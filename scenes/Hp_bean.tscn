@@ -1,0 +1,19 @@
+[gd_scene load_steps=4 format=3 uid="uid://dbeob8k77tolp"]
+
+[ext_resource type="Script" path="res://scenes/HPBean.gd" id="1_rq5sk"]
+[ext_resource type="Texture2D" uid="uid://qacfomrg0d0u" path="res://assets/prop/weapons potions pack 1.png" id="2_4ch2h"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_8vlde"]
+size = Vector2(8, 11)
+
+[node name="HPBean" type="Area2D"]
+script = ExtResource("1_rq5sk")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture = ExtResource("2_4ch2h")
+region_enabled = true
+region_rect = Rect2(98.8338, 17.2133, 9.59427, 12.9725)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, 0.5)
+shape = SubResource("RectangleShape2D_8vlde")
