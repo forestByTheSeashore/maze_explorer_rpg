@@ -12,6 +12,9 @@ extends StaticBody2D
 # -----------------------------------------------------------------------------
 enum DoorType { ENTRANCE, EXIT } # 定义门的类型枚举
 @export var type: DoorType = DoorType.ENTRANCE # 默认是入口门，可在检查器中更改
+@export var requires_key: bool = false  # 是否需要钥匙
+@export var required_key_type: String = "master_key"  # 需要的钥匙类型
+@export var consume_key_on_open: bool = true  # 开门时是否消耗钥匙
 
 # -----------------------------------------------------------------------------
 # 门的状态变量
@@ -151,11 +154,54 @@ func on_animation_finished():
 # -----------------------------------------------------------------------------
 # 公开函数：交互 (根据门类型只执行允许的动作)
 # -----------------------------------------------------------------------------
+# 修改 interact() 函数
 func interact():
-    if not is_transitioning:
-        if type == DoorType.ENTRANCE:
-            # 入口门：只执行关闭动作
+    match type:
+        DoorType.ENTRANCE:
+            # 入口门逻辑保持不变
             close_door()
-        elif type == DoorType.EXIT:
-            # 出口门：只执行打开动作
-            open_door()
+        
+        DoorType.EXIT:
+            # 出口门需要检查钥匙
+            if requires_key:
+                _try_open_locked_door()
+            else:
+                open_door()
+
+
+# 新增：尝试打开锁定的门
+func _try_open_locked_door():
+    # 查找玩家
+    var player = get_tree().get_first_node_in_group("player")
+    if not player:
+        print("错误：找不到玩家节点")
+        return
+    
+    # 检查玩家是否有所需钥匙
+    if player.has_method("has_key") and player.has_key(required_key_type):
+        print("玩家有钥匙，正在开门...")
+        
+        # 使用钥匙（如果设置为消耗）
+        if consume_key_on_open:
+            if player.has_method("use_key"):
+                player.use_key(required_key_type)
+                print("钥匙已被使用")
+        
+        # 打开门
+        open_door()
+        
+    else:
+        # 玩家没有钥匙
+        print("这扇门被锁着，需要", required_key_type, "才能打开")
+        _play_locked_door_feedback()
+
+# 新增：锁门反馈效果
+func _play_locked_door_feedback():
+    # 播放锁门音效或动画
+    if animated_sprite:
+        # 简单的晃动效果表示门被锁住
+        var original_position = animated_sprite.position
+        var tween = create_tween()
+        tween.tween_property(animated_sprite, "position:x", original_position.x + 2, 0.1)
+        tween.tween_property(animated_sprite, "position:x", original_position.x - 2, 0.1)
+        tween.tween_property(animated_sprite, "position:x", original_position.x, 0.1)

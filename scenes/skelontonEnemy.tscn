@@ -323,7 +323,7 @@ height = 46.0
 size = Vector2(350, 155.5)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_o55ta"]
-size = Vector2(26, 53)
+size = Vector2(14, 41)
 
 [node name="SkelontonEnemy" type="CharacterBody2D"]
 script = ExtResource("1_y3l6p")
@@ -351,5 +351,5 @@ path_max_distance = 10.0
 [node name="AttackHitbox" type="Area2D" parent="."]
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="AttackHitbox"]
-position = Vector2(-2, 8.5)
+position = Vector2(-2, 10.5)
 shape = SubResource("RectangleShape2D_o55ta")

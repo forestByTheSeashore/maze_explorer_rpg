@@ -1,4 +1,4 @@
-[gd_scene load_steps=8 format=3 uid="uid://cprxuuymlstnn"]
+[gd_scene load_steps=11 format=3 uid="uid://cprxuuymlstnn"]
 
 [ext_resource type="Script" path="res://levels/level_1.gd" id="1_i6ov5"]
 [ext_resource type="TileSet" uid="uid://cn6a27lw6v5xa" path="res://assets/tiles/tile_set.tres" id="2_0ngka"]
@@ -7,6 +7,9 @@
 [ext_resource type="PackedScene" uid="uid://bmtmrg6sdimhd" path="res://scenes/player.tscn" id="4_vvk68"]
 [ext_resource type="PackedScene" uid="uid://b7nyktx23bdg4" path="res://scenes/slime.tscn" id="6_vim0v"]
 [ext_resource type="PackedScene" uid="uid://cph7cfwmo5o3u" path="res://scenes/skelontonEnemy.tscn" id="7_q80s3"]
+[ext_resource type="PackedScene" uid="uid://1yvms4xqcd4x" path="res://scenes/Key.tscn" id="8_3kd7q"]
+[ext_resource type="PackedScene" uid="uid://bwpq3n0husxu5" path="res://ui/UIManager.tscn" id="9_h2weg"]
+[ext_resource type="PackedScene" uid="uid://dq7eh3hrpfflb" path="res://scenes/Sword.tscn" id="10_rmggf"]
 
 [node name="Level1" type="Node2D"]
 script = ExtResource("1_i6ov5")
@@ -44,14 +47,22 @@ collision_layer = 2
 [node name="SkelontonEnemy" parent="." instance=ExtResource("7_q80s3")]
 position = Vector2(510, 291)
 collision_layer = 2
-health = 100
-attack_power = 25
-speed = 75.0
-experience_drop = 50
-detection_radius_behavior = true
-detection_distance = 200.0
-attack_distance = 50.0
-attack_cooldown = 1.5
-attack_hitbox_reach = 25.0
-personal_space = 15.0
-retreat_speed_factor = 0.5
+
+[node name="Key" parent="." instance=ExtResource("8_3kd7q")]
+position = Vector2(69, 259)
+
+[node name="UiManager" parent="." instance=ExtResource("9_h2weg")]
+layer = 3
+
+[node name="WeaponRoot" type="Node2D" parent="."]
+
+[node name="Sword_iron" parent="WeaponRoot" instance=ExtResource("10_rmggf")]
+position = Vector2(212, 353)
+
+[node name="Sword_bronze" parent="WeaponRoot" instance=ExtResource("10_rmggf")]
+position = Vector2(190, 268)
+sword_type = 2
+
+[node name="Sword_steel" parent="WeaponRoot" instance=ExtResource("10_rmggf")]
+position = Vector2(235, 160)
+sword_type = 3

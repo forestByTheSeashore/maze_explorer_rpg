@@ -1,0 +1,41 @@
+Date : 2025-05-30 14:43:27
+Directory : d:\Program\GameProgramming\GameExplorer_V1\scenes
+Total : 16 files,  2130 codes, 280 comments, 513 blanks, all 2923 lines
+
+Languages
++----------+------------+------------+------------+------------+------------+
+| language | files      | code       | comment    | blank      | total      |
++----------+------------+------------+------------+------------+------------+
+| GDScript |          8 |      1,101 |        280 |        321 |      1,702 |
+| GDScene  |          8 |      1,029 |          0 |        192 |      1,221 |
++----------+------------+------------+------------+------------+------------+
+
+Directories
++-----------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| path                                                                  | files      | code       | comment    | blank      | total      |
++-----------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| .                                                                     |         16 |      2,130 |        280 |        513 |      2,923 |
++-----------------------------------------------------------------------+------------+------------+------------+------------+------------+
+
+Files
++-----------------------------------------------------------------------+----------+------------+------------+------------+------------+
+| filename                                                              | language | code       | comment    | blank      | total      |
++-----------------------------------------------------------------------+----------+------------+------------+------------+------------+
+| d:\Program\GameProgramming\GameExplorer_V1\scenes\Door.gd             | GDScript |        112 |         62 |         33 |        207 |
+| d:\Program\GameProgramming\GameExplorer_V1\scenes\HPBean.gd           | GDScript |         32 |          3 |         13 |         48 |
+| d:\Program\GameProgramming\GameExplorer_V1\scenes\Hp_bean.tscn        | GDScene  |         27 |          0 |          9 |         36 |
+| d:\Program\GameProgramming\GameExplorer_V1\scenes\IronSword.tscn      | GDScene  |          6 |          0 |          3 |          9 |
+| d:\Program\GameProgramming\GameExplorer_V1\scenes\Key.gd              | GDScript |         40 |         13 |         16 |         69 |
+| d:\Program\GameProgramming\GameExplorer_V1\scenes\Key.tscn            | GDScene  |         28 |          0 |          9 |         37 |
+| d:\Program\GameProgramming\GameExplorer_V1\scenes\Player.gd           | GDScript |        354 |        101 |        109 |        564 |
+| d:\Program\GameProgramming\GameExplorer_V1\scenes\Sword.gd            | GDScript |         85 |          6 |         17 |        108 |
+| d:\Program\GameProgramming\GameExplorer_V1\scenes\Sword.tscn          | GDScene  |         63 |          0 |         12 |         75 |
+| d:\Program\GameProgramming\GameExplorer_V1\scenes\WeaponData.gd       | GDScript |          6 |          1 |          1 |          8 |
+| d:\Program\GameProgramming\GameExplorer_V1\scenes\door.tscn           | GDScene  |         55 |          0 |         12 |         67 |
+| d:\Program\GameProgramming\GameExplorer_V1\scenes\player.tscn         | GDScene  |        498 |          0 |         78 |        576 |
+| d:\Program\GameProgramming\GameExplorer_V1\scenes\skelontonEnemy.gd   | GDScript |        367 |         66 |         99 |        532 |
+| d:\Program\GameProgramming\GameExplorer_V1\scenes\skelontonEnemy.tscn | GDScene  |        301 |          0 |         55 |        356 |
+| d:\Program\GameProgramming\GameExplorer_V1\scenes\slime.gd            | GDScript |        105 |         28 |         33 |        166 |
+| d:\Program\GameProgramming\GameExplorer_V1\scenes\slime.tscn          | GDScene  |         51 |          0 |         14 |         65 |
+| Total                                                                 |          |      2,130 |        280 |        513 |      2,923 |
++-----------------------------------------------------------------------+----------+------------+------------+------------+------------+

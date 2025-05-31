@@ -23,6 +23,13 @@ func _ready():
     if player and entry_door:
         player.global_position = entry_door.global_position
 
+    # 设置出口门需要钥匙
+    if exit_door:
+        exit_door.requires_key = true
+        exit_door.required_key_type = "master_key"
+        exit_door.consume_key_on_open = true
+        print("出口门已设置为需要钥匙：", exit_door.required_key_type)
+
     # 2. 连接出口门的 door_opened 信号到关卡结束处理函数
     if exit_door: # 确保 exit_door 存在
         # 确保 exit_door 确实有 door_opened 信号 (它是在 door.gd 中定义的)

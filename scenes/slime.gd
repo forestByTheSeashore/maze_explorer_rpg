@@ -60,12 +60,26 @@ func _on_hit_by_player():
     # 可以添加受击音效、闪烁效果等
     print(name, " 被玩家击中，但未被击败")
     
-    # 示例：短暂闪烁效果
+    # 改进的闪烁效果：更明显的受击反馈
     if animated_sprite:
         var original_modulate = animated_sprite.modulate
+        
+        # 第一次变红
         animated_sprite.modulate = Color.RED
         await get_tree().create_timer(0.1).timeout
+        
         if animated_sprite:  # 确保节点仍然存在
+            # 恢复原色
+            animated_sprite.modulate = original_modulate
+            await get_tree().create_timer(0.05).timeout
+            
+        if animated_sprite:
+            # 第二次变红（双闪效果）
+            animated_sprite.modulate = Color.RED
+            await get_tree().create_timer(0.1).timeout
+            
+        if animated_sprite:
+            # 最终恢复
             animated_sprite.modulate = original_modulate
 
 # 保留原有方法作为兼容接口（标记为已弃用）
@@ -74,7 +88,7 @@ func receive_hit_from_player(player_total_attack_power: int):
     receive_player_attack(player_total_attack_power)
 
 # 通用伤害接口（与其他敌人统一）
-func take_damage(amount: int, source_attack_power: int = 0):
+func take_damage(amount: int, _source_attack_power: int = 0):
     if is_dead:
         return
         

@@ -545,7 +545,7 @@ radius = 6.0
 height = 18.0
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_bquaw"]
-size = Vector2(12, 17)
+size = Vector2(8, 14)
 
 [node name="Player" type="CharacterBody2D"]
 script = ExtResource("1_pgjwu")
@@ -571,5 +571,4 @@ collision_mask = 2
 monitoring = false
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="AttackHitbox"]
-position = Vector2(0, 0.5)
 shape = SubResource("RectangleShape2D_bquaw")

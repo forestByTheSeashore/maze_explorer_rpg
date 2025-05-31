@@ -1,0 +1,8 @@
+[gd_scene load_steps=2 format=3 uid="uid://by2eoyy5po43s"]
+
+[ext_resource type="PackedScene" uid="uid://dq7eh3hrpfflb" path="res://scenes/Sword.tscn" id="1_6o23o"]
+
+[node name="Sword" instance=ExtResource("1_6o23o")]
+weapon_id = "iron_sword"
+weapon_name = "Iron Sword"
+attack_power = 20

@@ -1,0 +1,74 @@
+[gd_scene load_steps=10 format=3 uid="uid://dq7eh3hrpfflb"]
+
+[ext_resource type="Script" path="res://scenes/Sword.gd" id="1_2qem2"]
+[ext_resource type="Texture2D" uid="uid://cuvvbvu2ykclt" path="res://assets/prop/Swords.png" id="1_02wxt"]
+[ext_resource type="Texture2D" uid="uid://qacfomrg0d0u" path="res://assets/prop/weapons potions pack 1.png" id="2_a5xr2"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_i2s01"]
+atlas = ExtResource("2_a5xr2")
+region = Rect2(16, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_i1dou"]
+atlas = ExtResource("1_02wxt")
+region = Rect2(32, 0, 16, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_rde3x"]
+atlas = ExtResource("1_02wxt")
+region = Rect2(16, 0, 16, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_bvq2c"]
+atlas = ExtResource("1_02wxt")
+region = Rect2(224, 0, 16, 32)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_40d05"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_i2s01")
+}],
+"loop": true,
+"name": &"basic_sword",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_i1dou")
+}],
+"loop": true,
+"name": &"bronze_sword",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_rde3x")
+}],
+"loop": true,
+"name": &"iron_sword",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_bvq2c")
+}],
+"loop": true,
+"name": &"steel_sword",
+"speed": 5.0
+}]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_i4ep0"]
+size = Vector2(7, 28)
+
+[node name="Sword" type="Area2D"]
+script = ExtResource("1_2qem2")
+
+[node name="SwordSprite" type="AnimatedSprite2D" parent="."]
+position = Vector2(4.76837e-07, 1.90735e-06)
+scale = Vector2(2, 1.71875)
+sprite_frames = SubResource("SpriteFrames_40d05")
+animation = &"iron_sword"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(1, 6)
+shape = SubResource("RectangleShape2D_i4ep0")
+
+[node name="AudioStreamPlayer2D" type="AudioStreamPlayer2D" parent="."]

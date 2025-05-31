@@ -6,18 +6,26 @@ enum State { IDLE, CHASE, ATTACK, DEAD }
 var current_state: State = State.IDLE
 
 # --- 导出变量 (可在编辑器中调整) ---
-@export var health: int = 100
-@export var attack_power: int = 25
-@export var speed: float = 75.0
-@export var experience_drop: int = 50
+@export var health: int = 80
+@export var attack_power: int = 20
+@export var speed: float = 70.0
+@export var experience_drop: int = 30
 
 @export var detection_radius_behavior: bool = true # 是否使用索敌范围 Area2D
 @export var detection_distance: float = 200.0    # 发现玩家的距离 (如果不用Area2D)
-@export var attack_distance: float = 50.0     # 进入攻击状态的距离
-@export var attack_cooldown: float = 1.5      # 攻击间隔 (秒)
-@export var attack_hitbox_reach: float = 25.0 # 攻击判定框的向前（左右）偏移量
-@export var personal_space: float = 15.0 # 敌人个人空间，防止过近
-@export var retreat_speed_factor: float = 0.5 # 后退时的速度系数
+@export var attack_distance: float = 40.0        # 进入攻击状态的距离
+@export var attack_cooldown: float = 1.5         # 攻击间隔 (秒)
+@export var attack_hitbox_reach: float = 25.0    # 攻击判定框的向前偏移量
+@export var personal_space: float = 25.0         # 敌人个人空间，防止过近
+@export var enemy_separation_force: float = 150.0  # 敌人间分离力度
+@export var player_separation_threshold: float = 20.0  # 与玩家的最小距离阈值
+
+# --- 追逐行为配置 ---
+@export var chase_type: ChaseType = ChaseType.NORMAL  # 追逐类型
+@export var max_chase_distance: float = 800.0        # 最大追逐距离（用于无限追逐型）
+@export var lose_target_time: float = 5.0            # 失去目标后多久停止追逐
+
+enum ChaseType { NORMAL, ENDLESS }  # 普通追逐 vs 无限追逐
 
 # --- 节点引用 ---
 @onready var animated_sprite: AnimatedSprite2D = $AnimatedSprite2D
@@ -31,457 +39,631 @@ var can_attack: bool = true
 var facing_direction_vector: Vector2 = Vector2.RIGHT # 默认朝右
 var stuck_timer: float = 0.0
 var last_position: Vector2 = Vector2.ZERO
-var is_attacking: bool = false  # 新增：标记是否正在攻击过程中
+var is_attacking: bool = false
+
+# --- 追逐状态变量 ---
+var last_known_player_position: Vector2 = Vector2.ZERO  # 玩家最后已知位置
+var time_since_lost_target: float = 0.0                 # 失去目标后的时间
+var is_in_endless_chase: bool = false                   # 是否进入无限追逐模式
 
 func _ready():
-    add_to_group("enemies")
-    _enter_state(State.IDLE)
+	add_to_group("enemies")
+	_enter_state(State.IDLE)
 
-    # 连接信号
-    if detection_area and detection_radius_behavior:
-        print("连接 Area2D 信号")
-        detection_area.body_entered.connect(_on_DetectionArea_body_entered)
-        detection_area.body_exited.connect(_on_DetectionArea_body_exited)
-    
-    if attack_hitbox:
-        attack_hitbox.monitoring = false
+	# 连接信号
+	if detection_area and detection_radius_behavior:
+		detection_area.body_entered.connect(_on_DetectionArea_body_entered)
+		detection_area.body_exited.connect(_on_DetectionArea_body_exited)
+	
+	if attack_hitbox:
+		attack_hitbox.monitoring = false
 
-    animated_sprite.animation_finished.connect(_on_animation_finished)
-    
-    # 延迟配置导航代理，确保导航系统已准备好
-    call_deferred("_setup_navigation")
-    last_position = global_position
+	animated_sprite.animation_finished.connect(_on_animation_finished)
+	
+	# 延迟配置导航代理
+	call_deferred("_setup_navigation")
+	last_position = global_position
 
 func _setup_navigation():
-    """延迟配置导航代理"""
-    if navigation_agent:
-        navigation_agent.path_desired_distance = 8.0
-        navigation_agent.target_desired_distance = 15.0
-        navigation_agent.radius = 16.0
-        navigation_agent.avoidance_enabled = true
-        # 等待一帧确保导航网格加载
-        await get_tree().process_frame
+	"""延迟配置导航代理 - 迷宫优化版"""
+	if navigation_agent:
+		navigation_agent.path_desired_distance = 5.0  # 更精确的路径跟踪
+		navigation_agent.target_desired_distance = 20.0  # 目标距离
+		navigation_agent.radius = 12.0  # 适合迷宫的半径
+		navigation_agent.avoidance_enabled = true
+		navigation_agent.max_speed = speed
+		# 等待导航网格加载
+		await get_tree().process_frame
+		print(name, " 导航代理配置完成")
 
 func _physics_process(delta):
-    _check_if_stuck(delta)
-    
-    # 根据状态处理逻辑，但统一在最后调用 move_and_slide()
-    match current_state:
-        State.IDLE:
-            _idle_state(delta)
-        State.CHASE:
-            _chase_state(delta)
-        State.ATTACK:
-            _attack_state(delta)
-        State.DEAD:
-            velocity = Vector2.ZERO
-    
-    # 应用分离力（在速度设置之后）
-    _apply_separation_force(delta)
-    
-    # 统一移动处理
-    move_and_slide()
-    
-    # 更新位置记录
-    last_position = global_position
-
-func _apply_separation_force(delta):
-    """防止与玩家重叠的分离力"""
-    if player_target == null or current_state == State.DEAD:
-        return
-        
-    var distance_to_player = global_position.distance_to(player_target.global_position)
-    
-    # 如果太近，施加推力
-    if distance_to_player < personal_space and distance_to_player > 1.0: # 避免除零
-        var push_direction = global_position.direction_to(player_target.global_position) * -1
-        var push_strength = (personal_space - distance_to_player) / personal_space
-        var push_force = push_direction * push_strength * 100.0 # 调整推力强度
-        
-        velocity += push_force * delta
-        velocity = velocity.limit_length(speed * 1.5)
+	# 简单的防卡死检测
+	_prevent_overlap_with_player()
+	
+	# 检测卡住情况
+	if current_state == State.CHASE:
+		_check_if_stuck(delta)
+	
+	# 全局死亡检查：如果玩家死亡，立即停止所有行为
+	if player_target and player_target.has_method("is_dead") and player_target.is_dead():
+		if current_state != State.IDLE:
+			print(name, " 检测到玩家死亡，立即停止行为")
+			player_target = null
+			_enter_state(State.IDLE)
+			return
+	
+	# 状态机处理
+	match current_state:
+		State.IDLE:
+			_idle_state(delta)
+		State.CHASE:
+			_chase_state(delta)
+		State.ATTACK:
+			_attack_state(delta)
+		State.DEAD:
+			velocity = Vector2.ZERO
+	
+	# 移动
+	move_and_slide()
+	
+	# 再次检查防重叠（移动后）
+	_prevent_overlap_with_player()
+	
+	# 更新位置记录
+	last_position = global_position
 
 func _check_if_stuck(delta):
-    """检测是否卡住"""
-    if current_state != State.CHASE:
-        stuck_timer = 0.0
-        return
-    
-    var movement_threshold = 10.0 # 稍微提高阈值
-    if global_position.distance_to(last_position) < movement_threshold * delta:
-        stuck_timer += delta
-        if stuck_timer > 1.5: # 减少等待时间
-            print(name, " 检测到卡住，尝试绕路")
-            _handle_stuck_situation()
-            stuck_timer = 0.0
-    else:
-        stuck_timer = 0.0
+	"""迷宫环境下的卡住检测"""
+	if current_state != State.CHASE or not navigation_agent:
+		stuck_timer = 0.0
+		return
+	
+	var movement_distance = global_position.distance_to(last_position)
+	var desired_movement = speed * delta * 0.3
+	
+	if movement_distance < desired_movement:
+		stuck_timer += delta
+		# 迷宫中可能经常需要绕路，延长检测时间
+		if stuck_timer > 4.0:
+			_handle_stuck_situation()
+			stuck_timer = 0.0
+	else:
+		stuck_timer = max(0, stuck_timer - delta * 0.5)
 
 func _handle_stuck_situation():
-    """处理卡住情况"""
-    if player_target == null:
-        return
-    
-    # 尝试随机偏移方向
-    var to_player = global_position.direction_to(player_target.global_position)
-    var perpendicular = Vector2(-to_player.y, to_player.x) # 垂直方向
-    var random_offset = perpendicular * randf_range(-50, 50)
-    var new_target = player_target.global_position + random_offset
-    
-    if navigation_agent:
-        navigation_agent.target_position = new_target
+	"""迷宫环境下的卡住处理"""
+	if player_target == null or not navigation_agent:
+		return
+	
+	print(name, " 在迷宫中卡住，重新计算路径")
+	
+	# 强制刷新导航路径
+	navigation_agent.target_position = player_target.global_position
+	
+	# 如果还是卡住，尝试临时目标点
+	await get_tree().create_timer(0.5).timeout
+	
+	if navigation_agent.is_navigation_finished():
+		# 尝试朝玩家方向的一个随机偏移点移动
+		var to_player = global_position.direction_to(player_target.global_position)
+		var perpendicular = Vector2(-to_player.y, to_player.x)
+		var random_offset = perpendicular * randf_range(-80, 80)
+		var intermediate_target = global_position + to_player * 50 + random_offset
+		
+		navigation_agent.target_position = intermediate_target
+		print(name, " 设置临时目标点进行绕路")
+
+# ============================================================================
+# 简化的防卡死系统
+# ============================================================================
+func _prevent_overlap_with_player():
+	"""强化的防重叠系统，彻底解决黏附问题"""
+	if not player_target or not is_instance_valid(player_target):
+		return
+	
+	var distance = global_position.distance_to(player_target.global_position)
+	
+	# 扩大分离检测范围
+	if distance < 25.0 and distance > 0.1:
+		var push_direction = (global_position - player_target.global_position).normalized()
+		var relative_pos = global_position - player_target.global_position
+		
+		# 检查敌人是否在玩家上方（这是最容易黏住的情况）
+		var is_above_player = relative_pos.y < -8
+		
+		# 根据位置调整分离策略
+		var push_distance = 15.0
+		
+		if is_above_player:
+			# 特殊处理：强制向侧面分离，避免垂直黏附
+			var side_preference = Vector2(1.0, 0.2) if relative_pos.x >= 0 else Vector2(-1.0, 0.2)
+			push_direction = (push_direction * 0.3 + side_preference * 0.7).normalized()
+			push_distance = 25.0
+			print(name, " 在玩家上方，强制侧面分离")
+		elif distance < 12.0:
+			# 距离极近时，强力分离
+			push_distance = 20.0
+			print(name, " 距离极近，强力分离")
+		
+		# 检查玩家是否在攻击，攻击时减少分离
+		var player_is_attacking = false
+		if player_target.has_method("is_attacking"):
+			player_is_attacking = player_target.is_attacking()
+		
+		if not player_is_attacking:
+			# 使用 move_and_collide 进行精确的位置调整
+			var collision = move_and_collide(push_direction * push_distance)
+			if collision:
+				# 如果直接推开碰到墙，尝试侧面推开
+				var perpendicular = Vector2(-push_direction.y, push_direction.x)
+				move_and_collide(perpendicular * push_distance * 0.5)
+		else:
+			# 攻击时只做轻微调整
+			move_and_collide(push_direction * 5.0)
 
 # ============================================================================
 # 状态管理与逻辑
 # ============================================================================
 func _enter_state(new_state: State):
-    if current_state == new_state and new_state != State.ATTACK:
-        return
-    
-    var old_state = current_state
-    current_state = new_state
-    print(name, " 状态切换: ", State.keys()[old_state], " -> ", State.keys()[new_state])
+	if current_state == new_state and new_state != State.ATTACK:
+		return
+	
+	var old_state = current_state
+	current_state = new_state
+	print(name, " 状态切换: ", State.keys()[old_state], " -> ", State.keys()[new_state])
 
-    match current_state:
-        State.IDLE:
-            velocity = Vector2.ZERO
-            is_attacking = false
-            _update_visual_animation("idle")
-        State.CHASE:
-            is_attacking = false
-            _update_visual_animation("walk")
-        State.ATTACK:
-            velocity = Vector2.ZERO
-            if not is_attacking: # 防止重复攻击
-                is_attacking = true
-                _perform_attack()
-        State.DEAD:
-            is_attacking = false
-            _play_death_and_cleanup_setup()
+	match current_state:
+		State.IDLE:
+			velocity = Vector2.ZERO
+			is_attacking = false
+			_update_visual_animation("idle")
+		State.CHASE:
+			is_attacking = false
+			_update_visual_animation("walk")
+		State.ATTACK:
+			velocity = Vector2.ZERO
+			if not is_attacking:
+				is_attacking = true
+				_perform_attack()
+		State.DEAD:
+			is_attacking = false
+			_play_death_and_cleanup_setup()
 
 func _idle_state(_delta):
-    """待机状态逻辑"""
-    velocity = Vector2.ZERO
-    
-    # 寻找目标
-    if player_target == null:
-        _try_find_player()
-    elif is_instance_valid(player_target):
-        _enter_state(State.CHASE)
-    else:
-        player_target = null
-    
-    _update_visual_animation("idle")
+	"""待机状态逻辑"""
+	velocity = Vector2.ZERO
+	
+	# 寻找目标
+	if player_target == null:
+		_try_find_player()
+	elif is_instance_valid(player_target):
+		_enter_state(State.CHASE)
+	else:
+		player_target = null
+	
+	_update_visual_animation("idle")
 
 func _try_find_player():
-    """尝试寻找玩家目标"""
-    if detection_radius_behavior:
-        return # 使用 Area2D 检测
-    
-    var potential_player = _find_player_in_distance(detection_distance)
-    if potential_player:
-        print(name, " 发现玩家: ", potential_player.name)
-        player_target = potential_player
-        _update_facing_direction()
-        _enter_state(State.CHASE)
+	"""尝试寻找玩家目标"""
+	if detection_radius_behavior:
+		return # 使用 Area2D 检测
+	
+	var potential_player = _find_player_in_distance(detection_distance)
+	if potential_player:
+		print(name, " 发现玩家: ", potential_player.name)
+		player_target = potential_player
+		_update_facing_direction()
+		_enter_state(State.CHASE)
 
 func _chase_state(_delta):
-    """追逐状态逻辑"""
-    if not _validate_target():
-        return
-    
-    var distance_to_player = global_position.distance_to(player_target.global_position)
-    _update_facing_direction()
-    
-    # 检查是否进入攻击状态
-    if distance_to_player <= attack_distance and can_attack:
-        print(name, " 进入攻击距离: ", distance_to_player)
-        _enter_state(State.ATTACK)
-        return
-    
-    # 如果在冷却中且距离很近，等待
-    if distance_to_player <= attack_distance * 1.2 and not can_attack:
-        velocity = Vector2.ZERO
-        _update_visual_animation("idle")
-        return
-    
-    # 导航到玩家位置
-    _navigate_to_player(distance_to_player)
-    _update_visual_animation("walk")
+	"""追逐状态逻辑 - 改进的持续追逐"""
+	if not _validate_target():
+		# 如果失去目标，根据追逐类型决定行为
+		if chase_type == ChaseType.ENDLESS and is_in_endless_chase:
+			time_since_lost_target += _delta
+			if time_since_lost_target < lose_target_time:
+				# 继续追逐到最后已知位置
+				_navigate_to_last_known_position()
+				print(name, " 无限追逐模式：追逐最后已知位置")
+				return
+			else:
+				print(name, " 无限追逐超时，返回待机")
+				is_in_endless_chase = false
+				time_since_lost_target = 0.0
+		
+		_enter_state(State.IDLE)
+		return
+	
+	# 更新玩家最后已知位置
+	last_known_player_position = player_target.global_position
+	time_since_lost_target = 0.0
+	
+	var distance_to_player = global_position.distance_to(player_target.global_position)
+	_update_facing_direction()
+	
+	# 简化攻击距离判断 - 任何接近的情况都应该攻击
+	var dx = abs(global_position.x - player_target.global_position.x)
+	var dy = abs(global_position.y - player_target.global_position.y)
+	
+	# 如果在任何方向上都足够接近，就进入攻击状态
+	var should_attack = (distance_to_player <= attack_distance * 1.3) or (dx <= attack_distance and dy <= attack_distance)
+	
+	if should_attack and can_attack:
+		print(name, " 进入攻击距离: 距离=", distance_to_player, " dx=", dx, " dy=", dy, " 攻击阈值=", attack_distance)
+		_enter_state(State.ATTACK)
+		return
+	
+	# 如果在攻击冷却中且距离合适，保持距离等待
+	if distance_to_player <= attack_distance * 1.3 and not can_attack:
+		var ideal_distance = attack_distance * 1.1
+		if distance_to_player < ideal_distance:
+			var retreat_direction = (global_position - player_target.global_position).normalized()
+			velocity = retreat_direction * speed * 0.5
+		else:
+			velocity = Vector2.ZERO
+		_update_visual_animation("idle")
+		return
+	
+	# 正常追逐
+	_navigate_to_player()
+	_update_visual_animation("walk")
+
+func _navigate_to_player():
+	"""迷宫中的A*导航到玩家位置"""
+	if not player_target or not navigation_agent:
+		return
+	
+	var current_distance = global_position.distance_to(player_target.global_position)
+	
+	# 保持最小距离，避免过度接近
+	if current_distance > 20.0:
+		# 设置导航目标为玩家位置
+		navigation_agent.target_position = player_target.global_position
+		
+		# 使用A*算法获取下一个路径点
+		if not navigation_agent.is_navigation_finished():
+			var next_path_position = navigation_agent.get_next_path_position()
+			var direction = global_position.direction_to(next_path_position)
+			velocity = direction * speed
+		else:
+			velocity = Vector2.ZERO
+	else:
+		# 距离够近时停止移动
+		velocity = Vector2.ZERO
+
+func _navigate_to_last_known_position():
+	"""追逐到玩家最后已知位置"""
+	if not navigation_agent:
+		return
+	
+	var distance_to_last_known = global_position.distance_to(last_known_player_position)
+	
+	# 如果已经到达最后已知位置，停止追逐
+	if distance_to_last_known <= 30.0:
+		print(name, " 到达最后已知位置，停止追逐")
+		is_in_endless_chase = false
+		time_since_lost_target = 0.0
+		_enter_state(State.IDLE)
+		return
+	
+	# 导航到最后已知位置
+	navigation_agent.target_position = last_known_player_position
+	
+	if not navigation_agent.is_navigation_finished():
+		var next_path_position = navigation_agent.get_next_path_position()
+		var direction = global_position.direction_to(next_path_position)
+		velocity = direction * speed
+	else:
+		velocity = Vector2.ZERO
+	
+	_update_visual_animation("walk")
 
 func _attack_state(_delta):
-    """攻击状态逻辑"""
-    if not _validate_target():
-        return
-    
-    var distance_to_player = global_position.distance_to(player_target.global_position)
-    
-    # 如果玩家跑太远，切换到追逐
-    if distance_to_player > attack_distance * 2.0:
-        print(name, " 玩家跑远，切换到追逐")
-        is_attacking = false
-        can_attack = true
-        _enter_state(State.CHASE)
-        return
-    
-    # 面向玩家并停止移动
-    _update_facing_direction()
-    velocity = Vector2.ZERO
-    
-    # 攻击动画处理在 _perform_attack 中
+	"""攻击状态逻辑"""
+	if not _validate_target():
+		return
+	
+	var distance_to_player = global_position.distance_to(player_target.global_position)
+	
+	# 只有在玩家真的跑很远时才切换到追逐
+	if distance_to_player > attack_distance * 4.0:
+		print(name, " 玩家跑太远，切换到追逐")
+		is_attacking = false
+		can_attack = true
+		_enter_state(State.CHASE)
+		return
+	
+	# 攻击状态下保持静止
+	velocity = Vector2.ZERO
+	_update_facing_direction()
 
 func _validate_target() -> bool:
-    """验证目标有效性"""
-    if player_target == null or not is_instance_valid(player_target):
-        _enter_state(State.IDLE)
-        return false
-    return true
+	"""验证目标有效性"""
+	if player_target == null or not is_instance_valid(player_target):
+		_enter_state(State.IDLE)
+		return false
+	
+	# 检查玩家是否已死亡
+	if player_target.has_method("is_dead") and player_target.is_dead():
+		print(name, " 玩家已死亡，停止追逐和攻击")
+		player_target = null
+		_enter_state(State.IDLE)
+		return false
+	
+	return true
 
 func _update_facing_direction():
-    """更新朝向"""
-    if player_target:
-        facing_direction_vector = global_position.direction_to(player_target.global_position).normalized()
-
-func _navigate_to_player(distance_to_player: float):
-    """导航到玩家位置"""
-    if not navigation_agent:
-        # 如果没有导航代理，直接移动
-        velocity = facing_direction_vector * speed
-        return
-    
-    navigation_agent.target_position = player_target.global_position
-    
-    if not navigation_agent.is_navigation_finished():
-        var next_path_position = navigation_agent.get_next_path_position()
-        var move_direction = global_position.direction_to(next_path_position)
-        
-        # 如果导航路径不理想，使用直接路径
-        if next_path_position.distance_to(player_target.global_position) > attack_distance * 2:
-            move_direction = facing_direction_vector
-        
-        velocity = move_direction * speed
-    else:
-        # 导航完成，直接向玩家移动
-        velocity = facing_direction_vector * speed
+	"""更新朝向"""
+	if player_target:
+		facing_direction_vector = global_position.direction_to(player_target.global_position).normalized()
 
 # ============================================================================
 # 攻击系统
 # ============================================================================
 func _perform_attack():
-    """执行攻击"""
-    if not _validate_target() or is_attacking == false:
-        return
+	"""执行攻击"""
+	if not _validate_target() or is_attacking == false:
+		return
 
-    print(name, " 开始攻击 ", player_target.name)
-    _update_visual_animation("attack")
-    can_attack = false
-    
-    # 检查距离
-    var distance_to_player = global_position.distance_to(player_target.global_position)
-    if distance_to_player > attack_distance * 1.5:
-        print(name, " 攻击时玩家太远，取消攻击")
-        _reset_attack_state()
-        return
-    
-    # 配置攻击判定框
-    _setup_attack_hitbox()
-    
-    # 等待攻击判定
-    await get_tree().create_timer(0.2).timeout
-    
-    if not is_attacking: # 检查是否被打断
-        return
-    
-    # 执行攻击判定
-    _execute_attack_check()
-    
-    # 攻击冷却
-    await get_tree().create_timer(attack_cooldown).timeout
-    
-    _reset_attack_state()
+	print(name, " 开始攻击 ", player_target.name)
+	_update_visual_animation("attack")
+	can_attack = false
+	
+	# 不检查距离限制，直接执行攻击
+	print(name, " 跳过距离检查，直接攻击")
+	
+	# 配置攻击判定框
+	_setup_attack_hitbox()
+	
+	# 等待攻击判定
+	await get_tree().create_timer(0.3).timeout
+	
+	if not is_attacking:
+		return
+	
+	# 执行攻击判定
+	_execute_attack_check()
+	
+	# 攻击冷却
+	await get_tree().create_timer(attack_cooldown).timeout
+	
+	_reset_attack_state()
 
 func _setup_attack_hitbox():
-    """设置攻击判定框"""
-    if not attack_hitbox:
-        return
-    
-    var attack_direction = Vector2.RIGHT if not animated_sprite.flip_h else Vector2.LEFT
-    attack_hitbox.position = attack_direction * attack_hitbox_reach
-    attack_hitbox.monitoring = true
+	"""设置攻击判定框 - 支持四方向攻击"""
+	if not attack_hitbox:
+		return
+	
+	# 根据朝向确定攻击方向
+	var attack_direction = Vector2.ZERO
+	
+	# 判断主要朝向（优先考虑水平方向）
+	if abs(facing_direction_vector.x) > abs(facing_direction_vector.y):
+		# 水平方向为主
+		attack_direction = Vector2.RIGHT if facing_direction_vector.x > 0 else Vector2.LEFT
+	else:
+		# 垂直方向为主
+		attack_direction = Vector2.DOWN if facing_direction_vector.y > 0 else Vector2.UP
+	
+	# 设置攻击判定框位置
+	attack_hitbox.position = attack_direction * attack_hitbox_reach
+	attack_hitbox.monitoring = true
+	
+	print(name, " 攻击方向: ", attack_direction, " 朝向: ", facing_direction_vector)
 
 func _execute_attack_check():
-    """执行攻击检测"""
-    if not attack_hitbox:
-        print("警告: 未找到 AttackHitbox 节点!")
-        return
-    
-    var hit_targets = attack_hitbox.get_overlapping_bodies()
-    var hit_player = false
-    
-    for body in hit_targets:
-        if body == player_target and body.has_method("take_damage"):
-            var current_distance = global_position.distance_to(body.global_position)
-            if current_distance <= attack_distance * 1.5:
-                body.take_damage(attack_power)
-                hit_player = true
-                print(name, " 攻击命中，造成 ", attack_power, " 点伤害")
-                break
-    
-    if not hit_player:
-        print(name, " 攻击未命中")
-    
-    attack_hitbox.monitoring = false
+	"""执行攻击检测 - 改进的2D攻击判定"""
+	if not attack_hitbox:
+		print("警告: 未找到 AttackHitbox 节点!")
+		return
+	
+	# 攻击前再次验证目标（确保玩家没有在这段时间内死亡）
+	if not _validate_target():
+		attack_hitbox.monitoring = false
+		return
+	
+	var hit_targets = attack_hitbox.get_overlapping_bodies()
+	var hit_player = false
+	
+	for body in hit_targets:
+		if body == player_target and body.has_method("take_damage"):
+			# 最后一次检查玩家是否还活着
+			if body.has_method("is_dead") and body.is_dead():
+				print(name, " 玩家已死亡，取消攻击")
+				break
+				
+			var attack_distance_check = global_position.distance_to(body.global_position)
+			# 放宽攻击距离检测，特别是对角线情况
+			if attack_distance_check <= attack_distance * 1.8:
+				body.take_damage(attack_power)
+				hit_player = true
+				print(name, " 攻击命中，造成 ", attack_power, " 点伤害，距离: ", attack_distance_check)
+				break
+	
+	# 如果hitbox没有检测到，但玩家在攻击范围内，也算命中（备用检测）
+	if not hit_player and player_target:
+		# 再次检查玩家是否死亡
+		if player_target.has_method("is_dead") and player_target.is_dead():
+			print(name, " 玩家已死亡，取消备用攻击检测")
+		else:
+			var distance_to_player = global_position.distance_to(player_target.global_position)
+			if distance_to_player <= attack_distance * 1.5:
+				if player_target.has_method("take_damage"):
+					player_target.take_damage(attack_power)
+					hit_player = true
+					print(name, " 备用攻击检测命中，距离: ", distance_to_player)
+	
+	if not hit_player:
+		print(name, " 攻击未命中")
+	
+	attack_hitbox.monitoring = false
 
 func _reset_attack_state():
-    """重置攻击状态"""
-    can_attack = true
-    is_attacking = false
-    
-    if attack_hitbox:
-        attack_hitbox.monitoring = false
-    
-    # 重新评估状态
-    if current_state == State.ATTACK and _validate_target():
-        var distance = global_position.distance_to(player_target.global_position)
-        if distance <= attack_distance:
-            # 可以继续攻击，但不立即重新攻击
-            pass
-        else:
-            _enter_state(State.CHASE)
+	"""重置攻击状态 - 简化版"""
+	can_attack = true
+	is_attacking = false
+	
+	if attack_hitbox:
+		attack_hitbox.monitoring = false
+	
+	# 简单的攻击后处理
+	if _validate_target():
+		# 攻击后稍微后退
+		var retreat_direction = (global_position - player_target.global_position).normalized()
+		move_and_collide(retreat_direction * 15.0)
+		
+		# 短暂等待后继续
+		await get_tree().create_timer(0.5).timeout
+		_enter_state(State.CHASE)
 
 # ============================================================================
 # 动画系统
 # ============================================================================
 func _update_visual_animation(action_prefix: String):
-    """更新视觉动画"""
-    var anim_name = action_prefix + "_right"
-    
-    if not animated_sprite.sprite_frames.has_animation(anim_name):
-        print("错误: 动画 '", anim_name, "' 未找到!")
-        return
-    
-    var new_flip_h = facing_direction_vector.x < -0.01
-    
-    # 防止攻击动画被打断
-    if animated_sprite.animation.begins_with("attack") and animated_sprite.is_playing():
-        if not anim_name.begins_with("attack"):
-            return
-    
-    # 检查是否需要更新
-    var needs_update = (
-        animated_sprite.animation != anim_name or
-        animated_sprite.flip_h != new_flip_h or
-        not animated_sprite.is_playing()
-    )
-    
-    if needs_update:
-        animated_sprite.flip_h = new_flip_h
-        animated_sprite.play(anim_name)
+	"""更新视觉动画"""
+	var anim_name = action_prefix + "_right"
+	
+	if not animated_sprite.sprite_frames.has_animation(anim_name):
+		print("错误: 动画 '", anim_name, "' 未找到!")
+		return
+	
+	var new_flip_h = facing_direction_vector.x < -0.01
+	
+	# 防止攻击动画被打断
+	if animated_sprite.animation.begins_with("attack") and animated_sprite.is_playing():
+		if not anim_name.begins_with("attack"):
+			return
+	
+	# 检查是否需要更新
+	var needs_update = (
+		animated_sprite.animation != anim_name or
+		animated_sprite.flip_h != new_flip_h or
+		not animated_sprite.is_playing()
+	)
+	
+	if needs_update:
+		animated_sprite.flip_h = new_flip_h
+		animated_sprite.play(anim_name)
 
 # ============================================================================
 # 伤害系统
 # ============================================================================
 func receive_player_attack(player_attack_power: int) -> int:
-    """接收玩家攻击"""
-    if current_state == State.DEAD:
-        return 0
-    
-    var actual_damage = player_attack_power
-    health -= actual_damage
-    print(name, " 受到玩家攻击 ", actual_damage, " 点伤害, 剩余HP: ", health)
-    
-    _on_hit_by_player()
-    
-    if health <= 0:
-        _enter_state(State.DEAD)
-    
-    return actual_damage
+	"""接收玩家攻击"""
+	if current_state == State.DEAD:
+		return 0
+	
+	var actual_damage = player_attack_power
+	health -= actual_damage
+	print(name, " 受到玩家攻击 ", actual_damage, " 点伤害, 剩余HP: ", health)
+	
+	_on_hit_by_player()
+	
+	if health <= 0:
+		_enter_state(State.DEAD)
+	
+	return actual_damage
 
 func _on_hit_by_player():
-    """受击反应"""
-    print(name, " 被玩家击中")
-    
-    # 闪烁效果
-    var original_modulate = animated_sprite.modulate
-    animated_sprite.modulate = Color.RED
-    await get_tree().create_timer(0.1).timeout
-    if animated_sprite: # 确保节点存在
-        animated_sprite.modulate = original_modulate
+	"""受击反应"""
+	print(name, " 被玩家击中")
+	
+	# 闪烁效果
+	var original_modulate = animated_sprite.modulate
+	animated_sprite.modulate = Color.RED
+	await get_tree().create_timer(0.1).timeout
+	if animated_sprite:
+		animated_sprite.modulate = original_modulate
 
 func take_damage(amount: int, _source_attack_power: int = 0):
-    """通用伤害接口"""
-    if current_state == State.DEAD:
-        return
-    
-    health -= amount
-    print(name, " 受到 ", amount, " 点伤害, 剩余HP: ", health)
-    
-    if health <= 0:
-        _enter_state(State.DEAD)
+	"""通用伤害接口"""
+	if current_state == State.DEAD:
+		return
+	
+	health -= amount
+	print(name, " 受到 ", amount, " 点伤害, 剩余HP: ", health)
+	
+	if health <= 0:
+		_enter_state(State.DEAD)
 
 # ============================================================================
 # 死亡和清理
 # ============================================================================
 func _play_death_and_cleanup_setup():
-    """播放死亡动画并设置清理"""
-    velocity = Vector2.ZERO
-    set_physics_process(false)
-    
-    # 禁用碰撞
-    var collision_shape = $CollisionShape2D
-    if collision_shape:
-        collision_shape.disabled = true
-    
-    # 播放死亡动画
-    if animated_sprite.sprite_frames.has_animation("death"):
-        animated_sprite.play("death")
-        animated_sprite.flip_h = false
-    else:
-        print("错误: 'death' 动画未找到!")
-        _handle_defeat_cleanup()
+	"""播放死亡动画并设置清理"""
+	velocity = Vector2.ZERO
+	set_physics_process(false)
+	
+	# 禁用碰撞
+	var collision_shape = $CollisionShape2D
+	if collision_shape:
+		collision_shape.disabled = true
+	
+	# 播放死亡动画
+	if animated_sprite.sprite_frames.has_animation("death"):
+		animated_sprite.play("death")
+		animated_sprite.flip_h = false
+	else:
+		print("错误: 'death' 动画未找到!")
+		_handle_defeat_cleanup()
 
 func _handle_defeat_cleanup():
-    """处理死亡后的清理"""
-    var player_node = get_tree().get_first_node_in_group("player")
-    if player_node and player_node.has_method("gain_experience"):
-        player_node.gain_experience(experience_drop)
-        print("玩家获得经验: ", experience_drop)
-    
-    queue_free()
+	"""处理死亡后的清理"""
+	var player_node = get_tree().get_first_node_in_group("player")
+	if player_node and player_node.has_method("gain_experience"):
+		player_node.gain_experience(experience_drop)
+		print("玩家获得经验: ", experience_drop)
+	
+	queue_free()
 
 # ============================================================================
 # 信号回调
 # ============================================================================
 func _on_DetectionArea_body_entered(body):
-    """检测区域进入"""
-    if body.is_in_group("player"):
-        print(name, " 发现玩家: ", body.name)
-        player_target = body
-        if current_state == State.IDLE:
-            _update_facing_direction()
-            _enter_state(State.CHASE)
+	"""检测区域进入"""
+	if body.is_in_group("player"):
+		print(name, " 发现玩家: ", body.name)
+		player_target = body
+		last_known_player_position = body.global_position
+		
+		# 如果是无限追逐型敌人，激活无限追逐模式
+		if chase_type == ChaseType.ENDLESS:
+			is_in_endless_chase = true
+			print(name, " 激活无限追逐模式")
+		
+		if current_state == State.IDLE:
+			_update_facing_direction()
+			_enter_state(State.CHASE)
 
 func _on_DetectionArea_body_exited(body):
-    """检测区域离开"""
-    if body == player_target:
-        print(name, " 玩家离开检测范围")
-        player_target = null
-        if current_state in [State.CHASE, State.ATTACK]:
-            _enter_state(State.IDLE)
+	"""检测区域离开 - 改进的追逐逻辑"""
+	if body == player_target:
+		print(name, " 玩家离开检测范围")
+		
+		# 如果是无限追逐型，不立即失去目标
+		if chase_type == ChaseType.ENDLESS and is_in_endless_chase:
+			print(name, " 无限追逐模式：继续追逐")
+			# 不清除player_target，让追逐状态处理
+			return
+		
+		# 普通敌人立即停止追逐
+		player_target = null
+		if current_state in [State.CHASE, State.ATTACK]:
+			_enter_state(State.IDLE)
 
 func _on_animation_finished():
-    """动画完成回调"""
-    if current_state == State.DEAD and animated_sprite.animation == "death":
-        _handle_defeat_cleanup()
+	"""动画完成回调"""
+	if current_state == State.DEAD and animated_sprite.animation == "death":
+		_handle_defeat_cleanup()
 
 # ============================================================================
 # 辅助函数
 # ============================================================================
 func _find_player_in_distance(distance: float) -> CharacterBody2D:
-    """在指定距离内寻找玩家"""
-    var players = get_tree().get_nodes_in_group("player")
-    if not players.is_empty():
-        var player = players[0]
-        if global_position.distance_to(player.global_position) <= distance:
-            return player
-    return null
+	"""在指定距离内寻找玩家"""
+	var players = get_tree().get_nodes_in_group("player")
+	if not players.is_empty():
+		var player = players[0]
+		if global_position.distance_to(player.global_position) <= distance:
+			return player
+	return null
