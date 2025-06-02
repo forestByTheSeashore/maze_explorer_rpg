@@ -17,13 +17,13 @@ func _ready():
         if animated_sprite.sprite_frames.has_animation("idle"):
             animated_sprite.play("idle")
     
-    _start_floating_animation()
+    # _start_floating_animation()
 
 func _start_floating_animation():
     var tween = create_tween()
     tween.set_loops()
-    tween.tween_property(self, "position:y", position.y - 3, 1.0)
-    tween.tween_property(self, "position:y", position.y + 3, 1.0)
+    tween.tween_property(self, "position:y", position.y, 1.0)
+    tween.tween_property(self, "position:y", position.y, 1.0)
 
 func _on_body_entered(body):
     if is_collected or not body.is_in_group("player"):

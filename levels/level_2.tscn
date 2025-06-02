@@ -1,15 +1,9 @@
-[gd_scene load_steps=12 format=3 uid="uid://d2ymvxbg4u8iq"]
+[gd_scene load_steps=6 format=3 uid="uid://dahn3lwjfsiyr"]
 
 [ext_resource type="Script" path="res://levels/level_2.gd" id="1_level2"]
 [ext_resource type="TileSet" uid="uid://cn6a27lw6v5xa" path="res://assets/tiles/tile_set.tres" id="2_tileset"]
 [ext_resource type="PackedScene" uid="uid://dq4t3fc0e4a4a" path="res://scenes/door.tscn" id="3_door"]
 [ext_resource type="PackedScene" uid="uid://bmtmrg6sdimhd" path="res://scenes/player.tscn" id="4_player"]
-[ext_resource type="PackedScene" uid="uid://dbeob8k77tolp" path="res://scenes/Hp_bean.tscn" id="5_hp_bean"]
-[ext_resource type="PackedScene" uid="uid://1yvms4xqcd4x" path="res://scenes/Key.tscn" id="6_key"]
-[ext_resource type="PackedScene" uid="uid://cph7cfwmo5o3u" path="res://scenes/skelontonEnemy.tscn" id="7_skeleton"]
-[ext_resource type="PackedScene" uid="uid://b7nyktx23bdg4" path="res://scenes/slime.tscn" id="8_slime"]
-[ext_resource type="PackedScene" uid="uid://dbvnlcr5mg4gy" path="res://scenes/goblin.tscn" id="9_goblin"]
-[ext_resource type="PackedScene" uid="uid://dq7eh3hrpfflb" path="res://scenes/Sword.tscn" id="10_sword"]
 [ext_resource type="PackedScene" uid="uid://bwpq3n0husxu5" path="res://ui/UIManager.tscn" id="11_ui"]
 
 [node name="Level2" type="Node2D"]
@@ -35,33 +29,5 @@ position = Vector2(16, 168)
 [node name="Door_exit" parent="DoorRoot" instance=ExtResource("3_door")]
 position = Vector2(480, 168)
 type = 1
-
-[node name="Items" type="Node2D" parent="."]
-
-[node name="MasterKey" parent="Items" instance=ExtResource("6_key")]
-position = Vector2(250, 100)
-
-[node name="HpBean1" parent="Items" instance=ExtResource("5_hp_bean")]
-position = Vector2(150, 150)
-
-[node name="HpBean2" parent="Items" instance=ExtResource("5_hp_bean")]
-position = Vector2(350, 200)
-
-[node name="Sword" parent="Items" instance=ExtResource("10_sword")]
-position = Vector2(200, 250)
-
-[node name="Enemies" type="Node2D" parent="."]
-
-[node name="Skeleton1" parent="Enemies" instance=ExtResource("7_skeleton")]
-position = Vector2(100, 200)
-
-[node name="Skeleton2" parent="Enemies" instance=ExtResource("7_skeleton")]
-position = Vector2(300, 150)
-
-[node name="Slime1" parent="Enemies" instance=ExtResource("8_slime")]
-position = Vector2(400, 100)
-
-[node name="Goblin1" parent="Enemies" instance=ExtResource("9_goblin")]
-position = Vector2(250, 300)
 
 [node name="UIManager" parent="." instance=ExtResource("11_ui")]

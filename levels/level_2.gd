@@ -24,12 +24,30 @@ const DIRECTIONS = [Vector2i(2, 0), Vector2i(0, 2), Vector2i(-2, 0), Vector2i(0,
 # 枚举类型
 enum CellType { WALL, PATH }
 
+# === 从第一个脚本引入：物品/敌人配置 ===
+# 这些是预制件路径，请确保它们是正确的
+var packed_scenes = {
+	"Key": preload("res://scenes/Key.tscn"), # 假设路径
+	"Hp_bean": preload("res://scenes/Hp_bean.tscn"), # 假设路径
+	"IronSword_type0": preload("res://scenes/IronSword.tscn"), # 假设路径
+	"IronSword_type1": preload("res://scenes/IronSword.tscn"),
+	"IronSword_type2": preload("res://scenes/IronSword.tscn"),
+	"IronSword_type3": preload("res://scenes/IronSword.tscn"),
+	"Enemy_Goblin": preload("res://scenes/goblin.tscn"), # 假设路径
+	"Enemy_Skeleton": preload("res://scenes/skelontonEnemy.tscn"), # 假设路径
+	"Enemy_Slime": preload("res://scenes/slime.tscn") # 假设路径
+}
+
+var desired_counts = {
+	"Key": 1, "Hp_bean": 20, "IronSword_type0": 2, "IronSword_type1": 2,
+	"IronSword_type2": 1, "IronSword_type3": 1, "Enemy_Goblin": 8,
+	"Enemy_Skeleton": 5, "Enemy_Slime": 10
+}
+# === END: 从第一个脚本引入 ===
+
 func _ready():
 	print("=== Level 2 - 程序化迷宫生成开始 ===")
-	print("迷宫尺寸: ", maze_width, "x", maze_height)
-	print("墙壁瓦片ID (有碰撞): ", wall_tile_id)
-	print("地板瓦片ID: ", floor_tile_id)
-	print("走廊宽度: ", corridor_width)
+	# ... (你原来的 _ready 开头部分保持不变) ...
 	
 	# 检查TileMap节点
 	if not tile_map:
@@ -37,7 +55,10 @@ func _ready():
 		return
 	else:
 		print("TileMap 节点找到: ", tile_map.name)
-	
+		if not tile_map.tile_set:
+			print("致命错误: TileMap 的 TileSet 未设置!")
+			return
+			
 	# 连接出口门的打开信号
 	if exit_door:
 		if exit_door.has_signal("door_opened"):
@@ -46,36 +67,29 @@ func _ready():
 		else:
 			print("警告: 出口门没有 'door_opened' 信号!")
 	
-	# 1. 生成迷宫（使用优化后的迷宫生成算法）
 	print("步骤 1: 开始生成迷宫...")
-	generate_optimized_maze()  # 使用优化后的迷宫生成算法
+	generate_optimized_maze()
 	print("步骤 1: 迷宫生成完成")
 	
-	# 2. 绘制迷宫到 TileMap
 	print("步骤 2: 开始绘制迷宫到 TileMap...")
 	await draw_maze_to_tilemap()
 	print("步骤 2: TileMap 绘制完成")
 	
-	# 3. 设置玩家和门的位置
 	print("步骤 3: 设置玩家和门的位置...")
 	setup_player_and_doors_fixed()
 	print("步骤 3: 玩家和门设置完成")
 	
-	# 强制等待一帧，然后验证TileMap
 	await get_tree().process_frame
 	verify_tilemap()
 	
-	# 4. 确保从入口到出口有一条可行路径
 	print("步骤 4: 确保从入口到出口有一条可行路径...")
 	ensure_path_from_entrance_to_exit()
 	
-	# 5. 重新绘制迷宫（应用路径修正）
 	print("步骤 5: 重新绘制迷宫...")
 	await draw_maze_to_tilemap()
 	
-	# 6. 重新定位敌人和物品到迷宫内的可行走区域
 	print("步骤 6: 重新定位敌人和物品...")
-	reposition_enemies_and_items_optimized()
+	reposition_enemies_and_items_optimized() # 调用修改后的版本
 	print("步骤 6: 敌人和物品重新定位完成")
 	
 	print("=== Level 2 迷宫生成完成 ===")
@@ -454,67 +468,6 @@ func widen_specific_path(x1: int, y1: int, x2: int, y2: int):
 		else:
 			current_y -= 1
 
-# 重新定位敌人和物品到迷宫内的可行走区域
-func reposition_enemies_and_items_optimized():
-	"""智能重新定位敌人和物品到迷宫内的合适位置"""
-	print("智能重新定位敌人和物品...")
-	
-	# 收集所有真正安全的路径位置
-	var safe_positions = []
-	
-	# 更严格的安全位置检查：扫描整个迷宫，确保位置周围有足够空间
-	for y in range(3, maze_height-3):  # 增加边界缓冲
-		for x in range(3, maze_width-3):
-			if _is_truly_safe_position(x, y):
-				var world_pos = tile_map.to_global(tile_map.map_to_local(Vector2i(x, y)))
-				safe_positions.append(world_pos)
-	
-	print("找到 ", safe_positions.size(), " 个安全位置")
-	
-	if safe_positions.size() < 10:  # 如果安全位置太少，降低标准
-		print("安全位置不足，使用宽松标准...")
-		safe_positions.clear()
-		for y in range(2, maze_height-2):
-			for x in range(2, maze_width-2):
-				if _is_basic_safe_position(x, y):
-					var world_pos = tile_map.to_global(tile_map.map_to_local(Vector2i(x, y)))
-					safe_positions.append(world_pos)
-		print("宽松标准找到 ", safe_positions.size(), " 个位置")
-	
-	# 获取所有物品和敌人
-	var items = get_tree().get_nodes_in_group("items")
-	var enemies = get_tree().get_nodes_in_group("enemies")
-	var keys = _get_nodes_by_type(items, "Key")
-	var hp_beans = _get_nodes_by_type(items, "Hp_bean")
-	var weapons = _get_nodes_by_type(items, "IronSword")
-	
-	print("物品统计:")
-	print("- 钥匙: ", keys.size())
-	print("- HP豆: ", hp_beans.size())
-	print("- 武器: ", weapons.size())
-	print("- 敌人: ", enemies.size())
-	
-	# 如果没有足够的安全位置，创建更多
-	if safe_positions.size() < (keys.size() + hp_beans.size() + weapons.size() + enemies.size()):
-		print("安全位置不足，创建额外的安全区域...")
-		_create_additional_safe_areas()
-		# 重新收集位置
-		safe_positions.clear()
-		for y in range(2, maze_height-2):
-			for x in range(2, maze_width-2):
-				if _is_basic_safe_position(x, y):
-					var world_pos = tile_map.to_global(tile_map.map_to_local(Vector2i(x, y)))
-					safe_positions.append(world_pos)
-		print("创建安全区域后找到 ", safe_positions.size(), " 个位置")
-	
-	# 使用改进的放置策略
-	var used_positions = []
-	_place_keys(keys, safe_positions, used_positions, 200)
-	_place_items_safely(hp_beans, safe_positions, 100)
-	_place_items_safely(weapons, safe_positions, 150)
-	_place_items_safely(enemies, safe_positions, 120)
-	
-	print("物品和敌人重新定位完成")
 
 # 特殊处理钥匙的放置
 func _place_keys(keys: Array, positions: Array, used_positions: Array, min_distance: float):
@@ -585,46 +538,50 @@ func _place_keys(keys: Array, positions: Array, used_positions: Array, min_dista
 
 # 更严格的安全位置检查
 func _is_truly_safe_position(x: int, y: int) -> bool:
-	# 检查边界
-	if x < 2 or x >= maze_width-2 or y < 2 or y >= maze_height-2:
+	# 这是你脚本中定义的版本，检查3x3区域
+	if x < 1 or x >= maze_width - 1 or y < 1 or y >= maze_height - 1: # 调整了边界以匹配3x3逻辑
+		# 如果中心点 (x,y) 已经是边界的内一层(x=1或y=1)，那么 (x-1) 或 (y-1) 就是硬边界(0)
+		# 3x3区域要求中心点至少是(1,1)
+		# 之前这里是 x < 2 ... y < 2，对于3x3来说，中心点在(1,1)时，检查范围是(0..2, 0..2)
+		# 如果要求被检查的3x3区域完全不包含最外圈的硬墙(索引0或maze_width/height -1)，
+		# 那么中心点(x,y)本身必须是 x >=1, y >=1 且 x <= maze_width-2, y <= maze_height-2
+		# 你的原始版本是 x<2, y<2 ... 这意味着 x,y 至少是2。
+		# 我们这里统一一下，_is_truly_safe_position 检查以 (x,y) 为中心的 3x3 区域。
+		# 这就需要 (x,y) 距离硬边界至少1格。
+		# (x-1) >= 0 -> x >= 1
+		# (y-1) >= 0 -> y >= 1
+		# (x+1) < maze_width -> x < maze_width - 1
+		# (y+1) < maze_height -> y < maze_height - 1
+		# 所以，x的有效范围是 [1, maze_width-2]，y的有效范围是 [1, maze_height-2]
+		return false # 如果不满足这个，直接返回false
+	
+	if maze_grid.is_empty() or y < 0 or y >= maze_grid.size() or x < 0 or x >= maze_grid[y].size():
 		return false
-	
-	# 检查当前位置是否为路径
-	if maze_grid[y][x] != CellType.PATH:
+	if maze_grid[y][x] != CellType.PATH: # 中心点必须是路径
 		return false
-	
-	# 检查2x2范围内都是路径
-	for dy in range(-1, 2):
-		for dx in range(-1, 2):
-			var check_x = x + dx
-			var check_y = y + dy
-			if check_x >= 0 and check_x < maze_width and check_y >= 0 and check_y < maze_height:
-				if maze_grid[check_y][check_x] != CellType.PATH:
-					return false
-	
+		
+	for dy_offset in range(-1, 2): # 检查中心点及其8个邻居 (3x3)
+		for dx_offset in range(-1, 2):
+			var check_x = x + dx_offset
+			var check_y = y + dy_offset
+			# 边界检查已在循环开始前针对中心点 (x,y) 做了，确保3x3区域不会超出maze_grid
+			if maze_grid[check_y][check_x] != CellType.PATH:
+				return false
 	return true
 
 # 基本的安全位置检查
 func _is_basic_safe_position(x: int, y: int) -> bool:
-	# 检查边界
-	if x < 1 or x >= maze_width-1 or y < 1 or y >= maze_height-1:
-		return false
-	
-	# 检查当前位置是否为路径
-	if maze_grid[y][x] != CellType.PATH:
-		return false
-	
-	# 检查至少有一个相邻位置是路径
+	if x < 1 or x >= maze_width-1 or y < 1 or y >= maze_height-1: return false
+	if maze_grid.is_empty() or y < 0 or y >= maze_grid.size() or x < 0 or x >= maze_grid[y].size(): return false
+	if maze_grid[y][x] != CellType.PATH: return false
 	var adjacent_paths = 0
-	var directions = [Vector2i(-1, 0), Vector2i(1, 0), Vector2i(0, -1), Vector2i(0, 1)]
-	
+	var directions = [Vector2i(-1,0), Vector2i(1,0), Vector2i(0,-1), Vector2i(0,1)]
 	for dir in directions:
-		var check_x = x + dir.x
-		var check_y = y + dir.y
-		if check_x >= 0 and check_x < maze_width and check_y >= 0 and check_y < maze_height:
-			if maze_grid[check_y][check_x] == CellType.PATH:
-				adjacent_paths += 1
-	
+		var check_x = x + dir.x; var check_y = y + dir.y
+		if check_y >= 0 and check_y < maze_grid.size() and \
+		   check_x >= 0 and check_x < maze_grid[check_y].size() and \
+		   maze_grid[check_y][check_x] == CellType.PATH:
+			adjacent_paths += 1
 	return adjacent_paths >= 2
 
 # 创建额外的安全区域
@@ -992,3 +949,329 @@ func _find_best_position(positions: Array, used_positions: Array, min_distance: 
 	
 	# 如果没找到合适的位置，返回任意一个未使用的位置
 	return best_pos if best_pos else positions[0]
+
+func _get_nodes_by_name_prefix(nodes_array: Array, prefix: String) -> Array:
+	var result = []
+	for node_item in nodes_array:
+		if is_instance_valid(node_item) and node_item.name.begins_with(prefix):
+			result.append(node_item)
+	return result
+
+func _get_nodes_by_name_prefix_and_property(nodes_array: Array, prefix: String, prop_name: String, prop_value) -> Array:
+	var result = []
+	for node_item in nodes_array:
+		if is_instance_valid(node_item) and node_item.name.begins_with(prefix):
+			var actual_prop_value = null
+			if node_item.has_method("get_" + prop_name):
+				actual_prop_value = node_item.call("get_" + prop_name)
+			elif prop_name in node_item:
+				actual_prop_value = node_item.get(prop_name)
+			
+			if actual_prop_value == prop_value:
+				result.append(node_item)
+	return result
+
+func _prepare_entities_for_placement(p_desired_counts: Dictionary) -> Dictionary:
+	var entities_map: Dictionary = {}
+	var items_group = get_tree().get_nodes_in_group("items") # 获取场景中已有的
+	var enemies_group = get_tree().get_nodes_in_group("enemies")
+
+	# 构建一个包含当前场景中已存在节点的映射
+	var p_existing_nodes_map = {
+		"Key": _get_nodes_by_name_prefix(items_group, "Key"),
+		"Hp_bean": _get_nodes_by_name_prefix(items_group, "Hp_bean"),
+		"IronSword_type0": _get_nodes_by_name_prefix_and_property(items_group, "IronSword", "sword_type", 0),
+		"IronSword_type1": _get_nodes_by_name_prefix_and_property(items_group, "IronSword", "sword_type", 1),
+		"IronSword_type2": _get_nodes_by_name_prefix_and_property(items_group, "IronSword", "sword_type", 2),
+		"IronSword_type3": _get_nodes_by_name_prefix_and_property(items_group, "IronSword", "sword_type", 3),
+		"Enemy_Goblin": _get_nodes_by_name_prefix(enemies_group, "Goblin"),
+		"Enemy_Skeleton": _get_nodes_by_name_prefix(enemies_group, "Skeleton"),
+		"Enemy_Slime": _get_nodes_by_name_prefix(enemies_group, "Slime")
+	}
+
+	for type_str in p_desired_counts:
+		var desired_num = p_desired_counts[type_str]
+		var existing_nodes_of_type: Array = p_existing_nodes_map.get(type_str, [])
+		var nodes_for_this_type: Array = []
+
+		var num_to_take_from_existing = min(desired_num, existing_nodes_of_type.size())
+		for i in range(num_to_take_from_existing):
+			if is_instance_valid(existing_nodes_of_type[i]):
+				nodes_for_this_type.append(existing_nodes_of_type[i])
+		
+		var num_to_instance = desired_num - nodes_for_this_type.size()
+		if num_to_instance > 0:
+			if packed_scenes.has(type_str) and packed_scenes[type_str] is PackedScene:
+				var packed_scene: PackedScene = packed_scenes[type_str]
+				for _i in range(num_to_instance):
+					var instance = packed_scene.instantiate()
+					# 如果是剑，设置sword_type
+					var sword_type_to_set = -1
+					if type_str == "IronSword_type0": sword_type_to_set = 0
+					elif type_str == "IronSword_type1": sword_type_to_set = 1
+					elif type_str == "IronSword_type2": sword_type_to_set = 2
+					elif type_str == "IronSword_type3": sword_type_to_set = 3
+					
+					if sword_type_to_set != -1:
+						if "sword_type" in instance: 
+							instance.sword_type = sword_type_to_set
+						elif instance.has_method("set_sword_type"):
+							instance.set_sword_type(sword_type_to_set)
+					
+					# 重要：这里先不 add_child，由放置逻辑统一处理
+					nodes_for_this_type.append(instance)
+			else:
+				printerr("错误: 类型 ", type_str, " 的 PackedScene 未在 packed_scenes 中正确配置!")
+
+		entities_map[type_str] = nodes_for_this_type
+		
+		# 处理多余的已存在节点 (如果需要)
+		if existing_nodes_of_type.size() > num_to_take_from_existing:
+			for i in range(num_to_take_from_existing, existing_nodes_of_type.size()):
+				var surplus_node = existing_nodes_of_type[i]
+				if is_instance_valid(surplus_node) and surplus_node.is_inside_tree():
+					print("移除多余的预设节点: ", surplus_node.name)
+					surplus_node.queue_free()
+	return entities_map
+
+
+func reposition_enemies_and_items_optimized():
+	print("智能重新定位敌人和物品 (整合版)...")
+
+	# 1. 准备实体 (整合自第一个脚本的逻辑)
+	var entities_map: Dictionary = _prepare_entities_for_placement(desired_counts)
+
+	var keys_to_place: Array = entities_map.get("Key", [])
+	var hp_beans_to_place: Array = entities_map.get("Hp_bean", [])
+	var weapons_to_place: Array = []
+	weapons_to_place.append_array(entities_map.get("IronSword_type0", []))
+	weapons_to_place.append_array(entities_map.get("IronSword_type1", []))
+	weapons_to_place.append_array(entities_map.get("IronSword_type2", []))
+	weapons_to_place.append_array(entities_map.get("IronSword_type3", []))
+	var enemies_to_place: Array = []
+	enemies_to_place.append_array(entities_map.get("Enemy_Goblin", []))
+	enemies_to_place.append_array(entities_map.get("Enemy_Skeleton", []))
+	enemies_to_place.append_array(entities_map.get("Enemy_Slime", []))
+
+	# 将所有需要放置的节点先加入场景树 (如果它们还没在里面的话)
+	# 这样它们的 global_position 才能被正确设置
+	var all_entities_to_place_flat: Array = []
+	all_entities_to_place_flat.append_array(keys_to_place)
+	all_entities_to_place_flat.append_array(hp_beans_to_place)
+	all_entities_to_place_flat.append_array(weapons_to_place)
+	all_entities_to_place_flat.append_array(enemies_to_place)
+
+	for entity_node in all_entities_to_place_flat:
+		if not entity_node.is_inside_tree():
+			add_child(entity_node) # 添加到当前 Level2 节点下
+		entity_node.visible = true # 确保可见
+
+	# 2. 收集所有真正安全的、居中的世界坐标
+	var all_safe_centered_world_positions = []
+	if not tile_map or not tile_map.tile_set:
+		printerr("TileMap 或 TileSet 未初始化，无法获取格子尺寸!")
+		return
+		
+	var tile_center_offset = tile_map.tile_set.tile_size / 2.0
+
+	for y_tile in range(1, maze_height - 1): # 避开最外层边界
+		for x_tile in range(1, maze_width - 1):
+			if _is_truly_safe_position(x_tile, y_tile): # 使用你脚本中已有的严格安全检查
+				var local_tile_pos_top_left = tile_map.map_to_local(Vector2i(x_tile, y_tile))
+				var global_tile_pos_centered = tile_map.to_global(local_tile_pos_top_left + tile_center_offset)
+				all_safe_centered_world_positions.append(global_tile_pos_centered)
+	
+	all_safe_centered_world_positions.shuffle() # 打乱顺序增加随机性
+	print("找到 ", all_safe_centered_world_positions.size(), " 个居中的安全世界位置")
+
+	if all_safe_centered_world_positions.is_empty() and not all_entities_to_place_flat.is_empty() :
+		print("警告: 安全位置不足，尝试创建额外的安全区域...")
+		_create_additional_safe_areas() # 你脚本中已有的函数
+		await get_tree().process_frame # 等待 maze_grid 更新
+		await draw_maze_to_tilemap()   # 重绘 TileMap
+		
+		# 重新收集位置
+		all_safe_centered_world_positions.clear()
+		for y_tile in range(1, maze_height - 1):
+			for x_tile in range(1, maze_width - 1):
+				if _is_truly_safe_position(x_tile, y_tile):
+					var local_tile_pos_top_left = tile_map.map_to_local(Vector2i(x_tile, y_tile))
+					var global_tile_pos_centered = tile_map.to_global(local_tile_pos_top_left + tile_center_offset)
+					all_safe_centered_world_positions.append(global_tile_pos_centered)
+		all_safe_centered_world_positions.shuffle()
+		print("创建额外区域后找到 ", all_safe_centered_world_positions.size(), " 个居中的安全世界位置")
+
+	if all_safe_centered_world_positions.is_empty() and not all_entities_to_place_flat.is_empty():
+		printerr("致命错误: 即使创建了额外区域，仍然没有可用的安全位置!")
+		# 将未放置的物品隐藏
+		for entity_node in all_entities_to_place_flat: entity_node.visible = false
+		return
+
+	# 3. 使用统一的 `globally_used_positions` 进行放置
+	var globally_used_positions: Array = []
+
+	# 参数: (要放置的节点数组, 所有可用安全位置, 已用位置数组(会修改这个数组), 此类物品的最小间距)
+	if not keys_to_place.is_empty():
+		_place_keys_modified(keys_to_place, all_safe_centered_world_positions, globally_used_positions, 200.0)
+	
+	# 对于 HP_beans, weapons, enemies, 它们在你的脚本里共用 _place_items_safely
+	# 我们需要修改 _place_items_safely 来接受并更新 globally_used_positions
+	if not hp_beans_to_place.is_empty():
+		_place_items_safely_modified(hp_beans_to_place, all_safe_centered_world_positions, globally_used_positions, 70.0, "Hp_bean") # 减小了间距
+	if not weapons_to_place.is_empty():
+		_place_items_safely_modified(weapons_to_place, all_safe_centered_world_positions, globally_used_positions, 150.0, "Weapon")
+	if not enemies_to_place.is_empty():
+		_place_items_safely_modified(enemies_to_place, all_safe_centered_world_positions, globally_used_positions, 120.0, "Enemy")
+	
+	# 检查是否有物品未能成功放置 (简单的检查方法是看它的位置是否还是初始的 Vector2.ZERO)
+	for entity_node in all_entities_to_place_flat:
+		if is_instance_valid(entity_node) and entity_node.global_position.is_equal_approx(Vector2.ZERO) and entity_node.visible:
+			# 这个检查不够完美，因为物品可能被实例化在 (0,0)
+			# 更好的方式是在放置函数中标记或返回未放置的物品
+			# print("警告: 物品 ", entity_node.name, " 可能未被成功放置，当前位置: ", entity_node.global_position)
+			var found_in_used = false
+			for used_pos in globally_used_positions:
+				if entity_node.global_position.is_equal_approx(used_pos):
+					found_in_used = true
+					break
+			if not found_in_used and entity_node.name != player.name : # 排除玩家节点
+				print("警告: 物品 ", entity_node.name, " 未能找到放置位置或仍在原点，将被隐藏。")
+				entity_node.visible = false
+
+
+	print("物品和敌人重新定位完成 (整合版)")
+
+
+func _place_keys_modified(keys: Array, available_positions: Array, globally_used_positions: Array, min_distance: float):
+	print("特别处理 ", keys.size(), " 个钥匙放置...")
+	var positions_copy = available_positions.duplicate() # 操作副本，避免影响其他类型物品的可选位置总表
+	positions_copy.shuffle()
+
+	var placed_count = 0
+	for key_node in keys: # 修改变量名
+		var placed_successfully = false
+		var attempts = 0
+		for candidate_pos in positions_copy:
+			attempts += 1
+			var tile_pos = tile_map.local_to_map(tile_map.to_local(candidate_pos)) # 获取瓦片坐标用于安全检查
+
+			# 1. 检查瓦片本身是否绝对安全且附近没有墙 (基于你原有的 _is_truly_safe_position 和 _has_nearby_wall)
+			var is_tile_super_safe = _is_truly_safe_position(tile_pos.x, tile_pos.y) and \
+									 not _has_nearby_wall(tile_pos.x, tile_pos.y, 2) # 附近2格没墙
+
+			if not is_tile_super_safe:
+				continue
+
+			# 2. 检查与已放置物品的距离
+			var too_close_to_others = false
+			for used_pos in globally_used_positions:
+				if candidate_pos.distance_to(used_pos) < min_distance:
+					too_close_to_others = true
+					break
+			
+			if not too_close_to_others:
+				key_node.global_position = candidate_pos
+				globally_used_positions.append(candidate_pos) # 更新全局已用位置
+				# 从 positions_copy 中移除已用位置，防止重复给同一类型的其他钥匙
+				positions_copy.erase(candidate_pos)
+				print(key_node.name, " 成功放置在: ", candidate_pos.round(), " (尝试次数: ", attempts, ")")
+				placed_successfully = true
+				placed_count += 1
+				break # 处理下一个钥匙
+		
+		if not placed_successfully:
+			print("警告：无法为钥匙 ", key_node.name, " 找到一个理想的安全位置。它将被隐藏。")
+			key_node.visible = false
+	print("成功放置 %d/%d 个钥匙。" % [placed_count, keys.size()])
+
+
+func _place_items_safely_modified(items_in_category: Array, available_positions: Array, globally_used_positions: Array, min_distance_for_category: float, category_name_for_log: String):
+	if items_in_category.is_empty():
+		return
+	print("开始为类别 '%s' 放置 %d 个物品..." % [category_name_for_log, items_in_category.size()])
+
+	var positions_copy = available_positions.duplicate()
+	positions_copy.shuffle()
+	
+	var placed_count = 0
+
+	# 如果是HP豆，并且你的旧脚本里有 _place_hp_beans_modified，可以特殊调用
+	# 但为了通用性，我们先用一个标准流程
+	# if category_name_for_log == "Hp_bean":
+	# 	_place_hp_beans_modified(items_in_category, positions_copy, globally_used_positions, min_distance_for_category)
+	# 	return # _place_hp_beans_modified 应该处理计数和日志
+
+	for item_node in items_in_category:
+		var placed_successfully = false
+		var attempts = 0
+		# 尝试从可用位置中寻找
+		for candidate_pos in positions_copy: # 遍历的是打乱后的可用安全位置副本
+			attempts += 1
+			var tile_pos = tile_map.local_to_map(tile_map.to_local(candidate_pos))
+
+			# 1. 检查瓦片本身是否基本安全 (HP豆可以用 _is_truly_safe_position)
+			var is_tile_safe_enough = _is_basic_safe_position(tile_pos.x, tile_pos.y)
+			if category_name_for_log == "Hp_bean": # HP豆可以用更严格的检查
+				is_tile_safe_enough = _is_truly_safe_position(tile_pos.x, tile_pos.y)
+			
+			if not is_tile_safe_enough:
+				continue
+
+			# 2. 检查与已放置物品的距离
+			var too_close_to_others = false
+			for used_pos in globally_used_positions:
+				if candidate_pos.distance_to(used_pos) < min_distance_for_category:
+					too_close_to_others = true
+					break
+			
+			if not too_close_to_others:
+				item_node.global_position = candidate_pos
+				globally_used_positions.append(candidate_pos)
+				positions_copy.erase(candidate_pos) # 从这个类别的可用位置中移除
+				print(item_node.name, "(",category_name_for_log,")"," 成功放置在: ", candidate_pos.round(), " (尝试次数: ", attempts, ")")
+				placed_successfully = true
+				placed_count +=1
+				break # 处理这个类别的下一个物品
+		
+		if not placed_successfully:
+			# 如果在精选位置中找不到，可以尝试一个更宽松的后备查找，或者直接放弃
+			# print("警告：在精选位置中无法为 ", item_node.name, " (", category_name_for_log, ") 找到位置。")
+			# var fallback_pos = _find_any_safe_position_modified(available_positions, globally_used_positions, 32.0) # 使用一个较小的后备间距
+			# if fallback_pos != Vector2.ZERO:
+			# 	item_node.global_position = fallback_pos
+			# 	globally_used_positions.append(fallback_pos)
+			# 	print(item_node.name, "(",category_name_for_log,")"," 使用备用位置放置在: ", fallback_pos.round())
+			# 	placed_successfully = true
+			# 	placed_count +=1
+			# else:
+			print("警告：无法为 ", item_node.name, " (", category_name_for_log, ") 找到任何位置。它将被隐藏。")
+			item_node.visible = false
+	print("类别 '%s' 成功放置 %d/%d 个物品。" % [category_name_for_log, placed_count, items_in_category.size()])
+
+
+func get_enemy_clearance_radius(enemy_node: Node2D) -> int:
+	if enemy_node.name.begins_with("Goblin") or enemy_node.name.begins_with("Skeleton"):
+		return 8
+	else:
+		return 1
+
+func _is_area_clear_for_enemy(cx: int, cy: int, radius: int) -> bool:
+	if cx < radius or cx >= maze_width - radius or \
+	   cy < radius or cy >= maze_height - radius:
+		return false
+
+	for dy_offset in range(-radius, radius + 1):
+		for dx_offset in range(-radius, radius + 1):
+			var check_x = cx + dx_offset
+			var check_y = cy + dy_offset
+			
+			if check_x < 0 or check_x >= maze_width or \
+			   check_y < 0 or check_y >= maze_height:
+				return false 
+			if maze_grid[check_y][check_x] != CellType.PATH:
+				return false
+	return true
+
+func _is_ample_space_for_enemy(tile_x: int, tile_y: int, enemy_node: Node2D) -> bool:
+	var required_radius = get_enemy_clearance_radius(enemy_node)
+	return _is_area_clear_for_enemy(tile_x, tile_y, required_radius)

@@ -77,5 +77,6 @@ texture = ExtResource("1_acsvw")
 
 [resource]
 physics_layer_0/collision_layer = 2
+physics_layer_0/collision_mask = 3
 navigation_layer_0/layers = 1
 sources/0 = SubResource("TileSetAtlasSource_a4or2")

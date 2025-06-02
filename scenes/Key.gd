@@ -23,7 +23,7 @@ func _ready():
             animated_sprite.play("idle")
     
     # 可选：添加浮动效果
-    _start_floating_animation()
+    # _start_floating_animation()
 
 func _start_floating_animation():
     # 创建简单的上下浮动效果
