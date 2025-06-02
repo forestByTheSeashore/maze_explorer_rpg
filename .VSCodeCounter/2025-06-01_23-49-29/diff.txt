@@ -1,0 +1,50 @@
+Date : 2025-06-01 23:49:29
+Directory : d:\Program\GameProgramming\GameExplorer_V1\levels
+Total : 22 files,  -2444 codes, -252 comments, -591 blanks, all -3287 lines
+
+Languages
++----------+------------+------------+------------+------------+------------+
+| language | files      | code       | comment    | blank      | total      |
++----------+------------+------------+------------+------------+------------+
+| GDScript |         11 |     -1,078 |       -252 |       -333 |     -1,663 |
+| GDScene  |         11 |     -1,366 |          0 |       -258 |     -1,624 |
++----------+------------+------------+------------+------------+------------+
+
+Directories
++-----------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| path                                                                  | files      | code       | comment    | blank      | total      |
++-----------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| .                                                                     |         22 |     -2,444 |       -252 |       -591 |     -3,287 |
+| . (Files)                                                             |          4 |        526 |        125 |        162 |        813 |
+| ..                                                                    |         18 |     -2,970 |       -377 |       -753 |     -4,100 |
+| ..\scenes                                                             |         18 |     -2,970 |       -377 |       -753 |     -4,100 |
++-----------------------------------------------------------------------+------------+------------+------------+------------+------------+
+
+Files
++-----------------------------------------------------------------------+----------+------------+------------+------------+------------+
+| filename                                                              | language | code       | comment    | blank      | total      |
++-----------------------------------------------------------------------+----------+------------+------------+------------+------------+
+| d:\Program\GameProgramming\GameExplorer_V1\levels\level_1.gd          | GDScript |         36 |         17 |         11 |         64 |
+| d:\Program\GameProgramming\GameExplorer_V1\levels\level_1.tscn        | GDScene  |         51 |          0 |         19 |         70 |
+| d:\Program\GameProgramming\GameExplorer_V1\levels\level_2.gd          | GDScript |        396 |        108 |        113 |        617 |
+| d:\Program\GameProgramming\GameExplorer_V1\levels\level_2.tscn        | GDScene  |         43 |          0 |         19 |         62 |
+| d:\Program\GameProgramming\GameExplorer_V1\scenes\Door.gd             | GDScript |       -112 |        -62 |        -33 |       -207 |
+| d:\Program\GameProgramming\GameExplorer_V1\scenes\HPBean.gd           | GDScript |        -32 |         -3 |        -13 |        -48 |
+| d:\Program\GameProgramming\GameExplorer_V1\scenes\Hp_bean.tscn        | GDScene  |        -27 |          0 |         -9 |        -36 |
+| d:\Program\GameProgramming\GameExplorer_V1\scenes\IronSword.tscn      | GDScene  |         -6 |          0 |         -3 |         -9 |
+| d:\Program\GameProgramming\GameExplorer_V1\scenes\Key.gd              | GDScript |        -40 |        -13 |        -16 |        -69 |
+| d:\Program\GameProgramming\GameExplorer_V1\scenes\Key.tscn            | GDScene  |        -28 |          0 |         -9 |        -37 |
+| d:\Program\GameProgramming\GameExplorer_V1\scenes\Player.gd           | GDScript |       -460 |       -130 |       -139 |       -729 |
+| d:\Program\GameProgramming\GameExplorer_V1\scenes\Sword.gd            | GDScript |        -85 |         -6 |        -17 |       -108 |
+| d:\Program\GameProgramming\GameExplorer_V1\scenes\Sword.tscn          | GDScene  |        -63 |          0 |        -12 |        -75 |
+| d:\Program\GameProgramming\GameExplorer_V1\scenes\WeaponData.gd       | GDScript |         -6 |         -1 |         -1 |         -8 |
+| d:\Program\GameProgramming\GameExplorer_V1\scenes\door.tscn           | GDScene  |        -55 |          0 |        -12 |        -67 |
+| d:\Program\GameProgramming\GameExplorer_V1\scenes\goblin.gd           | GDScript |       -201 |        -33 |        -65 |       -299 |
+| d:\Program\GameProgramming\GameExplorer_V1\scenes\goblin.tscn         | GDScene  |       -426 |          0 |       -104 |       -530 |
+| d:\Program\GameProgramming\GameExplorer_V1\scenes\player.tscn         | GDScene  |       -499 |          0 |        -78 |       -577 |
+| d:\Program\GameProgramming\GameExplorer_V1\scenes\skelontonEnemy.gd   | GDScript |       -463 |        -97 |       -136 |       -696 |
+| d:\Program\GameProgramming\GameExplorer_V1\scenes\skelontonEnemy.tscn | GDScene  |       -303 |          0 |        -55 |       -358 |
+| d:\Program\GameProgramming\GameExplorer_V1\scenes\slime.gd            | GDScript |       -111 |        -32 |        -37 |       -180 |
+| d:\Program\GameProgramming\GameExplorer_V1\scenes\slime.tscn          | GDScene  |        -53 |          0 |        -14 |        -67 |
+| Total                                                                 |          |     -2,444 |       -252 |       -591 |     -3,287 |
++-----------------------------------------------------------------------+----------+------------+------------+------------+------------+

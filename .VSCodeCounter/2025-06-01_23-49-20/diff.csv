@@ -1,0 +1,9 @@
+"filename", "language", "GDScene", "GDScript", "comment", "blank", "total"
+"d:\Program\GameProgramming\GameExplorer_V1\scenes\Player.gd", "GDScript", 0, 0, 0, -1, -1
+"d:\Program\GameProgramming\GameExplorer_V1\scenes\goblin.gd", "GDScript", 0, 201, 33, 65, 299
+"d:\Program\GameProgramming\GameExplorer_V1\scenes\goblin.tscn", "GDScene", 422, 0, 0, 100, 522
+"d:\Program\GameProgramming\GameExplorer_V1\scenes\player.tscn", "GDScene", 2, 0, 0, 0, 2
+"d:\Program\GameProgramming\GameExplorer_V1\scenes\skelontonEnemy.gd", "GDScript", 0, 20, -1, 7, 26
+"d:\Program\GameProgramming\GameExplorer_V1\scenes\skelontonEnemy.tscn", "GDScene", 2, 0, 0, 0, 2
+"d:\Program\GameProgramming\GameExplorer_V1\scenes\slime.tscn", "GDScene", 2, 0, 0, 0, 2
+"Total", "-", 428, 221, 32, 171, 852

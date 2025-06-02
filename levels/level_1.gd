@@ -43,10 +43,9 @@ func _ready():
 
 func on_exit_door_has_opened(): # 当出口门的 door_opened 信号发出时调用
     print("出口门已打开，Level 1 结束！")
-    # 在这里放置游戏结束或进入下一关的逻辑
-    # 例如: get_tree().change_scene_to_file("res://level2.tscn")
-    # 或者 get_tree().reload_current_scene() # 重新加载当前关卡进行测试
-    # 或者 get_tree().quit() # 退出游戏
+    print("进入 Level 2 - 程序化迷宫关卡")
+    # 跳转到 Level 2
+    get_tree().change_scene_to_file("res://levels/level_2.tscn")
 
 func _process(_delta):
     # 玩家与出口门的交互逻辑
