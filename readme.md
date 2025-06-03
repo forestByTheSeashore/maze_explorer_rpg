@@ -23,6 +23,11 @@ You're an adventurer (exploring) through an ever-changing maze. Your goal? To su
   * Combat is straightforward: if your total attack power is greater than the enemy's, you win the skirmish!
   * Watch out! Some enemies will chase you relentlessly if you get too close.
   * Enemy AI is powered by Finite State Machines (FSM) and A* pathfinding (thanks to Godot's Navigation2D).
+* **UI System:**
+  * Main Menu: Clean and intuitive entry point with Start Game, Settings, and Exit options
+  * Settings Menu: Audio controls (master, music, sound effects) and fullscreen toggle
+  * Pause Menu: In-game pause functionality with resume, settings access, and quit options
+  * Scene Management: Smooth transitions between menus and game levels
 * **Level Structure:**
   * Levels are designed to be challenging but fair, with a strategic placement of items and enemies. Check out the `documents/CodeDesign.md` for an example of Level 3's map and flow!
   * Built using Godot's TileMap system for that classic 2D feel.
@@ -56,10 +61,12 @@ Just a heads-up, I've used some AI tools (like ChatGPT-4o) to help with backgrou
 
 ## What's Next? (My Rough Roadmap)
 
-* More enemy types with unique behaviors!
-* A wider variety of items, maybe some consumables or passive buffs.
-* Boss battles (thinking of designing).
-* More complex maze features (traps, puzzles, special rooms?).
+* Implementing save/load functionality for game progress
+* Adding gameplay settings (difficulty, controls customization)
+* More enemy types with unique behaviors
+* A wider variety of items, maybe some consumables or passive buffs
+* Boss battles (thinking of designing)
+* More complex maze features (traps, puzzles, special rooms?)
 * Maybe a simple story to tie it all together!
 
 ## Feedback & Contributions

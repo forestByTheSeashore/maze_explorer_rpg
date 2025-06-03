@@ -5,6 +5,7 @@ extends Node2D
 @onready var entry_door: Node = $DoorRoot/Door_entrance
 @onready var exit_door: Node = $DoorRoot/Door_exit
 @onready var tile_map: TileMap = $TileMap
+@onready var minimap = $CanvasLayer/MiniMap
 
 # === 迷宫生成参数 ===
 @export var maze_width: int = 81   # 迷宫宽度（恢复到81x81）
@@ -45,9 +46,13 @@ var desired_counts = {
 }
 # === END: 从第一个脚本引入 ===
 
+# 添加路径显示状态变量
+var show_path_to_key := false
+var show_path_to_door := false
+var path_lines := []  # 存储所有路径线
+
 func _ready():
 	print("=== Level 2 - 程序化迷宫生成开始 ===")
-	# ... (你原来的 _ready 开头部分保持不变) ...
 	
 	# 检查TileMap节点
 	if not tile_map:
@@ -58,7 +63,17 @@ func _ready():
 		if not tile_map.tile_set:
 			print("致命错误: TileMap 的 TileSet 未设置!")
 			return
-			
+	
+	# 设置节点组
+	if player:
+		player.add_to_group("player")
+	if tile_map:
+		tile_map.add_to_group("tilemap")
+	if exit_door:
+		exit_door.add_to_group("doors")
+	if entry_door:
+		entry_door.add_to_group("doors")
+	
 	# 连接出口门的打开信号
 	if exit_door:
 		if exit_door.has_signal("door_opened"):
@@ -92,19 +107,30 @@ func _ready():
 	reposition_enemies_and_items_optimized() # 调用修改后的版本
 	print("步骤 6: 敌人和物品重新定位完成")
 	
+	draw_path()
+	
 	print("=== Level 2 迷宫生成完成 ===")
 
 func _process(_delta):
+	# 处理路径显示按键
+	if Input.is_action_just_pressed("way_to_key"):  # F1
+		show_path_to_key = !show_path_to_key
+		show_path_to_door = false
+	
+	if Input.is_action_just_pressed("way_to_door"):  # F2
+		show_path_to_door = !show_path_to_door
+		show_path_to_key = false
+
+	# 实时更新路径
+	update_paths()
+
 	# 玩家与出口门的交互逻辑
-	if Input.is_action_just_pressed("interact"):  # "interact" 应该映射到 'F' 键
+	if Input.is_action_just_pressed("interact"):
 		if player and exit_door:
-			# 检查玩家是否足够接近出口门
 			var distance_to_exit_door = player.global_position.distance_to(exit_door.global_position)
-			if distance_to_exit_door < 30:  # 交互范围，可以调整
-				# 确保 exit_door 节点有 interact 方法
+			if distance_to_exit_door < 30:
 				if exit_door.has_method("interact"):
-					print("玩家正在尝试与出口门交互...")
-					exit_door.interact()  # 调用 Door.gd 中的 interact() 方法
+					exit_door.interact()
 				else:
 					print("错误: 出口门节点没有 'interact' 方法!")
 
@@ -1153,7 +1179,7 @@ func _place_keys_modified(keys: Array, available_positions: Array, globally_used
 		var attempts = 0
 		for candidate_pos in positions_copy:
 			attempts += 1
-			var tile_pos = tile_map.local_to_map(tile_map.to_local(candidate_pos)) # 获取瓦片坐标用于安全检查
+			var tile_pos = tile_map.local_to_map(tile_map.to_local(candidate_pos))
 
 			# 1. 检查瓦片本身是否绝对安全且附近没有墙 (基于你原有的 _is_truly_safe_position 和 _has_nearby_wall)
 			var is_tile_super_safe = _is_truly_safe_position(tile_pos.x, tile_pos.y) and \
@@ -1275,3 +1301,53 @@ func _is_area_clear_for_enemy(cx: int, cy: int, radius: int) -> bool:
 func _is_ample_space_for_enemy(tile_x: int, tile_y: int, enemy_node: Node2D) -> bool:
 	var required_radius = get_enemy_clearance_radius(enemy_node)
 	return _is_area_clear_for_enemy(tile_x, tile_y, required_radius)
+
+func draw_path():
+	var player = get_node("Player")
+	var key = get_node_or_null("Key")
+	var door_exit = get_node("DoorRoot/Door_exit")
+	var tile_map = get_node("TileMap")
+	
+	# 如果钥匙不存在且正在显示到钥匙的路径，则关闭路径显示
+	if not key and show_path_to_key:
+		show_path_to_key = false
+		print("钥匙已被收集，关闭到钥匙的路径显示")
+	
+	if not (player and door_exit and tile_map):
+		return
+
+	var nav_maps = NavigationServer2D.get_maps()
+	if nav_maps.is_empty():
+		print("警告：没有可用的导航地图")
+		return
+		
+	var nav_map = nav_maps[0]
+
+	if show_path_to_key and key:  # 只有在钥匙存在时才显示到钥匙的路径
+		var path_to_key = NavigationServer2D.map_get_path(nav_map, player.global_position, key.global_position, true)
+		draw_path_lines(path_to_key, Color(1, 0, 0))  # 红色表示到钥匙的路径
+
+	if show_path_to_door:
+		var path_to_door = NavigationServer2D.map_get_path(nav_map, player.global_position, door_exit.global_position, true)
+		draw_path_lines(path_to_door, Color(0, 0, 1))  # 蓝色表示到门的路径
+
+func draw_path_lines(path: PackedVector2Array, color: Color):
+	for i in range(path.size() - 1):
+		var line = Line2D.new()
+		line.add_point(path[i])
+		line.add_point(path[i + 1])
+		line.width = 2
+		line.default_color = color
+		add_child(line)
+		path_lines.append(line)
+
+func update_paths():
+	# 清除所有现有的路径线
+	for line in path_lines:
+		if is_instance_valid(line):
+			line.queue_free()
+	path_lines.clear()
+
+	# 如果需要显示路径，则重新绘制
+	if show_path_to_key or show_path_to_door:
+		draw_path()

@@ -290,21 +290,17 @@ var current_weapon_attack: int = 5 # 来自武器的攻击力加成 (后续武�
 # ============================================================================
 # 修改increase_hp_from_bean函数，确保武器系统兼容
 # ============================================================================
+func update_ui():
+	var ui = get_tree().get_first_node_in_group("ui_manager")
+	if ui:
+		ui.update_player_status(current_hp, max_hp, current_exp, exp_to_next_level)
+
 func increase_hp_from_bean(amount: int):
 	current_hp += amount
 	max_hp += amount
 	hp_beans_consumed += 1
-	
-	print("=== HP豆效果 ===")
-	print("HP永久增加了 ", amount, " 点！")
-	print("当前HP：", current_hp, " 最大HP：", max_hp)
-	print("已消费HP豆数量：", hp_beans_consumed)
-	print("=================")
-	
-	# 重新计算总攻击力
 	_recalculate_total_attacking_power()
-	
-	# 更新界面显示
+	update_ui()
 	_update_inventory_ui()
 	_notify_inventory_changed()
 
@@ -330,17 +326,17 @@ var current_exp: int = 0
 var exp_to_next_level: int = 50
 func gain_experience(amount: int):
 	current_exp += amount
-	print("获得经验: ", amount, ", 当前总经验: ", current_exp)
 	if current_exp >= exp_to_next_level:
 		level_up()
+	update_ui()
 
-func level_up(): # 示例升级逻辑
-	print("等级提升！")
+func level_up():
 	current_exp -= exp_to_next_level
-	exp_to_next_level += 25 
-	max_hp += 20 
-	current_hp = max_hp 
-	base_attack += 2 # 示例：攻击力也提升
+	exp_to_next_level += 25
+	max_hp += 20
+	current_hp = max_hp
+	base_attack += 2
+	update_ui()
 	print("HP上限提升至: ", max_hp, ", 攻击力提升至: ", base_attack)
 
 func _play_death_animation():
@@ -435,7 +431,7 @@ func take_damage(amount: int):
 
 	current_hp -= amount
 	current_hp = max(0, current_hp)
-	print("Player HP: ", current_hp)
+	update_ui()
 	# 这里可以发出信号更新UI: emit_signal("hp_updated", current_hp, max_hp)
 
 	# 播放受击反馈效果
@@ -452,7 +448,7 @@ func heal(amount: int):
 		return
 	current_hp += amount
 	current_hp = min(current_hp, max_hp)
-	print("Player HP: ", current_hp)
+	update_ui()
 	# 这里可以发出信号更新UI: emit_signal("hp_updated", current_hp, max_hp)
 
 func _handle_game_over_logic():
