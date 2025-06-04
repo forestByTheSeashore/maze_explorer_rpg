@@ -1,6 +1,6 @@
 extends Node
 
-const SAVE_PATH := "user://save_game.dat"
+const SAVE_PATH := "user://user_data/save_game.dat"
 
 var current_level_name : String = ""
 
@@ -46,6 +46,25 @@ func save_progress(level_name: String, player_data: Dictionary = {}) -> bool:
 			save_data["player_exp_to_next"] = player_data["exp_to_next"]
 		if player_data.has("position"):
 			save_data["player_position"] = player_data["position"]
+	
+	# 确保保存目录存在
+	var save_dir = SAVE_PATH.get_base_dir()
+	print("SaveManager: 检查保存目录:", save_dir)
+	
+	if not DirAccess.dir_exists_absolute(save_dir):
+		print("SaveManager: 创建保存目录:", save_dir)
+		var result = DirAccess.make_dir_recursive_absolute(save_dir)
+		if result != OK:
+			var error_msg = "无法创建保存目录: " + str(result)
+			print("SaveManager 错误: ", error_msg)
+			save_completed.emit(false, error_msg)
+			
+			# 显示错误通知
+			var notification_manager = get_node_or_null("/root/NotificationManager")
+			if notification_manager and notification_manager.has_method("show_error"):
+				notification_manager.show_error("保存失败: " + error_msg)
+			
+			return false
 	
 	# 尝试保存到文件
 	var file = FileAccess.open(SAVE_PATH, FileAccess.WRITE)

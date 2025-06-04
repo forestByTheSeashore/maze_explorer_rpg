@@ -6,6 +6,7 @@ extends Node2D
 @onready var exit_door: Node = $DoorRoot/Door_exit
 @onready var tile_map: TileMap = $TileMap
 @onready var minimap = $CanvasLayer/MiniMap
+@onready var pause_menu = get_node_or_null("CanvasLayer/PauseMenu") # 添加暂停菜单引用
 @onready var ui_manager = $UiManager
 
 # === 迷宫生成参数 ===
@@ -130,6 +131,21 @@ func _ready():
 	
 	print("=== 关卡初始化完成 ===")
 
+	# 默认隐藏minimap
+	if minimap:
+		minimap.visible = false
+	
+	# 确保暂停菜单初始是隐藏的，游戏处于非暂停状态
+	if pause_menu:
+		pause_menu.hide()
+		print("暂停菜单已隐藏")
+	else:
+		print("警告: 未找到暂停菜单节点")
+	
+	# 确保游戏处于非暂停状态
+	get_tree().paused = false
+	print("游戏暂停状态已重置为: ", get_tree().paused)
+
 # 信号处理函数
 func _on_level_ready_to_initialize(level_name: String):
 	print("收到level_ready_to_initialize信号，关卡名称: ", level_name)
@@ -191,10 +207,6 @@ func init_level() -> void:
 	draw_path()
 	print("=== 迷宫生成完成 ===")
 
-	# 默认隐藏minimap
-	if minimap:
-		minimap.visible = false
-
 func _process(_delta):
 	# 处理路径显示按键
 	if Input.is_action_just_pressed("way_to_key"):  # F1
@@ -218,9 +230,19 @@ func _process(_delta):
 				else:
 					print("错误: 出口门节点没有 'interact' 方法!")
 
+	# 处理暂停按键 (Escape)
+	if Input.is_action_just_pressed("ui_cancel"): # 默认 Escape 映射到 ui_cancel
+		# 只有在游戏未结束时才能暂停
+		if is_instance_valid(player) and is_instance_valid(exit_door):
+			toggle_pause()
+
 # 出口门打开后的处理函数
 func on_exit_door_has_opened():
 	print("出口门已打开，当前关卡完成！")
+	
+	# 确保游戏处于非暂停状态再切换场景
+	get_tree().paused = false
+	
 	var next_level = get_next_level_name()
 	if next_level:
 		print("切换到下一关: ", next_level)
@@ -1039,4 +1061,19 @@ func _on_show_door_path_toggled(enabled: bool):
 	if enabled:
 		show_path_to_key = false
 	update_paths()
+
+# 切换暂停状态函数
+func toggle_pause():
+	print("Base_Level: toggle_pause 被调用")
+	print("Base_Level: 当前暂停状态: ", get_tree().paused)
+	print("Base_Level: 暂停菜单节点: ", pause_menu)
+	
+	get_tree().paused = !get_tree().paused
+	print("Base_Level: 新的暂停状态: ", get_tree().paused)
+	
+	if pause_menu:
+		pause_menu.visible = get_tree().paused # 暂停时显示菜单，否则隐藏
+		print("Base_Level: 暂停菜单可见性设置为: ", pause_menu.visible)
+	else:
+		print("Base_Level: 错误 - 暂停菜单节点为null!")
 

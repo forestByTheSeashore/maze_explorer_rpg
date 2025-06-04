@@ -108,12 +108,6 @@ func _ready():
 	if pause_menu:
 		pause_menu.hide()
 	
-	# 连接暂停菜单的信号
-	if pause_menu:
-		pause_menu.resume_button.pressed.connect(_on_resume_button_pressed)
-		pause_menu.main_menu_button.pressed.connect(_on_main_menu_button_pressed)
-		pause_menu.quit_button.pressed.connect(_on_quit_button_pressed)
-
 	# 默认隐藏minimap
 	if minimap:
 		minimap.visible = false
@@ -141,6 +135,9 @@ func _on_show_door_path_toggled(enabled: bool):
 func on_exit_door_has_opened(): # 当出口门的 door_opened 信号发出时调用
 	print("出口门已打开，Level 1 结束！")
 	print("进入 Level 2 - 程序化迷宫关卡")
+	
+	# 确保游戏处于非暂停状态再切换场景
+	get_tree().paused = false
 	
 	# 使用LevelManager切换关卡
 	var level_manager = get_node_or_null("/root/LevelManager")
@@ -355,19 +352,3 @@ func toggle_pause():
 		print("Level_1: 暂停菜单可见性设置为: ", pause_menu.visible)
 	else:
 		print("Level_1: 错误 - 暂停菜单节点为null!")
-
-# 新增：暂停菜单按钮信号处理函数
-func _on_resume_button_pressed():
-	toggle_pause() # 继续游戏就是取消暂停
-
-func _on_main_menu_button_pressed():
-	print("Entering _on_main_menu_button_pressed")
-	print("Main Menu button pressed in pause menu")
-	# 恢复游戏进程
-	# get_tree().paused = false
-	# 使用 GameManager 进行场景切换
-	game_manager.change_scene("res://scenes/main_menu.tscn")
-
-func _on_quit_button_pressed():
-	print("Quit button pressed in pause menu")
-	get_tree().quit()

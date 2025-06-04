@@ -71,11 +71,20 @@ func _input(event):
 			_on_resume_button_pressed()
 		else:
 			show()
+		# 阻止事件继续传播给其他节点
+		get_viewport().set_input_as_handled()
 
 func _on_resume_button_pressed():
 	# 继续游戏
+	print("暂停菜单: Resume按钮被点击!")
+	print("暂停菜单: 当前暂停状态:", get_tree().paused)
+	print("暂停菜单: 当前可见状态:", visible)
+	
 	hide()
 	get_tree().paused = false
+	
+	print("暂停菜单: 已隐藏暂停菜单，已取消暂停")
+	print("暂停菜单: 新的暂停状态:", get_tree().paused)
 
 func _on_save_button_pressed():
 	print("暂停菜单: 保存按钮被点击")
