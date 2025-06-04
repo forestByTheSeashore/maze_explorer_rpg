@@ -6,6 +6,7 @@ extends Node2D
 @onready var exit_door: Node = $DoorRoot/Door_exit
 @onready var tile_map: TileMap = $TileMap
 @onready var minimap = $CanvasLayer/MiniMap
+@onready var ui_manager = $UiManager
 
 # === 迷宫生成参数 ===
 @export var maze_width: int = 81   # 迷宫宽度
@@ -63,6 +64,16 @@ func _ready():
 	print("=== 关卡初始化开始 ===")
 	print("当前场景名称: ", scene_file_path)
 	print("当前节点名称: ", name)
+	
+	# 连接UIManager信号
+	if ui_manager:
+		if ui_manager.has_signal("minimap_toggled"):
+			ui_manager.minimap_toggled.connect(_on_minimap_toggled)
+		if ui_manager.has_signal("show_key_path_toggled"):
+			ui_manager.show_key_path_toggled.connect(_on_show_key_path_toggled)
+		if ui_manager.has_signal("show_door_path_toggled"):
+			ui_manager.show_door_path_toggled.connect(_on_show_door_path_toggled)
+		print("UIManager信号已连接")
 	
 	# 只做节点引用和分组
 	if player:
@@ -179,6 +190,10 @@ func init_level() -> void:
 
 	draw_path()
 	print("=== 迷宫生成完成 ===")
+
+	# 默认隐藏minimap
+	if minimap:
+		minimap.visible = false
 
 func _process(_delta):
 	# 处理路径显示按键
@@ -301,7 +316,7 @@ func setup_player_and_doors_fixed():
 	
 	# 设置门的位置
 	if entry_door:
-		entry_door.global_position = entrance_world_pos
+		entry_door.global_position = entrance_world_pos + Vector2(0,50)
 		entry_door.visible = true
 		entry_door.z_index = 10
 		print("入口门设置在: ", entry_door.global_position)
@@ -317,7 +332,7 @@ func setup_player_and_doors_fixed():
 	
 	# 设置玩家位置和可见性
 	if player:
-		player.global_position = entrance_world_pos
+		player.global_position = entry_door.global_position + Vector2(20,0)
 		player.visible = true
 		player.z_index = 5  # 确保玩家在适当的层级
 		# 确保玩家的所有子节点也可见
@@ -1004,4 +1019,24 @@ func _create_additional_safe_areas():
 				break
 	
 	print("创建了 ", areas_created, " 个额外安全区域")
+
+# UIManager按钮回调函数
+func _on_minimap_toggled(enabled: bool):
+	print("小地图开关：", enabled)
+	if minimap:
+		minimap.visible = enabled
+
+func _on_show_key_path_toggled(enabled: bool):
+	print("钥匙路径开关：", enabled)
+	show_path_to_key = enabled
+	if enabled:
+		show_path_to_door = false
+	update_paths()
+
+func _on_show_door_path_toggled(enabled: bool):
+	print("门路径开关：", enabled)
+	show_path_to_door = enabled
+	if enabled:
+		show_path_to_key = false
+	update_paths()
 

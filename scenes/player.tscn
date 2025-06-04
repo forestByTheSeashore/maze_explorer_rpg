@@ -565,7 +565,7 @@ position = Vector2(1, 5)
 limit_left = 0
 limit_top = 0
 limit_right = 1296
-limit_bottom = 1296
+limit_bottom = 1316
 
 [node name="AttackHitbox" type="Area2D" parent="."]
 collision_layer = 4

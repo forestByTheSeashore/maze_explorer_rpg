@@ -4,6 +4,10 @@ extends CanvasLayer
 @onready var inventory_panel: Control = $StatusBar/InventoryPanel
 @onready var hp_bar = $StatusBar/LeftSection/BarsContainer/HPContainer/HPBar
 @onready var exp_bar = $StatusBar/LeftSection/BarsContainer/EXPContainer/EXPBar
+@onready var btn_nav = $StatusBar/ButtonSection/BtnNav
+@onready var nav_menu = $StatusBar/ButtonSection/BtnNav/NavMenu
+@onready var btn_inventory = $StatusBar/ButtonSection/BtnInventory
+@onready var btn_map = $StatusBar/ButtonSection/BtnMap
 
 # 动画相关变量
 var _last_max_hp: float = 100.0
@@ -14,12 +18,28 @@ var player_reference: Node = null
 var connection_retry_timer: float = 0.0
 var connection_retry_interval: float = 1.0
 
+signal minimap_toggled(enabled)
+signal key_door_display_toggled(enabled)
+signal show_key_path_toggled(enabled)
+signal show_door_path_toggled(enabled)
+
+var minimap_enabled := false
+var key_door_display_enabled := false
+var show_key_path_enabled := false
+var show_door_path_enabled := false
+
 func _ready():
 	add_to_group("ui_manager")
 	print("UIManager 初始化完成，初始 max_hp = ", _last_max_hp)
 	
 	# 尝试连接玩家
 	_try_connect_player()
+
+	# 连接按钮信号
+	btn_nav.pressed.connect(_on_btn_nav_pressed)
+	btn_inventory.pressed.connect(_on_btn_inventory_pressed)
+	btn_map.pressed.connect(_on_btn_map_pressed)
+	nav_menu.id_pressed.connect(_on_nav_menu_id_pressed)
 
 func _process(delta: float):
 	# 如果没有玩家引用，定期尝试重新连接
@@ -121,3 +141,24 @@ func _play_hp_increase_animation(new_hp: float, new_max_hp: float):
 	).set_delay(0.1)
 	
 	print("动画设置完成")
+
+func _on_btn_nav_pressed():
+	nav_menu.popup() # 弹出菜单
+
+func _on_btn_inventory_pressed():
+	toggle_inventory()
+
+func _on_btn_map_pressed():
+	minimap_enabled = !minimap_enabled
+	emit_signal("minimap_toggled", minimap_enabled)
+	# 这里你需要在场景中监听此信号，控制minimap显示/隐藏
+
+func _on_nav_menu_id_pressed(id):
+	if id == 0: # key
+		show_key_path_enabled = !show_key_path_enabled
+		nav_menu.set_item_checked(0, show_key_path_enabled)
+		emit_signal("show_key_path_toggled", show_key_path_enabled)
+	elif id == 1: # exit door
+		show_door_path_enabled = !show_door_path_enabled
+		nav_menu.set_item_checked(1, show_door_path_enabled)
+		emit_signal("show_door_path_toggled", show_door_path_enabled)

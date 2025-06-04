@@ -36,7 +36,7 @@ var _last_player_angle: float
 func _ready() -> void:
 	# 设置位置和大小
 	anchors_preset = Control.PRESET_TOP_RIGHT
-	global_position = Vector2(get_viewport_rect().size.x - map_size.x - map_margin, map_margin)
+	global_position = Vector2(get_viewport_rect().size.x - map_size.x - map_margin, map_margin + 110)
 	custom_minimum_size = map_size
 	size = map_size
 

@@ -10,6 +10,7 @@ extends Node2D
 @onready var tile_map: TileMap = $TileMap
 @onready var minimap = $CanvasLayer/MiniMap
 @onready var pause_menu = get_node_or_null("CanvasLayer/PauseMenu") # 安全获取暂停菜单节点引用
+@onready var ui_manager = $UiManager
 
 # 添加路径显示状态变量
 var show_path_to_key := false
@@ -30,13 +31,23 @@ func _ready():
 		push_error("Error: ExitDoor node not found in scene!")
 		return
 
+	# 连接UIManager信号
+	if ui_manager:
+		if ui_manager.has_signal("minimap_toggled"):
+			ui_manager.minimap_toggled.connect(_on_minimap_toggled)
+		if ui_manager.has_signal("show_key_path_toggled"):
+			ui_manager.show_key_path_toggled.connect(_on_show_key_path_toggled)
+		if ui_manager.has_signal("show_door_path_toggled"):
+			ui_manager.show_door_path_toggled.connect(_on_show_door_path_toggled)
+		print("UIManager信号已连接")
+
 	# 1. 入口门逻辑 (基本不变)
 	# entry_door.door_opened.connect(on_entry_door_opened) # 如果需要入口门打开时的特殊逻辑
 	# 假设入口门在 _ready() 中已经自行处理了初始打开状态 (根据 door.gd)
 
 	# 将玩家放置在入口门的位置
 	if player and entry_door:
-		player.global_position = entry_door.global_position
+		player.global_position = entry_door.global_position + Vector2(32,10)
 
 	# 设置出口门需要钥匙
 	if exit_door:
@@ -80,6 +91,30 @@ func _ready():
 		pause_menu.resume_button.pressed.connect(_on_resume_button_pressed)
 		pause_menu.main_menu_button.pressed.connect(_on_main_menu_button_pressed)
 		pause_menu.quit_button.pressed.connect(_on_quit_button_pressed)
+
+	# 默认隐藏minimap
+	if minimap:
+		minimap.visible = false
+
+# UIManager按钮回调函数
+func _on_minimap_toggled(enabled: bool):
+	print("小地图开关：", enabled)
+	if minimap:
+		minimap.visible = enabled
+
+func _on_show_key_path_toggled(enabled: bool):
+	print("钥匙路径开关：", enabled)
+	show_path_to_key = enabled
+	if enabled:
+		show_path_to_door = false
+	update_paths()
+
+func _on_show_door_path_toggled(enabled: bool):
+	print("门路径开关：", enabled)
+	show_path_to_door = enabled
+	if enabled:
+		show_path_to_key = false
+	update_paths()
 
 func on_exit_door_has_opened(): # 当出口门的 door_opened 信号发出时调用
 	print("出口门已打开，Level 1 结束！")
