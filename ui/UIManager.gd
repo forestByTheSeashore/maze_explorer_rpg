@@ -1,17 +1,55 @@
 # UIManager.gd - 游戏UI总管理器
 extends CanvasLayer
 
-@onready var inventory_panel: Control = $InventoryPanel
-@onready var hp_bar = $HPBar
-@onready var exp_bar = $EXPBar
+@onready var inventory_panel: Control = $StatusBar/InventoryPanel
+@onready var hp_bar = $StatusBar/LeftSection/BarsContainer/HPContainer/HPBar
+@onready var exp_bar = $StatusBar/LeftSection/BarsContainer/EXPContainer/EXPBar
 
 # 动画相关变量
 var _last_max_hp: float = 100.0
 var _hp_animation_tween: Tween = null
 
+# 玩家连接管理
+var player_reference: Node = null
+var connection_retry_timer: float = 0.0
+var connection_retry_interval: float = 1.0
+
 func _ready():
 	add_to_group("ui_manager")
 	print("UIManager 初始化完成，初始 max_hp = ", _last_max_hp)
+	
+	# 尝试连接玩家
+	_try_connect_player()
+
+func _process(delta: float):
+	# 如果没有玩家引用，定期尝试重新连接
+	if not player_reference:
+		connection_retry_timer += delta
+		if connection_retry_timer >= connection_retry_interval:
+			connection_retry_timer = 0.0
+			_try_connect_player()
+
+func _try_connect_player():
+	# 查找玩家
+	player_reference = get_tree().get_first_node_in_group("player")
+	if player_reference:
+		print("UIManager: 成功找到玩家引用")
+		# 立即更新一次玩家状态
+		_update_player_status()
+	else:
+		print("UIManager: 警告 - 未找到玩家引用，将在稍后重试")
+
+func _update_player_status():
+	if not player_reference:
+		return
+	
+	# 获取玩家当前状态
+	var hp = player_reference.current_hp if "current_hp" in player_reference else 100
+	var max_hp = player_reference.max_hp if "max_hp" in player_reference else 100
+	var exp = player_reference.current_exp if "current_exp" in player_reference else 0
+	var exp_to_next = player_reference.exp_to_next_level if "exp_to_next_level" in player_reference else 50
+	
+	update_player_status(hp, max_hp, exp, exp_to_next)
 
 func toggle_inventory():
 	if inventory_panel:

@@ -41,6 +41,8 @@ var input_cooldown: float = 0.2  # 输入冷却时间（秒）
 # ============================================================================
 func _ready():
 	add_to_group("player")
+	print("玩家节点已加入'player'组")
+	
 	# 连接动画完成信号，主要用于攻击和死亡动画后的状态切换
 	animated_sprite.animation_finished.connect(_on_animation_finished)
 	# 初始设置一次朝向对应的待机动画
@@ -54,6 +56,9 @@ func _ready():
 	
 	# 初始化攻击力
 	_recalculate_total_attacking_power()
+	
+	# 通知UI系统玩家已准备就绪
+	call_deferred("_notify_ui_player_ready")
 
 func _physics_process(_delta: float) -> void:
 	if current_state == PlayerState.DEATH:
@@ -712,6 +717,19 @@ func _toggle_inventory_panel():
 		ui_manager.toggle_inventory()
 	else:
 		print("UI Manager未找到，无法切换背包面板")
+
+# ============================================================================
+# 新增：通知UI玩家已准备就绪
+func _notify_ui_player_ready():
+	print("玩家准备就绪，通知UI系统")
+	# 立即发送一次背包变化信号，确保UI连接
+	_notify_inventory_changed()
+	
+	# 通知UIManager更新玩家状态
+	var ui_manager = get_tree().get_first_node_in_group("ui_manager")
+	if ui_manager and ui_manager.has_method("_try_connect_player"):
+		ui_manager._try_connect_player()
+		print("已通知UIManager重新连接玩家")
 
 # ============================================================================
 # 新增：玩家攻击状态检测

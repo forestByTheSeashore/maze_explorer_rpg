@@ -1,48 +1,81 @@
-[gd_scene load_steps=3 format=3 uid="uid://bwpq3n0husxu5"]
+[gd_scene load_steps=4 format=3 uid="uid://bwpq3n0husxu5"]
 
 [ext_resource type="Script" path="res://ui/UIManager.gd" id="1_aqwcd"]
 [ext_resource type="PackedScene" uid="uid://dlhw5wggxabc" path="res://ui/InventoryPanel.tscn" id="2_i1h5f"]
+[ext_resource type="Script" path="res://ui/StatusBar.gd" id="3_statusbar"]
 
 [node name="UiManager" type="CanvasLayer"]
 script = ExtResource("1_aqwcd")
 
-[node name="InventoryPanel" parent="." instance=ExtResource("2_i1h5f")]
-offset_left = 745.0
-offset_top = 14.0
-offset_right = 948.0
-offset_bottom = 252.0
+[node name="StatusBar" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 105.0
+grow_horizontal = 2
+script = ExtResource("3_statusbar")
 
-[node name="HPLabel" type="Label" parent="."]
-self_modulate = Color(1, 0.2, 0.2, 1)
-anchors_preset = -1
-anchor_left = 0.02
-anchor_right = 0.08
-anchor_bottom = 0.02
-text = "HP"
+[node name="Background" type="Panel" parent="StatusBar"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_bottom = -67.0
+grow_horizontal = 2
+grow_vertical = 2
 
-[node name="EXPLabel" type="Label" parent="."]
-self_modulate = Color(0.2, 0.2, 1, 1)
-anchors_preset = -1
-anchor_left = 0.02
-anchor_top = 0.08
-anchor_right = 0.08
-anchor_bottom = 0.1
-text = "EXP"
+[node name="LeftSection" type="HBoxContainer" parent="StatusBar"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_bottom = -74.0
+grow_horizontal = 2
+grow_vertical = 2
 
-[node name="HPBar" type="ProgressBar" parent="."]
-anchors_preset = -1
-anchor_left = 0.02
-anchor_top = 0.02
-anchor_right = 0.25
-anchor_bottom = 0.08
+[node name="BarsContainer" type="HBoxContainer" parent="StatusBar/LeftSection"]
+custom_minimum_size = Vector2(260, 0)
+layout_mode = 2
+
+[node name="HPContainer" type="HBoxContainer" parent="StatusBar/LeftSection/BarsContainer"]
+layout_mode = 2
+
+[node name="HPLabel" type="Label" parent="StatusBar/LeftSection/BarsContainer/HPContainer"]
+custom_minimum_size = Vector2(60, 0)
+layout_mode = 2
+text = "HP:"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="HPBar" type="ProgressBar" parent="StatusBar/LeftSection/BarsContainer/HPContainer"]
+custom_minimum_size = Vector2(200, 24)
+layout_mode = 2
 value = 100.0
 show_percentage = false
 
-[node name="EXPBar" type="ProgressBar" parent="."]
-anchors_preset = -1
-anchor_left = 0.02
-anchor_top = 0.1
-anchor_right = 0.25
-anchor_bottom = 0.16
+[node name="EXPContainer" type="HBoxContainer" parent="StatusBar/LeftSection/BarsContainer"]
+layout_mode = 2
+
+[node name="EXPLabel" type="Label" parent="StatusBar/LeftSection/BarsContainer/EXPContainer"]
+custom_minimum_size = Vector2(60, 0)
+layout_mode = 2
+text = "EXP:"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="EXPBar" type="ProgressBar" parent="StatusBar/LeftSection/BarsContainer/EXPContainer"]
+custom_minimum_size = Vector2(200, 24)
+layout_mode = 2
 max_value = 50.0
 show_percentage = false
+
+[node name="InventoryPanel" parent="StatusBar" instance=ExtResource("2_i1h5f")]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -250.0
+offset_top = 10.0
+offset_right = -20.0
+offset_bottom = 299.0
+grow_horizontal = 0

@@ -1,0 +1,34 @@
+Date : 2025-06-03 21:29:19
+Directory : d:\Program\GameProgramming\GameExplorer_V1\levels
+Total : 9 files,  2122 codes, 411 comments, 496 blanks, all 3029 lines
+
+Languages
++----------+------------+------------+------------+------------+------------+
+| language | files      | code       | comment    | blank      | total      |
++----------+------------+------------+------------+------------+------------+
+| GDScript |          6 |      2,010 |        411 |        453 |      2,874 |
+| GDScene  |          3 |        112 |          0 |         43 |        155 |
++----------+------------+------------+------------+------------+------------+
+
+Directories
++--------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| path                                                               | files      | code       | comment    | blank      | total      |
++--------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| .                                                                  |          9 |      2,122 |        411 |        496 |      3,029 |
++--------------------------------------------------------------------+------------+------------+------------+------------+------------+
+
+Files
++--------------------------------------------------------------------+----------+------------+------------+------------+------------+
+| filename                                                           | language | code       | comment    | blank      | total      |
++--------------------------------------------------------------------+----------+------------+------------+------------+------------+
+| d:\Program\GameProgramming\GameExplorer_V1\levels\base_level.tscn  | GDScene  |         25 |          0 |         10 |         35 |
+| d:\Program\GameProgramming\GameExplorer_V1\levels\level_1.gd       | GDScript |        188 |         54 |         51 |        293 |
+| d:\Program\GameProgramming\GameExplorer_V1\levels\level_1.tscn     | GDScene  |         60 |          0 |         22 |         82 |
+| d:\Program\GameProgramming\GameExplorer_V1\levels\level_2.gd       | GDScript |        942 |        198 |        233 |      1,373 |
+| d:\Program\GameProgramming\GameExplorer_V1\levels\level_2.tscn     | GDScene  |         27 |          0 |         11 |         38 |
+| d:\Program\GameProgramming\GameExplorer_V1\levels\level_3.gd       | GDScript |         28 |         51 |          9 |         88 |
+| d:\Program\GameProgramming\GameExplorer_V1\levels\level_4.gd       | GDScript |         32 |          9 |          8 |         49 |
+| d:\Program\GameProgramming\GameExplorer_V1\levels\level_base.gd    | GDScript |        672 |         85 |        132 |        889 |
+| d:\Program\GameProgramming\GameExplorer_V1\levels\level_manager.gd | GDScript |        148 |         14 |         20 |        182 |
+| Total                                                              |          |      2,122 |        411 |        496 |      3,029 |
++--------------------------------------------------------------------+----------+------------+------------+------------+------------+

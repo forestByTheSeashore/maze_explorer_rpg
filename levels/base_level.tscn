@@ -1,0 +1,37 @@
+[gd_scene load_steps=7 format=3 uid="uid://b6x8v0j6y5n3q"]
+
+[ext_resource type="PackedScene" uid="uid://bmtmrg6sdimhd" path="res://scenes/player.tscn" id="1_player"]
+[ext_resource type="Script" path="res://levels/level_base.gd" id="1_xpwav"]
+[ext_resource type="PackedScene" uid="uid://dq4t3fc0e4a4a" path="res://scenes/door.tscn" id="2_door"]
+[ext_resource type="PackedScene" uid="uid://bwpq3n0husxu5" path="res://ui/UIManager.tscn" id="2_nfb2m"]
+[ext_resource type="TileSet" uid="uid://cn6a27lw6v5xa" path="res://assets/tiles/tile_set.tres" id="3_tileset"]
+[ext_resource type="PackedScene" uid="uid://c5a7x3dhxd6ck" path="res://ui/MiniMap.tscn" id="6_obv57"]
+
+[node name="BaseLevel" type="Node2D"]
+script = ExtResource("1_xpwav")
+maze_width = null
+maze_height = null
+wall_tile_id = null
+floor_tile_id = null
+corridor_width = null
+
+[node name="UiManager" parent="." instance=ExtResource("2_nfb2m")]
+
+[node name="TileMap" type="TileMap" parent="."]
+tile_set = ExtResource("3_tileset")
+format = 2
+layer_0/name = "Ground"
+
+[node name="Player" parent="." instance=ExtResource("1_player")]
+position = Vector2(19, 17)
+
+[node name="DoorRoot" type="Node2D" parent="."]
+
+[node name="Door_entrance" parent="DoorRoot" instance=ExtResource("2_door")]
+
+[node name="Door_exit" parent="DoorRoot" instance=ExtResource("2_door")]
+type = 1
+
+[node name="CanvasLayer" type="CanvasLayer" parent="."]
+
+[node name="MiniMap" parent="CanvasLayer" instance=ExtResource("6_obv57")]

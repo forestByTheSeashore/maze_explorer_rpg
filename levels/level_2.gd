@@ -28,28 +28,37 @@ enum CellType { WALL, PATH }
 # === 从第一个脚本引入：物品/敌人配置 ===
 # 这些是预制件路径，请确保它们是正确的
 var packed_scenes = {
-	"Key": preload("res://scenes/Key.tscn"), # 假设路径
-	"Hp_bean": preload("res://scenes/Hp_bean.tscn"), # 假设路径
-	"IronSword_type0": preload("res://scenes/IronSword.tscn"), # 假设路径
+	"Key": preload("res://scenes/Key.tscn"),
+	"Hp_bean": preload("res://scenes/Hp_bean.tscn"),
+	"IronSword_type0": preload("res://scenes/IronSword.tscn"),
 	"IronSword_type1": preload("res://scenes/IronSword.tscn"),
 	"IronSword_type2": preload("res://scenes/IronSword.tscn"),
 	"IronSword_type3": preload("res://scenes/IronSword.tscn"),
-	"Enemy_Goblin": preload("res://scenes/goblin.tscn"), # 假设路径
-	"Enemy_Skeleton": preload("res://scenes/skelontonEnemy.tscn"), # 假设路径
-	"Enemy_Slime": preload("res://scenes/slime.tscn") # 假设路径
+	"Enemy_Goblin": preload("res://scenes/goblin.tscn"),
+	"Enemy_Skeleton": preload("res://scenes/skelontonEnemy.tscn"),
+	"Enemy_Slime": preload("res://scenes/slime.tscn")
 }
 
+# 物品和敌人数量配置（将被LevelManager覆盖）
 var desired_counts = {
-	"Key": 1, "Hp_bean": 20, "IronSword_type0": 2, "IronSword_type1": 2,
-	"IronSword_type2": 1, "IronSword_type3": 1, "Enemy_Goblin": 8,
-	"Enemy_Skeleton": 5, "Enemy_Slime": 10
+	"Key": 1,
+	"Hp_bean": 20,
+	"IronSword_type0": 2,
+	"IronSword_type1": 2,
+	"IronSword_type2": 1,
+	"IronSword_type3": 1,
+	"Enemy_Goblin": 2,
+	"Enemy_Skeleton": 1,
+	"Enemy_Slime": 2
 }
-# === END: 从第一个脚本引入 ===
 
 # 添加路径显示状态变量
 var show_path_to_key := false
 var show_path_to_door := false
 var path_lines := []  # 存储所有路径线
+
+# 当前关卡名称（由LevelManager设置）
+var current_level_name: String = ""
 
 func _ready():
 	print("=== Level 2 - 程序化迷宫生成开始 ===")
@@ -67,49 +76,117 @@ func _ready():
 	# 设置节点组
 	if player:
 		player.add_to_group("player")
+		player.visible = true  # 确保玩家可见
+		# 确保玩家的所有子节点也可见
+		for child in player.get_children():
+			child.visible = true
+		print("玩家节点状态：", "存在" if player else "不存在")
+		print("玩家可见性：", player.visible)
+		print("玩家位置：", player.global_position)
+	else:
+		push_error("玩家节点不存在!")
+	
 	if tile_map:
 		tile_map.add_to_group("tilemap")
+		print("TileMap 已添加到组")
+	else:
+		push_error("TileMap节点不存在!")
+	
 	if exit_door:
 		exit_door.add_to_group("doors")
+		print("出口门已添加到组")
+	else:
+		push_error("出口门节点不存在!")
+	
 	if entry_door:
 		entry_door.add_to_group("doors")
+		print("入口门已添加到组")
+	else:
+		push_error("入口门节点不存在!")
 	
+	# 获取LevelManager并连接信号
+	var level_manager = get_node_or_null("/root/LevelManager")
+	if level_manager:
+		print("找到LevelManager，连接信号")
+		# 确保没有重复连接
+		if level_manager.level_ready_to_initialize.is_connected(_on_level_ready_to_initialize):
+			level_manager.level_ready_to_initialize.disconnect(_on_level_ready_to_initialize)
+		
+		# 连接信号
+		level_manager.level_ready_to_initialize.connect(_on_level_ready_to_initialize)
+		
+		# 如果LevelManager已准备好初始化，立即调用初始化
+		if level_manager._should_initialize and level_manager.next_level_name != "":
+			print("LevelManager已准备好初始化，立即初始化关卡")
+			await level_manager.initialize_level()
+		else:
+			print("LevelManager未准备好初始化，使用默认配置")
+			await init_level()
+	else:
+		print("未找到LevelManager，使用默认配置")
+		await init_level()
+	
+	print("=== Level 2 迷宫生成完成 ===")
+
+# 信号处理函数
+func _on_level_ready_to_initialize(level_name: String):
+	print("收到level_ready_to_initialize信号，关卡名称: ", level_name)
+	var level_manager = get_node_or_null("/root/LevelManager")
+	if level_manager:
+		print("调用LevelManager.initialize_level()")
+		await level_manager.initialize_level()
+	else:
+		push_error("信号处理中找不到LevelManager!")
+
+func init_level() -> void:
+	print("=== 程序化迷宫生成开始 ===")
+	print("当前关卡: ", current_level_name if current_level_name != "" else "未知")
+	print("调用者: ", get_stack()[1]["function"] if get_stack().size() > 1 else "未知")
+
+	# 确保节点已经在场景树中
+	if not is_inside_tree():
+		push_error("节点尚未添加到场景树中，无法初始化关卡")
+		return
+
 	# 连接出口门的打开信号
 	if exit_door:
 		if exit_door.has_signal("door_opened"):
+			# 先断开所有已存在的连接
+			if exit_door.door_opened.is_connected(on_exit_door_has_opened):
+				exit_door.door_opened.disconnect(on_exit_door_has_opened)
+			# 重新连接信号
 			exit_door.door_opened.connect(on_exit_door_has_opened)
 			print("已连接出口门的打开信号")
 		else:
 			print("警告: 出口门没有 'door_opened' 信号!")
-	
+
 	print("步骤 1: 开始生成迷宫...")
 	generate_optimized_maze()
 	print("步骤 1: 迷宫生成完成")
-	
+
 	print("步骤 2: 开始绘制迷宫到 TileMap...")
 	await draw_maze_to_tilemap()
 	print("步骤 2: TileMap 绘制完成")
-	
+
 	print("步骤 3: 设置玩家和门的位置...")
 	setup_player_and_doors_fixed()
 	print("步骤 3: 玩家和门设置完成")
-	
+
 	await get_tree().process_frame
 	verify_tilemap()
-	
+
 	print("步骤 4: 确保从入口到出口有一条可行路径...")
 	ensure_path_from_entrance_to_exit()
-	
+
 	print("步骤 5: 重新绘制迷宫...")
 	await draw_maze_to_tilemap()
-	
+
 	print("步骤 6: 重新定位敌人和物品...")
-	reposition_enemies_and_items_optimized() # 调用修改后的版本
+	reposition_enemies_and_items_optimized()
 	print("步骤 6: 敌人和物品重新定位完成")
-	
+
 	draw_path()
-	
-	print("=== Level 2 迷宫生成完成 ===")
+	print("=== 迷宫生成完成 ===")
 
 func _process(_delta):
 	# 处理路径显示按键
@@ -136,11 +213,29 @@ func _process(_delta):
 
 # 出口门打开后的处理函数
 func on_exit_door_has_opened():
-	print("出口门已打开，Level 2 完成！")
-	print("游戏胜利！")
-	# 这里可以添加你的胜利画面或下一关逻辑
-	# 例如：显示胜利UI或返回主菜单
-	# get_tree().change_scene_to_file("res://scenes/victory_screen.tscn")
+	print("出口门已打开，当前关卡完成！")
+	var next_level = get_next_level_name()
+	if next_level:
+		print("切换到下一关: ", next_level)
+		# 使用正确的LevelManager机制
+		var level_manager = get_node("/root/LevelManager")
+		if level_manager:
+			level_manager.next_level_name = next_level
+			level_manager.prepare_next_level()
+			# 使用场景切换而不是节点管理
+			get_tree().change_scene_to_file("res://levels/base_level.tscn")
+		else:
+			print("错误：找不到LevelManager")
+	else:
+		print("恭喜！您已完成所有关卡！")
+		# 这里可以添加游戏结束的处理逻辑
+
+# 获取下一个关卡名称
+func get_next_level_name() -> String:
+	var level_manager = get_node("/root/LevelManager")
+	if level_manager and current_level_name != "":
+		return level_manager.get_next_level_name(current_level_name)
+	return ""
 
 func generate_optimized_maze():
 	"""使用递归分割法生成迷宫，创建类似图片的效果"""
@@ -167,8 +262,8 @@ func generate_optimized_maze():
 # 递归分割法：将区域分割成更小的子区域并添加墙体
 func _recursive_divide(x1: int, y1: int, x2: int, y2: int):
 	"""递归分割区域，创建墙体和通道"""
-	# 如果区域太小，停止分割
-	if x2 - x1 < 8 or y2 - y1 < 8:  # 增加最小区域大小
+	# 减小最小区域大小，让分割更细致
+	if x2 - x1 < 6 or y2 - y1 < 6:  # 从8改为6
 		return
 	
 	# 计算区域大小
@@ -178,13 +273,13 @@ func _recursive_divide(x1: int, y1: int, x2: int, y2: int):
 	# 决定水平分割还是垂直分割
 	var horizontal = width < height
 	
-	if horizontal and height > 6:  # 增加最小高度要求
+	if horizontal and height > 4:  # 从6改为4
 		# 计算可用于放置墙的空间
-		var wall_space = height - 6  # 留出更多空间
-		var wall_pos = 2  # 从距离边缘至少2格开始
+		var wall_space = height - 4  # 从6改为4
+		var wall_pos = 1  # 从2改为1
 		if wall_space > 0:
 			wall_pos = randi() % wall_space
-		var wall_y = y1 + 2 + wall_pos
+		var wall_y = y1 + 1 + wall_pos  # 从2改为1
 		
 		# 在指定y坐标创建横墙
 		for x in range(x1, x2 + 1):
@@ -192,29 +287,29 @@ func _recursive_divide(x1: int, y1: int, x2: int, y2: int):
 				maze_grid[wall_y][x] = CellType.WALL
 		
 		# 在墙上开一个宽门
-		var door_space = width - 4  # 留出更多门空间
-		if door_space < 3:  # 确保至少3格宽的门
+		var door_space = width - 2  # 从4改为2
+		if door_space < 3:  # 确保至少3格宽的门（从5改为3）
 			door_space = 3
-		var door_x = x1 + 2 + randi() % max(1, door_space - 2)
+		var door_x = x1 + 1 + randi() % max(1, door_space - 2)  # 从2改为1，为3格宽门留空间
 		if door_x >= 0 and door_x < maze_width:
 			# 创建3格宽的门
-			for dx in range(-1, 2):  # 左中右三格
+			for dx in range(-1, 2):  # 从-2,3改为-1,2，左中右三格（-1, 0, 1）
 				var x = door_x + dx
-				if x >= 0 and x < maze_width:
+				if x >= x1 and x < x2 + 1 and x >= 0 and x < maze_width:
 					maze_grid[wall_y][x] = CellType.PATH
 		
 		# 递归分割上下两部分
-		if wall_y - y1 > 3:
+		if wall_y - y1 > 2:  # 从3改为2
 			_recursive_divide(x1, y1, x2, wall_y - 1)
-		if y2 - wall_y > 3:
+		if y2 - wall_y > 2:  # 从3改为2
 			_recursive_divide(x1, wall_y + 1, x2, y2)
-	elif width > 6:  # 增加最小宽度要求
+	elif width > 4:  # 从6改为4
 		# 计算可用于放置墙的空间
-		var wall_space = width - 6  # 留出更多空间
-		var wall_pos = 2  # 从距离边缘至少2格开始
+		var wall_space = width - 4  # 从6改为4
+		var wall_pos = 1  # 从2改为1
 		if wall_space > 0:
 			wall_pos = randi() % wall_space
-		var wall_x = x1 + 2 + wall_pos
+		var wall_x = x1 + 1 + wall_pos  # 从2改为1
 		
 		# 在指定x坐标创建竖墙
 		for y in range(y1, y2 + 1):
@@ -222,20 +317,22 @@ func _recursive_divide(x1: int, y1: int, x2: int, y2: int):
 				maze_grid[y][wall_x] = CellType.WALL
 		
 		# 在墙上开一个高门
-		var door_space = height - 4  # 留出更多门空间
-		if door_space < 3:  # 确保至少3格高的门
+		var door_space = height - 2  # 从4改为2
+		if door_space < 3:  # 确保至少3格高的门（从5改为3）
 			door_space = 3
-		var door_y = y1 + 2 + randi() % max(1, door_space - 2)
+		var door_y = y1 + 1 + randi() % max(1, door_space - 2)  # 从2改为1，为3格高门留空间
 		if door_y >= 0 and door_y < maze_height:
 			# 创建3格高的门
-			for dy in range(-1, 2):  # 上中下三格
+			for dy in range(-1, 2):  # 从-2,3改为-1,2，上中下三格（-1, 0, 1）
 				var y = door_y + dy
-				if y >= 0 and y < maze_height:
+				if y >= y1 and y < y2 + 1 and y >= 0 and y < maze_height:
 					maze_grid[y][wall_x] = CellType.PATH
 		
 		# 递归分割左右两部分
-		_recursive_divide(x1, y1, wall_x - 1, y2)
-		_recursive_divide(wall_x + 1, y1, x2, y2)
+		if wall_x - x1 > 2:  # 从3改为2
+			_recursive_divide(x1, y1, wall_x - 1, y2)
+		if x2 - wall_x > 2:  # 从3改为2
+			_recursive_divide(wall_x + 1, y1, x2, y2)
 
 # 主路径加宽函数
 func _widen_main_paths(w: int):
@@ -499,49 +596,49 @@ func widen_specific_path(x1: int, y1: int, x2: int, y2: int):
 func _place_keys(keys: Array, positions: Array, used_positions: Array, min_distance: float):
 	"""特别处理钥匙的放置，确保它们放在远离墙壁的安全位置"""
 	print("特别处理 ", keys.size(), " 个钥匙放置...")
-    
-    # 筛选出最安全的位置（远离墙壁）
+	
+	# 筛选出最安全的位置（远离墙壁）
 	var safe_key_positions = []
 	for pos in positions:
 		var tile_pos = tile_map.local_to_map(tile_map.to_local(pos))
 		if _is_truly_safe_position(tile_pos.x, tile_pos.y) and not _has_nearby_wall(tile_pos.x, tile_pos.y, 2):
 			safe_key_positions.append(pos)
-    
+	
 	print("找到 ", safe_key_positions.size(), " 个适合放置钥匙的位置")
-    
-    # 如果安全位置不足，寻找更多位置
+	
+	# 如果安全位置不足，寻找更多位置
 	if safe_key_positions.size() < keys.size() * 2:
 		for y in range(3, maze_height-3, 2):
 			for x in range(3, maze_width-3, 2):
 				if safe_key_positions.size() >= keys.size() * 4:
 					break
-                
+				
 				if _is_basic_safe_position(x, y) and not _has_nearby_wall(x, y, 2):
 					var world_pos = tile_map.to_global(tile_map.map_to_local(Vector2i(x, y)))
 					if not safe_key_positions.has(world_pos):
 						safe_key_positions.append(world_pos)
-    
-    # 打乱安全位置列表
+	
+	# 打乱安全位置列表
 	safe_key_positions.shuffle()
-    
-    # 为每个钥匙找位置
+	
+	# 为每个钥匙找位置
 	for key in keys:
 		var placed = false
 		var max_attempts = 50
-        
+		
 		for attempt in range(max_attempts):
 			if attempt < safe_key_positions.size():
 				var pos = safe_key_positions[attempt]
-                
-                # 检查与已使用位置的距离
+				
+				# 检查与已使用位置的距离
 				var too_close = false
 				for used_pos in used_positions:
 					if pos.distance_to(used_pos) < min_distance:
 						too_close = true
 						break
-                
+				
 				if not too_close:
-                    # 再次确认这个位置是安全的
+					# 再次确认这个位置是安全的
 					var tile_pos = tile_map.local_to_map(tile_map.to_local(pos))
 					if _is_basic_safe_position(tile_pos.x, tile_pos.y) and not _has_nearby_wall(tile_pos.x, tile_pos.y, 2):
 						key.global_position = pos
@@ -549,9 +646,9 @@ func _place_keys(keys: Array, positions: Array, used_positions: Array, min_dista
 						print(key.name, " 成功放置在安全位置: ", pos, " (尝试次数: ", attempt + 1, ")")
 						placed = true
 						break
-        
+		
 		if not placed:
-            # 使用常规方法尝试放置
+			# 使用常规方法尝试放置
 			var fallback_pos = _find_any_safe_position(positions, used_positions)
 			if fallback_pos != Vector2.ZERO:
 				var tile_pos = tile_map.local_to_map(tile_map.to_local(fallback_pos))
@@ -1171,19 +1268,81 @@ func reposition_enemies_and_items_optimized():
 func _place_keys_modified(keys: Array, available_positions: Array, globally_used_positions: Array, min_distance: float):
 	print("特别处理 ", keys.size(), " 个钥匙放置...")
 	var positions_copy = available_positions.duplicate() # 操作副本，避免影响其他类型物品的可选位置总表
-	positions_copy.shuffle()
+	
+	# 获取重要位置的坐标，避免钥匙生成在这些地方附近
+	var player_spawn_pos = player.global_position if player else Vector2.ZERO
+	var exit_door_pos = exit_door.global_position if exit_door else Vector2.ZERO
+	var entry_door_pos = entry_door.global_position if entry_door else Vector2.ZERO
+	
+	var exclusion_radius = 300.0  # 排除半径（像素）
+	var preferred_distance_from_exit = 500.0  # 优先距离出口门更远的位置
+	
+	# 过滤掉太靠近重要位置的坐标
+	var filtered_positions = []
+	for pos in positions_copy:
+		var too_close_to_important_locations = false
+		
+		# 检查是否太靠近玩家出生点
+		if player_spawn_pos != Vector2.ZERO and pos.distance_to(player_spawn_pos) < exclusion_radius:
+			too_close_to_important_locations = true
+		
+		# 检查是否太靠近出口门（最重要的排除条件）
+		if exit_door_pos != Vector2.ZERO and pos.distance_to(exit_door_pos) < exclusion_radius:
+			too_close_to_important_locations = true
+		
+		# 检查是否太靠近入口门
+		if entry_door_pos != Vector2.ZERO and pos.distance_to(entry_door_pos) < exclusion_radius * 0.7:  # 入口门的排除半径稍小
+			too_close_to_important_locations = true
+		
+		if not too_close_to_important_locations:
+			filtered_positions.append(pos)
+	
+	print("过滤前位置数量: ", positions_copy.size(), " 过滤后位置数量: ", filtered_positions.size())
+	
+	# 如果过滤后位置太少，则逐步放宽条件
+	if filtered_positions.size() < keys.size() * 3:
+		print("过滤后位置不足，放宽条件...")
+		exclusion_radius = 200.0  # 减小排除半径
+		filtered_positions.clear()
+		
+		for pos in positions_copy:
+			var too_close_to_important_locations = false
+			
+			# 只保留对出口门的严格排除
+			if exit_door_pos != Vector2.ZERO and pos.distance_to(exit_door_pos) < exclusion_radius:
+				too_close_to_important_locations = true
+			
+			# 对玩家出生点的排除半径减半
+			if player_spawn_pos != Vector2.ZERO and pos.distance_to(player_spawn_pos) < exclusion_radius * 0.5:
+				too_close_to_important_locations = true
+			
+			if not too_close_to_important_locations:
+				filtered_positions.append(pos)
+		
+		print("放宽条件后位置数量: ", filtered_positions.size())
+	
+	# 按照距离出口门的远近排序，优先选择离出口门较远的位置
+	if exit_door_pos != Vector2.ZERO:
+		filtered_positions.sort_custom(func(a, b): 
+			var dist_a = a.distance_to(exit_door_pos)
+			var dist_b = b.distance_to(exit_door_pos)
+			return dist_a > dist_b  # 距离远的排在前面
+		)
+		print("已按距离出口门远近排序，最远距离: ", filtered_positions[0].distance_to(exit_door_pos) if not filtered_positions.is_empty() else "无位置")
+	else:
+		filtered_positions.shuffle()
 
 	var placed_count = 0
-	for key_node in keys: # 修改变量名
+	for key_node in keys:
 		var placed_successfully = false
 		var attempts = 0
-		for candidate_pos in positions_copy:
+		for candidate_pos in filtered_positions:
 			attempts += 1
 			var tile_pos = tile_map.local_to_map(tile_map.to_local(candidate_pos))
 
-			# 1. 检查瓦片本身是否绝对安全且附近没有墙 (基于你原有的 _is_truly_safe_position 和 _has_nearby_wall)
+			# 1. 检查瓦片本身是否绝对安全且附近没有墙
 			var is_tile_super_safe = _is_truly_safe_position(tile_pos.x, tile_pos.y) and \
-									 not _has_nearby_wall(tile_pos.x, tile_pos.y, 2) # 附近2格没墙
+								 not _has_nearby_wall(tile_pos.x, tile_pos.y, 2) # 附近2格没墙
 
 			if not is_tile_super_safe:
 				continue
@@ -1195,12 +1354,17 @@ func _place_keys_modified(keys: Array, available_positions: Array, globally_used
 					too_close_to_others = true
 					break
 			
+			# 3. 额外检查：确保距离出口门足够远（二次确认）
+			var distance_to_exit = candidate_pos.distance_to(exit_door_pos) if exit_door_pos != Vector2.ZERO else 1000.0
+			if distance_to_exit < 250.0:  # 二次确认距离出口门至少250像素
+				continue
+			
 			if not too_close_to_others:
 				key_node.global_position = candidate_pos
 				globally_used_positions.append(candidate_pos) # 更新全局已用位置
-				# 从 positions_copy 中移除已用位置，防止重复给同一类型的其他钥匙
-				positions_copy.erase(candidate_pos)
-				print(key_node.name, " 成功放置在: ", candidate_pos.round(), " (尝试次数: ", attempts, ")")
+				# 从 filtered_positions 中移除已用位置，防止重复给同一类型的其他钥匙
+				filtered_positions.erase(candidate_pos)
+				print(key_node.name, " 成功放置在: ", Vector2i(candidate_pos), " (尝试次数: ", attempts, ", 距离出口门: ", int(distance_to_exit), ")")
 				placed_successfully = true
 				placed_count += 1
 				break # 处理下一个钥匙
@@ -1254,7 +1418,7 @@ func _place_items_safely_modified(items_in_category: Array, available_positions:
 				item_node.global_position = candidate_pos
 				globally_used_positions.append(candidate_pos)
 				positions_copy.erase(candidate_pos) # 从这个类别的可用位置中移除
-				print(item_node.name, "(",category_name_for_log,")"," 成功放置在: ", candidate_pos.round(), " (尝试次数: ", attempts, ")")
+				print(item_node.name, "(",category_name_for_log,")"," 成功放置在: ", Vector2i(candidate_pos), " (尝试次数: ", attempts, ")")
 				placed_successfully = true
 				placed_count +=1
 				break # 处理这个类别的下一个物品

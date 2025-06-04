@@ -1,12 +1,15 @@
 # level_1.gd
 extends Node2D
 
+# 添加 GameManager 引用
+@onready var game_manager = get_node("/root/GameManager")
+
 @onready var player = $Player
 @onready var entry_door: Node = $DoorRoot/Door_entrance # 确保名称匹配
 @onready var exit_door: Node = $DoorRoot/Door_exit   # 确保名称匹配
 @onready var tile_map: TileMap = $TileMap
 @onready var minimap = $CanvasLayer/MiniMap
-@onready var pause_menu = $CanvasLayer/PauseMenu # 获取暂停菜单节点引用
+@onready var pause_menu = get_node_or_null("CanvasLayer/PauseMenu") # 安全获取暂停菜单节点引用
 
 # 添加路径显示状态变量
 var show_path_to_key := false
@@ -69,30 +72,46 @@ func _ready():
 	draw_path()
 
 	# 确保暂停菜单初始是隐藏的
-	pause_menu.hide()
+	if pause_menu:
+		pause_menu.hide()
 	
 	# 连接暂停菜单的信号
-	pause_menu.resume_button.pressed.connect(_on_resume_button_pressed)
-	pause_menu.settings_button.pressed.connect(_on_settings_button_pressed)
-	pause_menu.main_menu_button.pressed.connect(_on_main_menu_button_pressed)
-	pause_menu.quit_button.pressed.connect(_on_quit_button_pressed)
-
-# func on_entry_door_opened(): # 如果有入口门打开后的特定逻辑，保留此函数
-#     print("入口门已打开，玩家可以进入迷宫。")
+	if pause_menu:
+		pause_menu.resume_button.pressed.connect(_on_resume_button_pressed)
+		pause_menu.main_menu_button.pressed.connect(_on_main_menu_button_pressed)
+		pause_menu.quit_button.pressed.connect(_on_quit_button_pressed)
 
 func on_exit_door_has_opened(): # 当出口门的 door_opened 信号发出时调用
 	print("出口门已打开，Level 1 结束！")
 	print("进入 Level 2 - 程序化迷宫关卡")
-	# 跳转到 Level 2
-	get_tree().change_scene_to_file("res://levels/level_2.tscn")
+	
+	# 使用LevelManager切换关卡
+	var level_manager = get_node_or_null("/root/LevelManager")
+	if level_manager:
+		# 设置下一关名称
+		level_manager.next_level_name = "level_2"
+		# 准备初始化下一关
+		level_manager.prepare_next_level()
+		# 使用场景切换
+		print("准备切换到base_level.tscn...")
+		
+		# 延迟一帧再切换场景，确保所有标记都被设置
+		await get_tree().process_frame
+		var error = get_tree().change_scene_to_file("res://levels/base_level.tscn")
+		if error != OK:
+			push_error("场景切换失败! 错误码: " + str(error))
+	else:
+		push_error("错误：找不到LevelManager")
 
 func _process(_delta):
 	# 处理路径显示按键
 	if Input.is_action_just_pressed("way_to_key"):  # F1
+		print("show way to key")
 		show_path_to_key = !show_path_to_key
 		show_path_to_door = false
 	
-	if Input.is_action_just_pressed("way_to_door"):  # F2
+	if Input.is_action_just_pressed("way_to_door"):
+		print("show way to door")  # F2
 		show_path_to_door = !show_path_to_door
 		show_path_to_key = false
 
@@ -111,8 +130,11 @@ func _process(_delta):
 				else:
 					push_error("Error: ExitDoor node does not have 'interact' method!")
 
-	# 移除了原先的自动距离检测开门逻辑，以避免冲突，专注于按 'F' 键交互
-	# 如果你确实需要基于距离的自动触发，请仔细考虑它与按键交互的关系
+	# 处理暂停按键 (Escape)
+	if Input.is_action_just_pressed("ui_cancel"): # 默认 Escape 映射到 ui_cancel
+		# 只有在游戏未结束时才能暂停
+		if is_instance_valid(player) and is_instance_valid(exit_door):
+			toggle_pause()
 
 func update_paths():
 	# 清除所有现有的路径线
@@ -240,53 +262,25 @@ func create_circle_marker(radius: int, color: Color) -> ImageTexture:
 	return texture
 
 func _input(event):
-	# 处理路径显示按键
-	if Input.is_action_just_pressed("way_to_key"):  # F1
-		show_path_to_key = !show_path_to_key
-		show_path_to_door = false
-	
-	if Input.is_action_just_pressed("way_to_door"):  # F2
-		show_path_to_door = !show_path_to_door
-		show_path_to_key = false
-
-	# 实时更新路径
-	update_paths()
-
-	# 玩家与出口门的交互逻辑
-	if Input.is_action_just_pressed("interact"): # "interact" 应该映射到 'F' 键
-		if player and exit_door:
-			# 检查玩家是否足够接近出口门
-			var distance_to_exit_door = player.global_position.distance_to(exit_door.global_position)
-			if distance_to_exit_door < 30: # 交互范围，可以调整
-				# 确保 exit_door 节点有 interact 方法
-				if exit_door.has_method("interact"):
-					exit_door.interact() # 调用 Door.gd 中的 interact() 方法
-				else:
-					push_error("Error: ExitDoor node does not have 'interact' method!")
-
-	# 处理暂停按键 (Escape)
-	if event.is_action_just_pressed("ui_cancel"): # 默认 Escape 映射到 ui_cancel
-		toggle_pause()
+	pass
 
 # 新增：切换暂停状态函数
 func toggle_pause():
 	get_tree().paused = !get_tree().paused
-	pause_menu.visible = get_tree().paused # 暂停时显示菜单，否则隐藏
+	if pause_menu:
+		pause_menu.visible = get_tree().paused # 暂停时显示菜单，否则隐藏
 
 # 新增：暂停菜单按钮信号处理函数
 func _on_resume_button_pressed():
 	toggle_pause() # 继续游戏就是取消暂停
 
-func _on_settings_button_pressed():
-	print("Settings button pressed in pause menu")
-	# TODO: 实现从暂停菜单打开设置菜单的功能
-	# 你可能需要加载设置场景，并确保游戏保持暂停状态
-
 func _on_main_menu_button_pressed():
+	print("Entering _on_main_menu_button_pressed")
 	print("Main Menu button pressed in pause menu")
-	# 恢复游戏进程再切换场景
-	get_tree().paused = false
-	get_tree().change_scene_to_file("res://scenes/main_menu.tscn")
+	# 恢复游戏进程
+	# get_tree().paused = false
+	# 使用 GameManager 进行场景切换
+	game_manager.change_scene("res://scenes/main_menu.tscn")
 
 func _on_quit_button_pressed():
 	print("Quit button pressed in pause menu")

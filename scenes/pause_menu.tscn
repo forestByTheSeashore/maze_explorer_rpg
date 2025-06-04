@@ -47,11 +47,6 @@ custom_minimum_size = Vector2(200, 50)
 layout_mode = 2
 text = "继续游戏"
 
-[node name="SettingsButton" type="Button" parent="VBoxContainer"]
-custom_minimum_size = Vector2(200, 50)
-layout_mode = 2
-text = "设置"
-
 [node name="MainMenuButton" type="Button" parent="VBoxContainer"]
 custom_minimum_size = Vector2(200, 50)
 layout_mode = 2

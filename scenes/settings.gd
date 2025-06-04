@@ -10,6 +10,12 @@ extends Control
 # 设置文件路径
 const SETTINGS_FILE = "user://settings.cfg"
 
+# 添加 GameManager 引用
+@onready var game_manager = get_node("/root/GameManager")
+
+# 定义一个信号，在设置菜单关闭时发出
+# signal settings_closed
+
 func _ready():
 	# 连接信号
 	master_volume.value_changed.connect(_on_master_volume_changed)
@@ -84,5 +90,6 @@ func _on_fullscreen_toggled(button_pressed: bool):
 	_save_settings()
 
 func _on_back_button_pressed():
-	# 返回主菜单
-	get_tree().change_scene_to_file("res://scenes/main_menu.tscn") 
+	print("Settings: Back button pressed")
+	# 返回到主菜单场景
+	game_manager.change_scene("res://scenes/main_menu.tscn") 

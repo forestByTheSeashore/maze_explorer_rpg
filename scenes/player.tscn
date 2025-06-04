@@ -552,7 +552,8 @@ collision_mask = 2
 script = ExtResource("1_pgjwu")
 
 [node name="PlayerAnimatedSprite" type="AnimatedSprite2D" parent="."]
-position = Vector2(0, -9)
+position = Vector2(-0.999998, -11)
+scale = Vector2(1.1875, 1.22917)
 sprite_frames = SubResource("SpriteFrames_85plc")
 animation = &"attack_up"
 

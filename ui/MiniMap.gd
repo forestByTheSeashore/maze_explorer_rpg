@@ -86,7 +86,7 @@ func _process(_delta: float) -> void:
 		needs_redraw = true
 	
 	# 检查是否需要重绘
-	if show_minimap and player:
+	if show_minimap and is_instance_valid(player):
 		var current_pos = player.global_position
 		var current_angle = player.rotation
 		
@@ -222,13 +222,13 @@ func _draw_items_and_doors_with_center(center_world: Vector2, center_screen: Vec
 	# 钥匙
 	var keys = get_tree().get_nodes_in_group("keys")
 	for key in keys:
-		if key.visible:
+		if is_instance_valid(key) and key.visible:
 			var key_pos = world_to_map(key.global_position) - center_map + center_screen
 			draw_circle(key_pos, item_marker_size, key_color)
 	# 门
 	var doors = get_tree().get_nodes_in_group("doors")
 	for door in doors:
-		if door.visible:
+		if is_instance_valid(door) and door.visible:
 			var door_pos = world_to_map(door.global_position) - center_map + center_screen
 			draw_rect(Rect2(door_pos - Vector2(item_marker_size, item_marker_size)/2, Vector2(item_marker_size, item_marker_size)), door_color, true)
 
@@ -236,6 +236,6 @@ func _draw_enemies_with_center(center_world: Vector2, center_screen: Vector2) ->
 	var center_map = world_to_map(center_world)
 	var enemies = get_tree().get_nodes_in_group("enemies")
 	for enemy in enemies:
-		if enemy.visible:
+		if is_instance_valid(enemy) and enemy.visible:
 			var enemy_pos = world_to_map(enemy.global_position) - center_map + center_screen
 			draw_circle(enemy_pos, item_marker_size/1.5, enemy_color)
