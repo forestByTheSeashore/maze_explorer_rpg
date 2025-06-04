@@ -24,12 +24,34 @@ var path_gradient := true   # 是否使用渐变色
 # 移除  signal player_reached_exit，因为我们将直接响应门的打开事件
 
 func _ready():
+	print("Level_1: _ready 开始...")
+	
 	if entry_door == null:
 		push_error("Error: EntryDoor node not found in scene!")
 		return
 	if exit_door == null:
 		push_error("Error: ExitDoor node not found in scene!")
 		return
+
+	# 检查暂停菜单
+	print("Level_1: 检查暂停菜单节点...")
+	pause_menu = get_node_or_null("CanvasLayer/PauseMenu")
+	if pause_menu:
+		print("Level_1: 暂停菜单找到了: ", pause_menu.name)
+	else:
+		print("Level_1: 警告 - 暂停菜单未找到，尝试其他路径...")
+		# 尝试其他可能的路径
+		pause_menu = get_node_or_null("PauseMenu")
+		if pause_menu:
+			print("Level_1: 在根路径找到暂停菜单")
+		else:
+			var canvas_layer = get_node_or_null("CanvasLayer")
+			if canvas_layer:
+				print("Level_1: 找到CanvasLayer，子节点列表:")
+				for child in canvas_layer.get_children():
+					print("  - ", child.name, " (类型: ", child.get_class(), ")")
+			else:
+				print("Level_1: 连CanvasLayer都没找到")
 
 	# 连接UIManager信号
 	if ui_manager:
@@ -149,6 +171,26 @@ func _process(_delta):
 		print("show way to door")  # F2
 		show_path_to_door = !show_path_to_door
 		show_path_to_key = false
+
+	# 快速保存和加载
+	if Input.is_action_just_pressed("quick_save"):  # F5
+		print("快速保存游戏...")
+		var save_manager = get_node("/root/SaveManager")
+		if save_manager:
+			save_manager.quick_save()
+		else:
+			print("错误：找不到SaveManager")
+	
+	if Input.is_action_just_pressed("quick_load"):  # F6
+		print("快速加载游戏...")
+		var save_manager = get_node("/root/SaveManager")
+		if save_manager and save_manager.has_save():
+			var save_data = save_manager.load_progress()
+			if not save_data.is_empty():
+				print("加载成功，准备切换场景...")
+				# 这里可以根据需要处理加载后的场景切换逻辑
+		else:
+			print("没有可用的存档或找不到SaveManager")
 
 	# 实时更新路径
 	update_paths()
@@ -301,9 +343,18 @@ func _input(event):
 
 # 新增：切换暂停状态函数
 func toggle_pause():
+	print("Level_1: toggle_pause 被调用")
+	print("Level_1: 当前暂停状态: ", get_tree().paused)
+	print("Level_1: 暂停菜单节点: ", pause_menu)
+	
 	get_tree().paused = !get_tree().paused
+	print("Level_1: 新的暂停状态: ", get_tree().paused)
+	
 	if pause_menu:
 		pause_menu.visible = get_tree().paused # 暂停时显示菜单，否则隐藏
+		print("Level_1: 暂停菜单可见性设置为: ", pause_menu.visible)
+	else:
+		print("Level_1: 错误 - 暂停菜单节点为null!")
 
 # 新增：暂停菜单按钮信号处理函数
 func _on_resume_button_pressed():
