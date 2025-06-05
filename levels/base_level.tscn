@@ -1,4 +1,4 @@
-[gd_scene load_steps=8 format=3 uid="uid://b6x8v0j6y5n3q"]
+[gd_scene load_steps=9 format=3 uid="uid://b6x8v0j6y5n3q"]
 
 [ext_resource type="PackedScene" uid="uid://bmtmrg6sdimhd" path="res://scenes/player.tscn" id="1_player"]
 [ext_resource type="Script" path="res://levels/level_base.gd" id="1_xpwav"]
@@ -7,6 +7,7 @@
 [ext_resource type="TileSet" uid="uid://cn6a27lw6v5xa" path="res://assets/tiles/tile_set.tres" id="3_tileset"]
 [ext_resource type="PackedScene" uid="uid://c5a7x3dhxd6ck" path="res://ui/MiniMap.tscn" id="6_obv57"]
 [ext_resource type="PackedScene" uid="uid://bhulmutpv1chm" path="res://scenes/pause_menu.tscn" id="7_r7oj1"]
+[ext_resource type="PackedScene" uid="uid://cusuqf0wl6tu6" path="res://scenes/game_over.tscn" id="8_guqx7"]
 
 [node name="BaseLevel" type="Node2D"]
 script = ExtResource("1_xpwav")
@@ -36,3 +37,6 @@ type = 1
 [node name="MiniMap" parent="CanvasLayer" instance=ExtResource("6_obv57")]
 
 [node name="PauseMenu" parent="CanvasLayer" instance=ExtResource("7_r7oj1")]
+
+[node name="GameOverScreen" parent="CanvasLayer" instance=ExtResource("8_guqx7")]
+visible = false

@@ -457,23 +457,86 @@ func heal(amount: int):
 	# 这里可以发出信号更新UI: emit_signal("hp_updated", current_hp, max_hp)
 
 func _handle_game_over_logic():
-	print("玩家已死亡 - 游戏结束处理！")
-	print("关卡失败！")
+	print("玩家已死亡 - 显示Game Over页面！")
 	
-	# 可以在这里添加更多游戏结束逻辑：
-	# 1. 显示游戏结束画面
-	# 2. 停止背景音乐，播放失败音效
-	# 3. 显示重试按钮
-	# 4. 记录失败统计等
+	# 停止玩家的所有物理处理
+	set_physics_process(false)
 	
-	# 示例：延迟重新加载关卡
-	await get_tree().create_timer(2.0).timeout
-	print("准备重新开始关卡...")
-	# get_tree().reload_current_scene()  # 取消注释以启用自动重启
+	# 停止动画在最后一帧
+	if animated_sprite:
+		animated_sprite.stop()
 	
-	# 或者显示游戏结束画面等
-	# animated_sprite.stop() # 停在死亡动画的最后一帧
-	# set_physics_process(false) # 彻底停止玩家活动
+	# 寻找并显示Game Over页面
+	var game_over_screen = _find_or_create_game_over_screen()
+	if game_over_screen:
+		game_over_screen.show_game_over()
+	else:
+		print("错误：无法找到或创建Game Over页面")
+		# 备用方案：延迟后重新加载场景
+		await get_tree().create_timer(3.0).timeout
+		get_tree().reload_current_scene()
+
+func _find_or_create_game_over_screen():
+	"""查找或创建Game Over页面"""
+	# 首先尝试在当前场景中查找Game Over页面
+	var current_scene = get_tree().current_scene
+	if current_scene:
+		var game_over_node = current_scene.find_child("GameOverScreen", true, false)
+		if game_over_node:
+			print("找到现有的Game Over页面")
+			return game_over_node
+		
+		# 尝试在CanvasLayer中查找
+		var canvas_layers = current_scene.find_children("CanvasLayer", "", true, false)
+		for canvas_layer in canvas_layers:
+			var game_over_in_canvas = canvas_layer.find_child("GameOverScreen", true, false)
+			if game_over_in_canvas:
+				print("在CanvasLayer中找到Game Over页面")
+				return game_over_in_canvas
+	
+	# 如果没有找到，尝试动态创建
+	print("未找到Game Over页面，尝试动态加载")
+	var game_over_scene_path = "res://scenes/game_over.tscn"
+	
+	if FileAccess.file_exists(game_over_scene_path):
+		var game_over_scene = load(game_over_scene_path)
+		if game_over_scene:
+			var game_over_instance = game_over_scene.instantiate()
+			
+			# 添加到最适合的父节点
+			var target_parent = _find_best_ui_parent()
+			if target_parent:
+				target_parent.add_child(game_over_instance)
+				print("成功创建并添加Game Over页面到:", target_parent.name)
+				return game_over_instance
+			else:
+				print("错误：找不到合适的父节点来添加Game Over页面")
+				game_over_instance.queue_free()
+	
+	print("无法加载Game Over场景文件:", game_over_scene_path)
+	return null
+
+func _find_best_ui_parent():
+	"""找到最适合添加UI的父节点"""
+	var current_scene = get_tree().current_scene
+	if not current_scene:
+		return null
+	
+	# 优先使用现有的CanvasLayer
+	var canvas_layers = current_scene.find_children("CanvasLayer", "", true, false)
+	for canvas_layer in canvas_layers:
+		# 避免添加到小地图的CanvasLayer
+		if canvas_layer.name != "MiniMapCanvas" and not canvas_layer.name.to_lower().contains("minimap"):
+			print("使用现有的CanvasLayer:", canvas_layer.name)
+			return canvas_layer
+	
+	# 如果没有合适的CanvasLayer，创建一个新的
+	var new_canvas_layer = CanvasLayer.new()
+	new_canvas_layer.name = "GameOverCanvasLayer"
+	new_canvas_layer.layer = 100  # 确保在最上层
+	current_scene.add_child(new_canvas_layer)
+	print("创建新的CanvasLayer用于Game Over页面")
+	return new_canvas_layer
 
 
 

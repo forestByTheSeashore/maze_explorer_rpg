@@ -1,4 +1,4 @@
-[gd_scene load_steps=14 format=3 uid="uid://cprxuuymlstnn"]
+[gd_scene load_steps=15 format=3 uid="uid://cprxuuymlstnn"]
 
 [ext_resource type="Script" path="res://levels/level_1.gd" id="1_i6ov5"]
 [ext_resource type="TileSet" uid="uid://cn6a27lw6v5xa" path="res://assets/tiles/tile_set.tres" id="2_0ngka"]
@@ -13,6 +13,7 @@
 [ext_resource type="PackedScene" uid="uid://dbvnlcr5mg4gy" path="res://scenes/goblin.tscn" id="11_v3gcd"]
 [ext_resource type="PackedScene" uid="uid://c5a7x3dhxd6ck" path="res://ui/MiniMap.tscn" id="12_sntum"]
 [ext_resource type="PackedScene" uid="uid://bhulmutpv1chm" path="res://scenes/pause_menu.tscn" id="13_jwtdq"]
+[ext_resource type="PackedScene" uid="uid://cusuqf0wl6tu6" path="res://scenes/game_over.tscn" id="14_ukrcy"]
 
 [node name="Level1" type="Node2D"]
 script = ExtResource("1_i6ov5")
@@ -80,3 +81,6 @@ offset_right = -233.0
 offset_bottom = 219.0
 
 [node name="PauseMenu" parent="CanvasLayer" instance=ExtResource("13_jwtdq")]
+
+[node name="GameOverScreen" parent="CanvasLayer" instance=ExtResource("14_ukrcy")]
+visible = false
