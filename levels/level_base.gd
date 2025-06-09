@@ -80,9 +80,10 @@ func _ready():
 	if player:
 		player.add_to_group("player")
 		player.visible = true  # 确保玩家可见
-		# 确保玩家的所有子节点也可见
+		# 确保玩家的可视化子节点可见（跳过不支持visible属性的节点）
 		for child in player.get_children():
-			child.visible = true
+			if child.has_method("set_visible") or "visible" in child:
+				child.visible = true
 		print("玩家节点状态：", "存在" if player else "不存在")
 		print("玩家可见性：", player.visible)
 		print("玩家位置：", player.global_position)
@@ -166,6 +167,12 @@ func init_level() -> void:
 	if not is_inside_tree():
 		push_error("节点尚未添加到场景树中，无法初始化关卡")
 		return
+
+	# 通知UI管理器当前关卡信息
+	if ui_manager and current_level_name != "":
+		if ui_manager.has_method("update_level_info"):
+			ui_manager.update_level_info(current_level_name)
+			print("LevelBase: 已通知UI管理器当前关卡：", current_level_name)
 
 	# 连接出口门的打开信号
 	if exit_door:
@@ -266,6 +273,10 @@ func get_next_level_name() -> String:
 		return level_manager.get_next_level_name(current_level_name)
 	return ""
 
+# 获取当前关卡名称（供UI系统调用）
+func get_current_level_name() -> String:
+	return current_level_name
+
 # 递归分割法生成迷宫
 func generate_optimized_maze():
 	maze_grid.clear()
@@ -357,9 +368,10 @@ func setup_player_and_doors_fixed():
 		player.global_position = entry_door.global_position + Vector2(20,0)
 		player.visible = true
 		player.z_index = 5  # 确保玩家在适当的层级
-		# 确保玩家的所有子节点也可见
+		# 确保玩家的可视化子节点可见（跳过不支持visible属性的节点）
 		for child in player.get_children():
-			child.visible = true
+			if child.has_method("set_visible") or "visible" in child:
+				child.visible = true
 		print("玩家设置在: ", player.global_position)
 		print("玩家可见性：", player.visible)
 

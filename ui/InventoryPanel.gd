@@ -86,7 +86,18 @@ func _update_weapons_display():
 	
 	var weapons = player_reference.get_available_weapons()
 	var current_weapon = player_reference.get_current_weapon()
-	var current_weapon_index = player_reference.current_weapon_index
+	var current_weapon_index = -1
+	
+	# 通过武器系统获取当前武器索引（如果武器系统存在）
+	if player_reference.weapon_system:
+		current_weapon_index = player_reference.weapon_system.get_current_weapon_index()
+	else:
+		# 向后兼容：通过查找当前武器在数组中的位置来获取索引
+		if current_weapon:
+			for i in range(weapons.size()):
+				if weapons[i].weapon_id == current_weapon.weapon_id:
+					current_weapon_index = i
+					break
 	
 	print("背包UI: 更新武器显示，共有", weapons.size(), "把武器")
 	print("背包UI: 当前武器:", current_weapon.weapon_name if current_weapon else "无", "索引:", current_weapon_index)
@@ -148,7 +159,10 @@ var is_updating_from_ui: bool = false  # 防止UI更新循环
 
 func _on_weapon_selected(index: int, pressed: bool):
 	if pressed and player_reference and not is_updating_from_ui:
-		print("背包UI: 选择武器索引:", index, "当前玩家武器索引:", player_reference.current_weapon_index)
+		var current_index = -1
+		if player_reference.weapon_system:
+			current_index = player_reference.weapon_system.get_current_weapon_index()
+		print("背包UI: 选择武器索引:", index, "当前玩家武器索引:", current_index)
 		is_updating_from_ui = true
 		player_reference.switch_to_weapon_by_index(index)
 		# 延迟重置标志，确保信号处理完毕

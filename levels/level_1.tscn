@@ -73,6 +73,7 @@ sword_type = 3
 position = Vector2(460, 89)
 
 [node name="CanvasLayer" type="CanvasLayer" parent="."]
+visible = false
 
 [node name="MiniMap" parent="CanvasLayer" instance=ExtResource("12_sntum")]
 offset_left = -433.0

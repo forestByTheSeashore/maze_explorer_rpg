@@ -34,7 +34,7 @@ grow_horizontal = 2
 grow_vertical = 2
 
 [node name="BarsContainer" type="HBoxContainer" parent="StatusBar/LeftSection"]
-custom_minimum_size = Vector2(260, 0)
+custom_minimum_size = Vector2(340, 0)
 layout_mode = 2
 
 [node name="HPContainer" type="HBoxContainer" parent="StatusBar/LeftSection/BarsContainer"]
@@ -68,6 +68,21 @@ custom_minimum_size = Vector2(200, 24)
 layout_mode = 2
 max_value = 50.0
 show_percentage = false
+
+[node name="LevelContainer" type="HBoxContainer" parent="StatusBar/LeftSection/BarsContainer"]
+layout_mode = 2
+
+[node name="LevelLabel" type="Label" parent="StatusBar/LeftSection/BarsContainer/LevelContainer"]
+layout_mode = 2
+text = "LEVEL:"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="LevelValue" type="Label" parent="StatusBar/LeftSection/BarsContainer/LevelContainer"]
+layout_mode = 2
+text = "1"
+horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="InventoryPanel" parent="StatusBar" instance=ExtResource("2_i1h5f")]
 layout_mode = 1

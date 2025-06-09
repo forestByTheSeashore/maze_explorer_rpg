@@ -1,6 +1,9 @@
 # level_1.gd
 extends Node2D
 
+# 关卡信息
+var current_level_name: String = "level_1"
+
 # 添加 GameManager 引用
 @onready var game_manager = get_node("/root/GameManager")
 
@@ -62,6 +65,11 @@ func _ready():
 		if ui_manager.has_signal("show_door_path_toggled"):
 			ui_manager.show_door_path_toggled.connect(_on_show_door_path_toggled)
 		print("UIManager信号已连接")
+		
+		# 通知UI管理器当前关卡信息
+		if ui_manager.has_method("update_level_info"):
+			ui_manager.update_level_info(current_level_name)
+			print("Level_1: 已通知UI管理器当前关卡：", current_level_name)
 
 	# 1. 入口门逻辑 (基本不变)
 	# entry_door.door_opened.connect(on_entry_door_opened) # 如果需要入口门打开时的特殊逻辑
@@ -111,6 +119,10 @@ func _ready():
 	# 默认隐藏minimap
 	if minimap:
 		minimap.visible = false
+
+func get_current_level_name() -> String:
+	"""返回当前关卡名称"""
+	return current_level_name
 
 # UIManager按钮回调函数
 func _on_minimap_toggled(enabled: bool):

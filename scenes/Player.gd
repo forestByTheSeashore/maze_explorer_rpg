@@ -18,22 +18,12 @@ var current_hp: int = 100
 var max_hp: int = 100 # 你之前的代码是500，如果GDD有定义初始值，以GDD为准
 var facing_direction_vector: Vector2 = Vector2.DOWN # 用于记录玩家的朝向，攻击和待机时使用
 
-# --- 新增：物品系统 ---
-var keys: Array[String] = []  # 玩家拥有的钥匙列表
-var has_sword: bool = false   # 是否拥有剑
-var hp_beans_consumed: int = 0  # 已消费的HP豆数量
+# --- 系统组件引用 ---
+var inventory_system: InventorySystem
+var weapon_system: WeaponSystem
 
-# --- 武器系统变量（替换现有的武器相关变量） ---
-var available_weapons: Array[WeaponData] = []  # 玩家已获得的武器列表
-var current_weapon_index: int = 0              # 当前装备的武器索引
-var current_weapon: WeaponData                 # 当前装备的武器
-
-# --- 新增：UI通知系统 ---
-signal inventory_changed  # 背包变化信号
-
-# --- 新增：输入防重复变量 ---
-var last_input_time: float = 0.0
-var input_cooldown: float = 0.2  # 输入冷却时间（秒）
+# --- 向后兼容的信号 ---
+signal inventory_changed  # 背包变化信号（向后兼容）
 
 
 # ============================================================================
@@ -43,13 +33,17 @@ func _ready():
 	add_to_group("player")
 	print("玩家节点已加入'player'组")
 	
+	# 动态创建和初始化系统组件
+	_initialize_systems()
+	
 	# 连接动画完成信号，主要用于攻击和死亡动画后的状态切换
 	animated_sprite.animation_finished.connect(_on_animation_finished)
-	# 初始设置一次朝向对应的待机动画
-	_update_idle_animation()
-
-	# 初始化武器系统
-	_initialize_weapon_system()
+	
+	# 连接系统信号（向后兼容）
+	if inventory_system:
+		inventory_system.inventory_changed.connect(_on_inventory_changed)
+	if weapon_system:
+		weapon_system.weapon_changed.connect(_on_weapon_changed)
 	
 	# 初始设置一次朝向对应的待机动画
 	_update_idle_animation()
@@ -60,14 +54,54 @@ func _ready():
 	# 通知UI系统玩家已准备就绪
 	call_deferred("_notify_ui_player_ready")
 
+# ============================================================================
+# 系统初始化
+# ============================================================================
+func _initialize_systems():
+	"""动态创建和初始化系统组件"""
+	# 创建背包系统
+	inventory_system = InventorySystem.new()
+	inventory_system.name = "InventorySystem"
+	add_child(inventory_system)
+	print("InventorySystem 创建完成")
+	
+	# 创建武器系统  
+	weapon_system = WeaponSystem.new()
+	weapon_system.name = "WeaponSystem"
+	add_child(weapon_system)
+	print("WeaponSystem 创建完成")
+
+# ============================================================================
+# 系统回调函数
+# ============================================================================
+func _on_inventory_changed():
+	"""背包系统变化回调"""
+	inventory_changed.emit()
+	_update_inventory_ui()
+
+func _on_weapon_changed(weapon: WeaponData):
+	"""武器系统变化回调"""
+	_recalculate_total_attacking_power()
+	inventory_changed.emit()
+	_update_inventory_ui()
+
+func _handle_inventory_input():
+	"""处理背包相关输入"""
+	# 背包切换（I键）
+	if Input.is_action_just_pressed("toggle_inventory"):
+		print("按下I键切换背包")
+		_toggle_inventory_panel()
+
 func _physics_process(_delta: float) -> void:
 	if current_state == PlayerState.DEATH:
 		# 如果玩家已死亡，不执行任何操作
 		# 死亡动画播放完毕后，可以通过 _on_animation_finished 处理后续逻辑
 		return
 
-	# 新增：处理武器切换和背包输入
-	_handle_weapon_input()
+	# 处理武器切换和背包输入
+	if weapon_system:
+		weapon_system.handle_weapon_input()
+	_handle_inventory_input()
 
 	# 1. 处理攻击输入
 	if Input.is_action_just_pressed("attack"): # "attack" 应该映射到 'J' 键
@@ -303,7 +337,8 @@ func update_ui():
 func increase_hp_from_bean(amount: int):
 	current_hp += amount
 	max_hp += amount
-	hp_beans_consumed += 1
+	if inventory_system:
+		inventory_system.consume_hp_bean()
 	_recalculate_total_attacking_power()
 	update_ui()
 	_update_inventory_ui()
@@ -317,12 +352,12 @@ func increase_hp_from_bean(amount: int):
 func _recalculate_total_attacking_power():
 	# 基于当前HP的攻击力
 	var hp_based_attack = int(current_hp / 5.0)
-	var weapon_attack = current_weapon.attack_power if current_weapon else 0
+	var weapon_attack = weapon_system.get_weapon_attack_power() if weapon_system else 0
 	print("重新计算攻击力：HP基础攻击力(", hp_based_attack, ") + 武器攻击力(", weapon_attack, ") = ", get_total_attack())
 
 func get_total_attack() -> int:
 	var hp_based_attack = int(current_hp / 5.0)
-	var weapon_attack = current_weapon.attack_power if current_weapon else 0
+	var weapon_attack = weapon_system.get_weapon_attack_power() if weapon_system else 0
 	return hp_based_attack + weapon_attack
 
 
@@ -544,35 +579,34 @@ func _find_best_ui_parent():
 # 钥匙系统
 # ============================================================================
 func add_key(key_type: String):
-	if key_type not in keys:
-		keys.append(key_type)
-		print("玩家获得钥匙：", key_type)
+	if inventory_system:
+		inventory_system.add_key(key_type)
 		# 更新界面显示
 		_update_inventory_ui()
 		# 通知背包UI更新
 		call_deferred("_notify_inventory_changed")
-	else:
-		print("玩家已经拥有钥匙：", key_type)
 
 func has_key(key_type: String) -> bool:
-	var result = key_type in keys
-	print("检查钥匙 '", key_type, "'：", "有" if result else "没有")
-	return result
+	if inventory_system:
+		return inventory_system.has_key(key_type)
+	return false
 
 func use_key(key_type: String) -> bool:
-	if has_key(key_type):
-		keys.erase(key_type)
-		print("玩家使用了钥匙：", key_type)
-		_update_inventory_ui()
-		# 通知背包UI更新
-		call_deferred("_notify_inventory_changed")
-		return true
+	if inventory_system:
+		var success = inventory_system.use_key(key_type)
+		if success:
+			_update_inventory_ui()
+			# 通知背包UI更新
+			call_deferred("_notify_inventory_changed")
+		return success
 	else:
-		print("玩家没有钥匙：", key_type, "，无法使用")
+		print("背包系统未找到，无法使用钥匙")
 		return false
 
 func get_keys() -> Array[String]:
-	return keys.duplicate()
+	if inventory_system:
+		return inventory_system.get_keys()
+	return []
 
 # ============================================================================
 # 修改界面更新函数，添加武器信息显示
@@ -580,197 +614,64 @@ func get_keys() -> Array[String]:
 func _update_inventory_ui():
 	print("=== 玩家状态更新 ===")
 	print("当前HP：", current_hp, " 最大HP：", max_hp)
+	var current_weapon = weapon_system.get_current_weapon() if weapon_system else null
 	print("当前武器：", current_weapon.weapon_name if current_weapon else "无", "（攻击力：", current_weapon.attack_power if current_weapon else 0, "）")
-	print("拥有武器数量：", available_weapons.size())
-	print("拥有钥匙：", keys)
-	print("已消费HP豆数量：", hp_beans_consumed)
+	print("拥有武器数量：", weapon_system.get_weapon_count() if weapon_system else 0)
+	print("拥有钥匙：", inventory_system.get_keys() if inventory_system else [])
+	print("已消费HP豆数量：", inventory_system.get_hp_beans_consumed() if inventory_system else 0)
 	print("总攻击力：", get_total_attack())
 	print("=====================")
 
 
 
 
-func _initialize_weapon_system():
-	# 确保武器数组为空
-	available_weapons.clear()
-	
-	# 创建基础武器
-	var basic_weapon = WeaponData.new()
-	basic_weapon.weapon_id = "basic_sword"
-	basic_weapon.weapon_name = "Basic Sword"
-	basic_weapon.attack_power = 5
-	basic_weapon.weapon_description = "基础武器"
-	
-	available_weapons.append(basic_weapon)
-	current_weapon_index = 0
-	current_weapon = basic_weapon
-	
-	print("武器系统初始化完成，初始武器：", basic_weapon.weapon_name, "，武器总数：", available_weapons.size())
-
 # ============================================================================
-# 武器获取系统
+# 向后兼容的武器接口函数（委托给武器系统）
 # ============================================================================
 func try_equip_weapon(weapon_id: String, weapon_name: String, weapon_attack: int) -> bool:
-	# 检查是否已经拥有这把武器
-	for weapon in available_weapons:
-		if weapon.weapon_id == weapon_id:
-			print("已经拥有武器：", weapon_name)
-			return false
-	
-	# 创建新武器数据
-	var new_weapon = WeaponData.new()
-	new_weapon.weapon_id = weapon_id
-	new_weapon.weapon_name = weapon_name
-	new_weapon.attack_power = weapon_attack
-	new_weapon.weapon_description = "从地图中获得的武器"
-	
-	# 将新武器添加到武器库
-	available_weapons.append(new_weapon)
-	
-	# 检查新武器是否比当前武器更强
-	if weapon_attack > current_weapon.attack_power:
-		# 自动切换到更强的武器
-		current_weapon_index = available_weapons.size() - 1
-		current_weapon = new_weapon
-		print("自动装备更强的武器：", weapon_name, "（攻击力：", weapon_attack, "）")
-	else:
-		print("获得新武器：", weapon_name, "（攻击力：", weapon_attack, "），但保持当前装备")
-	
-	_recalculate_total_attacking_power()
-	_update_inventory_ui()
-	
-	# 确保立即通知UI更新
-	call_deferred("_notify_inventory_changed")
-	
-	return true
+	"""尝试装备新武器（向后兼容接口）"""
+	if weapon_system:
+		return weapon_system.try_equip_weapon(weapon_id, weapon_name, weapon_attack)
+	return false
 
-# ============================================================================
-# 武器切换系统
-# ============================================================================
 func switch_to_next_weapon():
-	if available_weapons.size() <= 1:
-		print("只有一把武器，无法切换")
-		return
-	
-	var old_index = current_weapon_index
-	current_weapon_index = (current_weapon_index + 1) % available_weapons.size()
-	current_weapon = available_weapons[current_weapon_index]
-	
-	print("切换武器: 从索引", old_index, "到索引", current_weapon_index)
-	print("切换武器到：", current_weapon.weapon_name, "（攻击力：", current_weapon.attack_power, "）")
-	print("当前武器总数：", available_weapons.size())
-	_recalculate_total_attacking_power()
-	_update_inventory_ui()
-	
-	# 立即通知UI更新
-	call_deferred("_notify_inventory_changed")
+	"""切换到下一把武器（向后兼容接口）"""
+	if weapon_system:
+		weapon_system.switch_to_next_weapon()
 
 func switch_to_previous_weapon():
-	if available_weapons.size() <= 1:
-		print("只有一把武器，无法切换")
-		return
-	
-	current_weapon_index = (current_weapon_index - 1 + available_weapons.size()) % available_weapons.size()
-	current_weapon = available_weapons[current_weapon_index]
-	
-	print("切换武器到：", current_weapon.weapon_name, "（攻击力：", current_weapon.attack_power, "）")
-	_recalculate_total_attacking_power()
-	_update_inventory_ui()
-	
-	# 立即通知UI更新
-	call_deferred("_notify_inventory_changed")
+	"""切换到上一把武器（向后兼容接口）"""
+	if weapon_system:
+		weapon_system.switch_to_previous_weapon()
 
 func switch_to_weapon_by_index(index: int):
-	if index >= 0 and index < available_weapons.size():
-		print("切换武器到索引：", index, "当前索引：", current_weapon_index)
-		current_weapon_index = index
-		current_weapon = available_weapons[index]
-		
-		print("切换武器到：", current_weapon.weapon_name, "（攻击力：", current_weapon.attack_power, "）")
-		_recalculate_total_attacking_power()
-		_update_inventory_ui()
-		
-		# 只有非UI触发的切换才发送信号，避免循环
-		var ui_manager = get_tree().get_first_node_in_group("ui_manager")
-		var inventory_panel = ui_manager.get_node("InventoryPanel") if ui_manager else null
-		if not inventory_panel or not inventory_panel.is_updating_from_ui:
-			call_deferred("_notify_inventory_changed")
-	else:
-		print("无效的武器索引：", index, "可用武器数量：", available_weapons.size())
+	"""切换到指定索引的武器（向后兼容接口）"""
+	if weapon_system:
+		weapon_system.switch_to_weapon_by_index(index)
 
-# ============================================================================
-# 新增：武器输入处理
-# ============================================================================
-func _handle_weapon_input():
-	var current_time = Time.get_ticks_msec() / 1000.0
-	
-	# Tab键切换武器（检测Tab和Shift+Tab）
-	if Input.is_action_just_pressed("ui_focus_next") and not Input.is_key_pressed(KEY_SHIFT):
-		if current_time - last_input_time > input_cooldown:
-			print("按下Tab键切换到下一个武器")
-			switch_to_next_weapon()
-			last_input_time = current_time
-	elif Input.is_action_just_pressed("ui_focus_prev") or (Input.is_action_just_pressed("ui_focus_next") and Input.is_key_pressed(KEY_SHIFT)):
-		if current_time - last_input_time > input_cooldown:
-			print("按下Shift+Tab键切换到上一个武器")
-			switch_to_previous_weapon()
-			last_input_time = current_time
-	
-	# E和Q键武器切换
-	elif Input.is_action_just_pressed("weapon_next"):
-		if current_time - last_input_time > input_cooldown:
-			print("按下E键切换武器")
-			switch_to_next_weapon()
-			last_input_time = current_time
-	elif Input.is_action_just_pressed("weapon_previous"):
-		if current_time - last_input_time > input_cooldown:
-			print("按下Q键切换武器")
-			switch_to_previous_weapon()
-			last_input_time = current_time
-	
-	# 数字键快速切换武器（1-4键）
-	if Input.is_action_just_pressed("weapon_1"):
-		if current_time - last_input_time > input_cooldown:
-			print("按下数字键1切换武器")
-			switch_to_weapon_by_index(0)
-			last_input_time = current_time
-	elif Input.is_action_just_pressed("weapon_2"):
-		if current_time - last_input_time > input_cooldown:
-			print("按下数字键2切换武器")
-			switch_to_weapon_by_index(1)
-			last_input_time = current_time
-	elif Input.is_action_just_pressed("weapon_3"):
-		if current_time - last_input_time > input_cooldown:
-			print("按下数字键3切换武器")
-			switch_to_weapon_by_index(2)
-			last_input_time = current_time
-	elif Input.is_action_just_pressed("weapon_4"):
-		if current_time - last_input_time > input_cooldown:
-			print("按下数字键4切换武器")
-			switch_to_weapon_by_index(3)
-			last_input_time = current_time
-	
-	# 背包切换（I键）
-	if Input.is_action_just_pressed("toggle_inventory"):
-		print("按下I键切换背包")
-		_toggle_inventory_panel()
-
-# ============================================================================
-# 武器信息获取函数（供UI使用）
-# ============================================================================
 func get_available_weapons() -> Array[WeaponData]:
-	return available_weapons.duplicate()
+	"""获取所有可用武器（向后兼容接口）"""
+	if weapon_system:
+		return weapon_system.get_available_weapons()
+	return []
 
 func get_current_weapon() -> WeaponData:
-	return current_weapon
+	"""获取当前武器（向后兼容接口）"""
+	if weapon_system:
+		return weapon_system.get_current_weapon()
+	return null
 
 func get_weapon_count() -> int:
-	return available_weapons.size()
+	"""获取武器数量（向后兼容接口）"""
+	if weapon_system:
+		return weapon_system.get_weapon_count()
+	return 0
 
 # ============================================================================
 # UI通知系统
 # ============================================================================
 func _notify_inventory_changed():
+	"""向后兼容的通知函数"""
 	inventory_changed.emit()
 
 func _toggle_inventory_panel():

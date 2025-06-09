@@ -2,6 +2,7 @@
 extends CanvasLayer
 
 @onready var inventory_panel: Control = $StatusBar/InventoryPanel
+@onready var status_bar: Control = $StatusBar
 @onready var hp_bar = $StatusBar/LeftSection/BarsContainer/HPContainer/HPBar
 @onready var exp_bar = $StatusBar/LeftSection/BarsContainer/EXPContainer/EXPBar
 @onready var btn_nav = $StatusBar/ButtonSection/BtnNav
@@ -34,12 +35,20 @@ func _ready():
 	
 	# 尝试连接玩家
 	_try_connect_player()
+	
+	# 连接关卡管理器信号（如果存在）
+	if LevelManager:
+		if LevelManager.has_signal("level_ready_to_initialize"):
+			LevelManager.level_ready_to_initialize.connect(_on_level_changed)
 
 	# 连接按钮信号
 	btn_nav.pressed.connect(_on_btn_nav_pressed)
 	btn_inventory.pressed.connect(_on_btn_inventory_pressed)
 	btn_map.pressed.connect(_on_btn_map_pressed)
 	nav_menu.id_pressed.connect(_on_nav_menu_id_pressed)
+	
+	# 延迟更新关卡信息，确保所有系统都已初始化
+	call_deferred("_update_level_display")
 
 func _process(delta: float):
 	# 如果没有玩家引用，定期尝试重新连接
@@ -142,8 +151,43 @@ func _play_hp_increase_animation(new_hp: float, new_max_hp: float):
 	
 	print("动画设置完成")
 
+# ============================================================================
+# 关卡信息管理
+# ============================================================================
+func _on_level_changed(level_name: String):
+	"""当关卡改变时更新显示"""
+	print("UIManager: 接收到关卡变化信号: ", level_name)
+	_update_level_display(level_name)
+
+func _update_level_display(level_name: String = ""):
+	"""更新关卡显示"""
+	if status_bar and status_bar.has_method("update_level_info"):
+		status_bar.update_level_info(level_name)
+		print("UIManager: 已更新关卡显示: ", level_name)
+	else:
+		print("UIManager: 警告 - StatusBar 没有 update_level_info 方法")
+
+func update_level_info(level_name: String):
+	"""公共接口：更新关卡信息"""
+	_update_level_display(level_name)
+
+# ============================================================================
+# 按钮事件处理
+# ============================================================================
 func _on_btn_nav_pressed():
-	nav_menu.popup() # 弹出菜单
+	# 计算按钮的全局位置
+	var button_global_pos = btn_nav.global_position
+	var button_size = btn_nav.size
+	
+	# 设置菜单位置：在按钮下方显示
+	var menu_pos = Vector2i(
+		int(button_global_pos.x),
+		int(button_global_pos.y + button_size.y)
+	)
+	
+	# 弹出菜单到指定位置
+	nav_menu.popup_on_parent(Rect2i(menu_pos, Vector2i(0, 0)))
+	print("NAV菜单显示在位置: ", menu_pos)
 
 func _on_btn_inventory_pressed():
 	toggle_inventory()
