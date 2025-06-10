@@ -39,26 +39,26 @@ theme_override_constants/separation = 20
 [node name="GameOverTitle" type="Label" parent="VBoxContainer"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 48
-text = "游戏结束"
+text = "Game Over"
 horizontal_alignment = 1
 
 [node name="DeathMessage" type="Label" parent="VBoxContainer"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 18
-text = "你的角色死亡了..."
+text = "Your character has died..."
 horizontal_alignment = 1
 
 [node name="SaveAndReturnButton" type="Button" parent="VBoxContainer"]
 custom_minimum_size = Vector2(300, 60)
 layout_mode = 2
 theme_override_font_sizes/font_size = 16
-text = "存档当前关卡并返回主菜单"
+text = "Save current level and return to main menu"
 
 [node name="ReturnWithoutSaveButton" type="Button" parent="VBoxContainer"]
 custom_minimum_size = Vector2(300, 60)
 layout_mode = 2
 theme_override_font_sizes/font_size = 16
-text = "不存档，直接返回主菜单"
+text = "Return to main menu without saving"
 
 [node name="StatusLabel" type="Label" parent="VBoxContainer"]
 modulate = Color(1, 1, 1, 0.7)

@@ -52,27 +52,27 @@ theme_override_constants/separation = 20
 [node name="StartButton" type="Button" parent="VBoxContainer"]
 custom_minimum_size = Vector2(200, 50)
 layout_mode = 2
-text = "开始游戏"
+text = "Start Game"
 
 [node name="ContinueButton" type="Button" parent="VBoxContainer"]
 custom_minimum_size = Vector2(200, 50)
 layout_mode = 2
-text = "继续游戏"
+text = "Continue Game"
 
 [node name="TutorialButton" type="Button" parent="VBoxContainer"]
 custom_minimum_size = Vector2(200, 50)
 layout_mode = 2
-text = "玩法说明"
+text = "Gameplay Instructions"
 
 [node name="SettingsButton" type="Button" parent="VBoxContainer"]
 custom_minimum_size = Vector2(200, 50)
 layout_mode = 2
-text = "设置"
+text = "Settings"
 
 [node name="QuitButton" type="Button" parent="VBoxContainer"]
 custom_minimum_size = Vector2(200, 50)
 layout_mode = 2
-text = "退出游戏"
+text = "Quit Game"
 
 [node name="Version" type="Label" parent="."]
 layout_mode = 1

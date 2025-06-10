@@ -40,7 +40,7 @@ theme_override_constants/separation = 20
 [node name="Title" type="Label" parent="ScrollContainer/VBoxContainer"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 32
-text = "🎮 游戏玩法说明"
+text = "🎮 Gameplay Instructions"
 horizontal_alignment = 1
 
 [node name="MovementSection" type="VBoxContainer" parent="ScrollContainer/VBoxContainer"]
@@ -50,17 +50,17 @@ theme_override_constants/separation = 10
 [node name="MovementTitle" type="Label" parent="ScrollContainer/VBoxContainer/MovementSection"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 22
-text = "🚶 角色移动"
+text = "🚶 Character Movement"
 
 [node name="MovementContent" type="RichTextLabel" parent="ScrollContainer/VBoxContainer/MovementSection"]
 custom_minimum_size = Vector2(0, 100)
 layout_mode = 2
 bbcode_enabled = true
-text = "[color=lightgreen]• WASD 键[/color] 或 [color=lightgreen]方向键[/color] - 移动角色
-[color=gray]  W/↑ - 向上移动
-  A/← - 向左移动  
-  S/↓ - 向下移动
-  D/→ - 向右移动[/color]"
+text = "[color=lightgreen]• WASD keys[/color] or [color=lightgreen]Arrow keys[/color] - Move the character
+[color=gray]  W/↑ - Move up
+  A/← - Move left  
+  S/↓ - Move down
+  D/→ - Move right[/color]"
 fit_content = true
 
 [node name="InteractionSection" type="VBoxContainer" parent="ScrollContainer/VBoxContainer"]
@@ -70,15 +70,15 @@ theme_override_constants/separation = 10
 [node name="InteractionTitle" type="Label" parent="ScrollContainer/VBoxContainer/InteractionSection"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 22
-text = "🔄 互动操作"
+text = "🔄 Interaction"
 
 [node name="InteractionContent" type="RichTextLabel" parent="ScrollContainer/VBoxContainer/InteractionSection"]
 custom_minimum_size = Vector2(0, 80)
 layout_mode = 2
 bbcode_enabled = true
-text = "[color=yellow]• F 键[/color] - 与物品、门等进行互动
-[color=gray]  靠近门按F键开门（需要对应钥匙）
-  靠近物品按F键拾取[/color]"
+text = "[color=yellow]• F key[/color] - Interact with items, doors, etc.
+[color=gray]  Press F key near a door to open it (requires the corresponding key)
+  Press F key near an item to pick it up[/color]"
 fit_content = true
 
 [node name="CombatSection" type="VBoxContainer" parent="ScrollContainer/VBoxContainer"]
@@ -88,18 +88,18 @@ theme_override_constants/separation = 10
 [node name="CombatTitle" type="Label" parent="ScrollContainer/VBoxContainer/CombatSection"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 22
-text = "⚔️ 战斗系统"
+text = "⚔️ Combat System"
 
 [node name="CombatContent" type="RichTextLabel" parent="ScrollContainer/VBoxContainer/CombatSection"]
 custom_minimum_size = Vector2(0, 120)
 layout_mode = 2
 bbcode_enabled = true
-text = "[color=red]• J 键[/color] - 攻击敌人
-[color=orange]• 1-4 数字键[/color] - 快速切换武器
-[color=cyan]• Tab 键[/color] - 切换到下一个武器
-[color=cyan]• Shift+Tab[/color] - 切换到上一个武器
-[color=gray]  不同类型的武器有不同的攻击力
-  击败敌人可能掉落物品[/color]"
+text = "[color=red]• J key[/color] - Attack enemies
+[color=orange]• 1-4 number keys[/color] - Quick switch weapons
+[color=cyan]• Tab key[/color] - Switch to the next weapon
+[color=cyan]• Shift+Tab[/color] - Switch to the previous weapon
+[color=gray]  Different weapon types have different attack power
+  Defeating enemies may drop items[/color]"
 fit_content = true
 
 [node name="InventorySection" type="VBoxContainer" parent="ScrollContainer/VBoxContainer"]
@@ -109,16 +109,16 @@ theme_override_constants/separation = 10
 [node name="InventoryTitle" type="Label" parent="ScrollContainer/VBoxContainer/InventorySection"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 22
-text = "🎒 物品管理"
+text = "🎒 Inventory Management"
 
 [node name="InventoryContent" type="RichTextLabel" parent="ScrollContainer/VBoxContainer/InventorySection"]
 custom_minimum_size = Vector2(0, 100)
 layout_mode = 2
 bbcode_enabled = true
-text = "[color=purple]• I 键[/color] - 打开/关闭物品栏
-[color=gray]  物品栏显示你收集的所有物品
-  包括钥匙、武器、回血豆等
-  可以查看物品详细信息[/color]"
+text = "[color=purple]• I key[/color] - Open/Close inventory
+[color=gray]  The inventory displays all the items you have collected
+  Including keys, weapons, health beans, etc.
+  You can view detailed information about the items[/color]"
 fit_content = true
 
 [node name="NavigationSection" type="VBoxContainer" parent="ScrollContainer/VBoxContainer"]
@@ -128,17 +128,17 @@ theme_override_constants/separation = 10
 [node name="NavigationTitle" type="Label" parent="ScrollContainer/VBoxContainer/NavigationSection"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 22
-text = "🧭 导航辅助"
+text = "🧭 Navigation Assistance"
 
 [node name="NavigationContent" type="RichTextLabel" parent="ScrollContainer/VBoxContainer/NavigationSection"]
 custom_minimum_size = Vector2(0, 120)
 layout_mode = 2
 bbcode_enabled = true
-text = "[color=yellow]• F1 键[/color] - 显示/隐藏到钥匙的路径
-[color=cyan]• F2 键[/color] - 显示/隐藏到出口门的路径
-[color=lightblue]• M 键[/color] - 打开/关闭小地图
-[color=gray]  路径会以彩色线条显示最佳路线
-  小地图显示当前关卡的整体布局[/color]"
+text = "[color=yellow]• F1 key[/color] - Show/Hide path to the key
+[color=cyan]• F2 key[/color] - Show/Hide path to the exit door
+[color=lightblue]• M key[/color] - Open/Close mini-map
+[color=gray]  Paths are displayed with colored lines showing the best route
+  The mini-map shows the overall layout of the current level[/color]"
 fit_content = true
 
 [node name="SaveSection" type="VBoxContainer" parent="ScrollContainer/VBoxContainer"]
@@ -148,15 +148,15 @@ theme_override_constants/separation = 10
 [node name="SaveTitle" type="Label" parent="ScrollContainer/VBoxContainer/SaveSection"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 22
-text = "💾 保存/加载"
+text = "💾 Save/Load"
 
 [node name="SaveContent" type="RichTextLabel" parent="ScrollContainer/VBoxContainer/SaveSection"]
 custom_minimum_size = Vector2(0, 80)
 layout_mode = 2
 bbcode_enabled = true
-text = "[color=green]• F5 键[/color] - 快速保存游戏
-[color=lightgreen]• F6 键[/color] - 快速加载游戏
-[color=gray]  随时保存你的游戏进度[/color]"
+text = "[color=green]• F5 key[/color] - Quick save game
+[color=lightgreen]• F6 key[/color] - Quick load game
+[color=gray]  Save your game progress anytime[/color]"
 fit_content = true
 
 [node name="PauseSection" type="VBoxContainer" parent="ScrollContainer/VBoxContainer"]
@@ -166,14 +166,14 @@ theme_override_constants/separation = 10
 [node name="PauseTitle" type="Label" parent="ScrollContainer/VBoxContainer/PauseSection"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 22
-text = "⏸️ 游戏暂停"
+text = "⏸️ Game Pause"
 
 [node name="PauseContent" type="RichTextLabel" parent="ScrollContainer/VBoxContainer/PauseSection"]
 custom_minimum_size = Vector2(0, 60)
 layout_mode = 2
 bbcode_enabled = true
-text = "[color=white]• ESC 键[/color] - 暂停/恢复游戏
-[color=gray]  暂停时可以访问设置菜单[/color]"
+text = "[color=white]• ESC key[/color] - Pause/Resume game
+[color=gray]  Access settings menu when paused[/color]"
 fit_content = true
 
 [node name="ObjectivesSection" type="VBoxContainer" parent="ScrollContainer/VBoxContainer"]
@@ -183,18 +183,18 @@ theme_override_constants/separation = 10
 [node name="ObjectivesTitle" type="Label" parent="ScrollContainer/VBoxContainer/ObjectivesSection"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 22
-text = "🎯 游戏目标"
+text = "🎯 Game Objectives"
 
 [node name="ObjectivesContent" type="RichTextLabel" parent="ScrollContainer/VBoxContainer/ObjectivesSection"]
 custom_minimum_size = Vector2(0, 120)
 layout_mode = 2
 bbcode_enabled = true
-text = "[color=gold]主要目标：[/color]
-• 探索迷宫，寻找钥匙
-• 使用钥匙打开出口门
-• 击败路上的敌人
-• 收集有用的物品和武器
-[color=lightblue]• 到达下一关卡[/color]"
+text = "[color=gold]Main Objectives:[/color]
+• Explore the maze and find keys
+• Use keys to open the exit door
+• Defeat enemies along the way
+• Collect useful items and weapons
+[color=lightblue]• Reach the next level[/color]"
 fit_content = true
 
 [node name="TipsSection" type="VBoxContainer" parent="ScrollContainer/VBoxContainer"]
@@ -204,20 +204,20 @@ theme_override_constants/separation = 10
 [node name="TipsTitle" type="Label" parent="ScrollContainer/VBoxContainer/TipsSection"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 22
-text = "💡 游戏技巧"
+text = "💡 Game Tips"
 
 [node name="TipsContent" type="RichTextLabel" parent="ScrollContainer/VBoxContainer/TipsSection"]
 custom_minimum_size = Vector2(0, 140)
 layout_mode = 2
 bbcode_enabled = true
-text = "[color=lightgreen]• 探索要点：[/color]
-  - 仔细探索每个角落，寻找隐藏的物品
-  - 利用导航功能找到最佳路径
-  - 收集回血豆恢复生命值
-[color=orange]• 战斗技巧：[/color]
-  - 合理使用不同类型的武器
-  - 观察敌人的攻击模式
-  - 保持距离进行战术性攻击"
+text = "[color=lightgreen]• Exploration Tips:[/color]
+  - Carefully explore every corner to find hidden items
+  - Use navigation features to find the best path
+  - Collect health beans to restore health
+[color=orange]• Combat Tips:[/color]
+  - Use different types of weapons wisely
+  - Observe enemy attack patterns
+  - Maintain distance for tactical attacks"
 fit_content = true
 
 [node name="BackButton" type="Button" parent="."]
@@ -231,7 +231,7 @@ offset_top = -70.0
 offset_right = 200.0
 offset_bottom = -20.0
 grow_vertical = 0
-text = "返回主菜单"
+text = "Back to Main Menu"
 
 [node name="CloseButton" type="Button" parent="."]
 custom_minimum_size = Vector2(100, 40)
@@ -244,4 +244,4 @@ offset_top = 20.0
 offset_right = -20.0
 offset_bottom = 60.0
 grow_horizontal = 0
-text = "✕ 关闭"
+text = "✕ Close"

@@ -46,3 +46,4 @@ offset_bottom = 219.0
 [node name="PauseMenu" parent="CanvasLayer" instance=ExtResource("13_jwtdq")]
 
 [node name="GameOverScreen" parent="CanvasLayer" instance=ExtResource("14_ukrcy")]
+scale = Vector2(1, 0.995918)

@@ -39,23 +39,23 @@ theme_override_constants/separation = 15
 [node name="Title" type="Label" parent="VBoxContainer"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 32
-text = "游戏暂停"
+text = "Game Paused"
 horizontal_alignment = 1
 
 [node name="ResumeButton" type="Button" parent="VBoxContainer"]
 custom_minimum_size = Vector2(200, 50)
 layout_mode = 2
-text = "继续游戏"
+text = "Continue Game"
 
 [node name="SaveButton" type="Button" parent="VBoxContainer"]
 custom_minimum_size = Vector2(200, 50)
 layout_mode = 2
-text = "保存游戏"
+text = "Save Game"
 
 [node name="LoadButton" type="Button" parent="VBoxContainer"]
 custom_minimum_size = Vector2(200, 50)
 layout_mode = 2
-text = "加载游戏"
+text = "Load Game"
 
 [node name="StatusLabel" type="Label" parent="VBoxContainer"]
 modulate = Color(1, 1, 1, 0.3)
@@ -69,20 +69,20 @@ layout_mode = 2
 [node name="EncryptionLabel" type="Label" parent="VBoxContainer/EncryptionContainer"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 14
-text = "存档加密:"
+text = "Save Encryption:"
 horizontal_alignment = 1
 
 [node name="EncryptionToggle" type="CheckBox" parent="VBoxContainer/EncryptionContainer"]
 layout_mode = 2
 button_pressed = true
-text = "启用"
+text = "Enable"
 
 [node name="MainMenuButton" type="Button" parent="VBoxContainer"]
 custom_minimum_size = Vector2(200, 50)
 layout_mode = 2
-text = "返回主菜单"
+text = "Back to Main Menu"
 
 [node name="QuitButton" type="Button" parent="VBoxContainer"]
 custom_minimum_size = Vector2(200, 50)
 layout_mode = 2
-text = "退出游戏"
+text = "Quit Game"

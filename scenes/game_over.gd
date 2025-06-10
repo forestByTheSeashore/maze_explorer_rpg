@@ -164,7 +164,12 @@ func _enable_buttons():
 
 # 显示Game Over页面的公共方法
 func show_game_over():
-	print("GameOver: 显示Game Over页面")
+	print("GameOver: Showing Game Over screen")
+	
+	# 清理任何残留的屏幕效果
+	var effects_manager = get_node_or_null("/root/EffectsManager")
+	if effects_manager and effects_manager.has_method("clear_screen_flash_effects"):
+		effects_manager.clear_screen_flash_effects()
 	
 	# 暂停游戏
 	get_tree().paused = true
@@ -176,4 +181,4 @@ func show_game_over():
 	_enable_buttons()
 	
 	# 重置状态文本
-	_show_status("选择你的操作", Color.WHITE) 
+	_show_status("Choose your action", Color.WHITE) 

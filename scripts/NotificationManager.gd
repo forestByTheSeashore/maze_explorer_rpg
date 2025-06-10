@@ -1,14 +1,14 @@
 extends CanvasLayer
 
-# 通知管理器 - 用于显示游戏中的各种消息
-# 例如：保存成功、加载失败等
+# Notification Manager - Used to display various messages in the game
+# Examples: save successful, load failed, etc.
 
 var notification_container: VBoxContainer
 var notification_queue = []
-var max_notifications = 5  # 增加最大通知数量
+var max_notifications = 5  # Increased maximum number of notifications
 var notification_duration = 3.0
 
-# 通知类型配置
+# Notification type configurations
 var notification_types = {
 	"success": {
 		"color": Color(0.2, 0.8, 0.2, 0.95),
@@ -48,57 +48,57 @@ var notification_types = {
 }
 
 func _ready():
-	print("NotificationManager: 开始初始化...")
+	print("NotificationManager: Initializing...")
 	
-	# 确保通知系统在暂停时也能工作
+	# Ensure notification system works even when paused
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	
-	# 创建通知容器
+	# Create notification container
 	notification_container = VBoxContainer.new()
 	notification_container.name = "NotificationContainer"
 	notification_container.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
-	notification_container.position = Vector2(-320, 20)  # 右上角位置
+	notification_container.position = Vector2(-320, 20)  # Top-right position
 	notification_container.custom_minimum_size = Vector2(300, 0)
 	add_child(notification_container)
 	
-	print("NotificationManager: 初始化完成")
+	print("NotificationManager: Initialization Complete")
 
-# 显示通知消息
+# Display notification message
 func show_notification(message: String, type: String = "info", duration: float = 3.0):
-	print("NotificationManager: 显示通知 - ", message)
+	print("NotificationManager: Showing notification - ", message)
 	
-	# 播放音效
+	# Play sound effect
 	_play_notification_sound(type)
 	
-	# 创建通知节点
+	# Create notification node
 	var notification = create_notification_node(message, type)
 	
-	# 添加到容器
+	# Add to container
 	notification_container.add_child(notification)
 	notification_queue.append(notification)
 	
-	# 如果通知太多，移除最早的
+	# Remove oldest if too many
 	while notification_queue.size() > max_notifications:
 		var old_notification = notification_queue.pop_front()
 		if is_instance_valid(old_notification):
 			remove_notification(old_notification)
 	
-	# 设置自动移除
+	# Set auto-removal
 	var timer = get_tree().create_timer(duration)
 	timer.timeout.connect(func(): remove_notification(notification))
 	
-	# 显示动画
+	# Show animation
 	animate_notification_in(notification)
 
-# 创建通知节点
+# Create notification node
 func create_notification_node(message: String, type: String) -> Control:
 	var notification = Panel.new()
 	notification.custom_minimum_size = Vector2(300, 70)
 	
-	# 获取类型配置
+	# Get type configuration
 	var type_config = notification_types.get(type, notification_types["info"])
 	
-	# 设置样式
+	# Set style
 	var style_box = StyleBoxFlat.new()
 	style_box.bg_color = type_config.color
 	style_box.corner_radius_top_left = 10
@@ -112,13 +112,13 @@ func create_notification_node(message: String, type: String) -> Control:
 	style_box.border_color = Color.WHITE.lerp(type_config.color, 0.3)
 	notification.add_theme_stylebox_override("panel", style_box)
 	
-	# 创建主容器
+	# Create main container
 	var main_container = HBoxContainer.new()
 	main_container.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	main_container.add_theme_constant_override("separation", 10)
 	notification.add_child(main_container)
 	
-	# 添加图标
+	# Add icon
 	var icon_label = Label.new()
 	icon_label.text = type_config.icon
 	icon_label.add_theme_font_size_override("font_size", 24)
@@ -127,7 +127,7 @@ func create_notification_node(message: String, type: String) -> Control:
 	icon_label.custom_minimum_size = Vector2(40, 0)
 	main_container.add_child(icon_label)
 	
-	# 添加文本标签
+	# Add text label
 	var label = Label.new()
 	label.text = message
 	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -139,7 +139,7 @@ func create_notification_node(message: String, type: String) -> Control:
 	
 	return notification
 
-# 播放通知音效
+# Play notification sound
 func _play_notification_sound(type: String):
 	var type_config = notification_types.get(type, notification_types["info"])
 	var sound_name = type_config.get("sound")
@@ -147,7 +147,7 @@ func _play_notification_sound(type: String):
 	if sound_name:
 		var audio_manager = get_node_or_null("/root/AudioManager")
 		if audio_manager and audio_manager.has_method("play_sfx"):
-			# 简化版音频系统的音效映射
+			# Simplified audio system sound mapping
 			var simple_sound = ""
 			match sound_name:
 				"pickup":
@@ -159,21 +159,21 @@ func _play_notification_sound(type: String):
 				"level_complete":
 					simple_sound = "victory"
 				_:
-					simple_sound = "button"  # 默认使用按钮音效
+					simple_sound = "button"  # Default to button sound
 			
 			audio_manager.play_sfx(simple_sound, -5.0)
 
-# 移除通知
+# Remove notification
 func remove_notification(notification: Control):
 	if is_instance_valid(notification) and notification in notification_queue:
 		notification_queue.erase(notification)
 		animate_notification_out(notification)
 
-# 显示动画
+# Show animation
 func animate_notification_in(notification: Control):
 	notification.modulate.a = 0.0
 	notification.scale = Vector2(0.8, 0.8)
-	notification.position.x += 50  # 从右侧滑入
+	notification.position.x += 50  # Slide in from right
 	
 	var tween = create_tween()
 	tween.set_parallel(true)
@@ -181,7 +181,7 @@ func animate_notification_in(notification: Control):
 	tween.tween_property(notification, "scale", Vector2(1.0, 1.0), 0.4)
 	tween.tween_property(notification, "position:x", notification.position.x - 50, 0.4)
 
-# 隐藏动画
+# Hide animation
 func animate_notification_out(notification: Control):
 	if not is_instance_valid(notification):
 		return
@@ -196,14 +196,14 @@ func animate_notification_out(notification: Control):
 			notification.queue_free()
 	).set_delay(0.3)
 
-# 清除所有通知
+# Clear all notifications
 func clear_all_notifications():
 	for notification in notification_queue:
 		if is_instance_valid(notification):
 			notification.queue_free()
 	notification_queue.clear()
 
-# 便捷方法
+# Convenience methods
 func show_success(message: String, duration: float = 3.0):
 	show_notification(message, "success", duration)
 
@@ -226,65 +226,65 @@ func show_navigation(message: String, duration: float = 3.0):
 	show_notification(message, "navigation", duration)
 
 ## ============================================================================
-## 游戏特定的通知方法
+## Game-specific notification methods
 ## ============================================================================
 
-# 钥匙相关通知
-func notify_key_obtained(key_type: String = "钥匙"):
-	show_pickup("🔑 成功获得" + key_type + "！现在可以打开门了", 4.0)
+# Key-related notifications
+func notify_key_obtained(key_type: String = "Key"):
+	show_pickup("🔑 Successfully obtained " + key_type + "! Now you can open the door", 4.0)
 
-func notify_key_used(key_type: String = "钥匙"):
-	show_info("🔑 使用了" + key_type)
+func notify_key_used(key_type: String = "Key"):
+	show_info("🔑 Used " + key_type)
 
-func notify_key_required(key_type: String = "钥匙"):
-	show_warning("🚪 这扇门需要" + key_type + "才能打开")
+func notify_key_required(key_type: String = "Key"):
+	show_warning("🚪 This door requires " + key_type + " to open")
 
 func notify_key_already_collected():
-	show_navigation("🔑 钥匙已经被拾取！请导航到出口门")
+	show_navigation("🔑 Key already collected! Navigate to the exit door")
 
-# 导航相关通知
+# Navigation-related notifications
 func notify_navigation_to_key():
-	show_navigation("🧭 显示到钥匙的路径")
+	show_navigation("🧭 Showing path to key")
 
 func notify_navigation_to_door():
-	show_navigation("🧭 显示到出口门的路径")
+	show_navigation("🧭 Showing path to exit door")
 
 func notify_navigation_disabled():
-	show_info("🧭 路径提示已关闭")
+	show_info("🧭 Path guidance disabled")
 
-# 物品拾取通知
+# Item pickup notifications
 func notify_weapon_obtained(weapon_name: String, attack_power: int):
-	show_pickup("⚔️ 获得武器：" + weapon_name + "（攻击力+" + str(attack_power) + "）", 3.5)
+	show_pickup("⚔️ Obtained weapon: " + weapon_name + " (Attack +" + str(attack_power) + ")", 3.5)
 
 func notify_hp_increased(amount: int):
-	show_pickup("❤️ 生命值永久增加+" + str(amount) + "！", 3.0)
+	show_pickup("❤️ HP permanently increased +" + str(amount) + "!", 3.0)
 
-# 战斗相关通知
+# Combat-related notifications
 func notify_enemy_defeated(enemy_name: String):
-	show_success("⚔️ 击败了" + enemy_name + "！")
+	show_success("⚔️ Defeated " + enemy_name + "!")
 
 func notify_player_hurt(damage: int):
-	show_warning("💔 受到" + str(damage) + "点伤害！")
+	show_warning("💔 Took " + str(damage) + " damage!")
 
-# 游戏进度通知
+# Game progress notifications
 func notify_level_complete():
-	show_achievement("🎉 关卡完成！恭喜通关！", 6.0)
+	show_achievement("🎉 Level complete! Congratulations!", 6.0)
 
 func notify_door_opened():
-	show_success("🚪 门已打开！")
+	show_success("🚪 Door opened!")
 
 func notify_door_locked():
-	show_warning("🔒 门被锁住了")
+	show_warning("🔒 Door is locked")
 
-# 系统通知
+# System notifications
 func notify_game_saved():
-	show_success("💾 游戏已保存")
+	show_success("💾 Game saved")
 
 func notify_game_loaded():
-	show_success("📁 游戏已加载")
+	show_success("📁 Game loaded")
 
 func notify_quick_save():
-	show_info("💾 快速保存中...")
+	show_info("💾 Quick saving...")
 
 func notify_quick_load():
-	show_info("📁 快速加载中...") 
+	show_info("📁 Quick loading...")

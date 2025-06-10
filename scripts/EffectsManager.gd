@@ -406,24 +406,48 @@ func create_trail_effect(start_pos: Vector2, end_pos: Vector2, color: Color = Co
 
 ## 屏幕特效
 func create_screen_flash(color: Color = Color.WHITE, duration: float = 0.2):
+	print("EffectsManager: Creating screen flash effect")
+	
+	# 确保当前场景存在
+	if not get_tree() or not get_tree().current_scene:
+		print("EffectsManager: No current scene, skipping screen flash")
+		return
+	
 	var overlay = ColorRect.new()
+	overlay.name = "ScreenFlashOverlay"
 	overlay.color = color
 	overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	
 	var canvas = CanvasLayer.new()
+	canvas.name = "ScreenFlashCanvas"
 	canvas.layer = 1000
+	canvas.process_mode = Node.PROCESS_MODE_ALWAYS  # 确保在暂停时也能工作
 	canvas.add_child(overlay)
 	get_tree().current_scene.add_child(canvas)
 	
-	var tween = create_tween()
-	tween.tween_property(overlay, "modulate:a", 0.0, duration)
-	tween.tween_callback(func():
+	# 使用timer作为备用清理机制
+	var cleanup_timer = get_tree().create_timer(duration + 1.0)  # 额外1秒确保清理
+	cleanup_timer.timeout.connect(func():
 		if is_instance_valid(canvas):
+			print("EffectsManager: Timer cleanup of screen flash")
 			canvas.queue_free()
 	)
 	
-	print("EffectsManager: 创建屏幕闪光特效")
+	# 使用tween进行淡出动画
+	var tween = create_tween()
+	if tween:
+		tween.tween_property(overlay, "modulate:a", 0.0, duration)
+		tween.tween_callback(func():
+			if is_instance_valid(canvas):
+				print("EffectsManager: Tween cleanup of screen flash")
+				canvas.queue_free()
+		)
+	else:
+		# 如果tween创建失败，直接使用timer清理
+		print("EffectsManager: Tween creation failed, using timer for cleanup")
+	
+	print("EffectsManager: Screen flash effect created with duration: ", duration)
 
 func create_damage_number(position: Vector2, damage: int, color: Color = Color.RED):
 	var label = Label.new()
@@ -453,7 +477,30 @@ func clear_all_effects():
 			effect.queue_free()
 	active_effects.clear()
 	
+	# 清理屏幕闪烁效果
+	clear_screen_flash_effects()
+	
 	print("EffectsManager: 已清理所有特效")
+
+func clear_screen_flash_effects():
+	"""清理所有屏幕闪烁效果"""
+	if not get_tree() or not get_tree().current_scene:
+		return
+	
+	var current_scene = get_tree().current_scene
+	var canvas_layers = current_scene.find_children("ScreenFlashCanvas", "", true, false)
+	
+	for canvas in canvas_layers:
+		if is_instance_valid(canvas):
+			print("EffectsManager: Removing residual screen flash canvas: ", canvas.name)
+			canvas.queue_free()
+	
+	# 也检查任何可能遗留的ColorRect
+	var flash_overlays = current_scene.find_children("ScreenFlashOverlay", "", true, false)
+	for overlay in flash_overlays:
+		if is_instance_valid(overlay):
+			print("EffectsManager: Removing residual screen flash overlay: ", overlay.name)
+			overlay.queue_free()
 
 ## 获取特效统计
 func get_active_effects_count() -> int:
