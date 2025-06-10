@@ -35,6 +35,11 @@ func _on_body_entered(body):
     if body.has_method("increase_hp_from_bean"):
         body.increase_hp_from_bean(hp_increase)
         print("玩家的HP永久增加了 ", hp_increase, " 点！")
+        
+        # 显示HP增加通知
+        var notification_manager = get_node_or_null("/root/NotificationManager")
+        if notification_manager:
+            notification_manager.notify_hp_increased(hp_increase)
     
     # 播放拾取效果
     _play_pickup_effect()

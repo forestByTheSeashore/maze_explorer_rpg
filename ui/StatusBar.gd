@@ -49,7 +49,12 @@ func _format_level_name(level_name: String) -> String:
 
 func _get_current_level_name() -> String:
 	"""获取当前关卡名称"""
-	# 首先尝试从LevelManager获取
+	# 首先尝试从SaveManager获取当前关卡（适用于加载存档的情况）
+	var save_manager = get_node_or_null("/root/SaveManager")
+	if save_manager and save_manager.current_level_name != "":
+		return save_manager.current_level_name
+	
+	# 尝试从LevelManager获取
 	if LevelManager and LevelManager.next_level_name != "":
 		return LevelManager.next_level_name
 	
@@ -63,7 +68,12 @@ func _get_current_level_name() -> String:
 	# 尝试从场景名称推断
 	if current_scene:
 		var scene_name = current_scene.name.to_lower()
-		if scene_name.contains("level"):
+		# 特殊处理：如果是base_level场景，可能是level_2或更高
+		if scene_name == "base_level":
+			# 优先从场景文件路径推断
+			if current_scene.scene_file_path.contains("base_level"):
+				return "level_2"  # base_level场景默认为level_2
+		elif scene_name.contains("level"):
 			# 从场景名中提取关卡信息
 			for i in range(1, 10):
 				if scene_name.contains(str(i)):

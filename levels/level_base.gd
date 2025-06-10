@@ -58,6 +58,19 @@ var show_path_to_key := false
 var show_path_to_door := false
 var path_lines := []  # 存储所有路径线
 
+# 新增：路径显示设置（统一到Level1的方案）
+var path_width := 4.0       # 路径线宽度
+var path_smoothing := true  # 是否平滑路径
+var path_gradient := true   # 是否使用渐变色
+
+# 统一颜色方案
+const PATH_COLORS = {
+	"key": Color.YELLOW,      # 钥匙路径：黄色
+	"door": Color.CYAN,       # 门路径：青色
+	"weapon": Color.GREEN,    # 武器路径：绿色（扩展）
+	"hp": Color.ORANGE        # HP豆路径：橙色（扩展）
+}
+
 # 当前关卡名称（由LevelManager设置）
 var current_level_name: String = ""
 
@@ -65,6 +78,11 @@ func _ready():
 	print("=== 关卡初始化开始 ===")
 	print("当前场景名称: ", scene_file_path)
 	print("当前节点名称: ", name)
+	
+	# 初始化路径状态（统一到Level1方案）
+	show_path_to_key = false
+	show_path_to_door = false
+	path_lines.clear()
 	
 	# 连接UIManager信号
 	if ui_manager:
@@ -122,9 +140,19 @@ func _ready():
 		# 如果LevelManager已准备好初始化，立即调用初始化
 		if level_manager._should_initialize and level_manager.next_level_name != "":
 			print("LevelManager已准备好初始化，立即初始化关卡")
-			await level_manager.initialize_level()
+			print("LevelManager.next_level_name: ", level_manager.next_level_name)
+			
+			# 检查关卡配置是否存在
+			if level_manager.LEVEL_CONFIGS.has(level_manager.next_level_name):
+				await level_manager.initialize_level()
+			else:
+				print("错误: 关卡配置不存在，使用默认配置")
+				# 设置默认关卡名称
+				current_level_name = "level_2" # 默认为level_2
+				await init_level()
 		else:
 			print("LevelManager未准备好初始化，使用默认配置")
+			current_level_name = "level_2" # 默认为level_2
 			await init_level()
 	else:
 		print("未找到LevelManager，使用默认配置")
@@ -173,6 +201,12 @@ func init_level() -> void:
 		if ui_manager.has_method("update_level_info"):
 			ui_manager.update_level_info(current_level_name)
 			print("LevelBase: 已通知UI管理器当前关卡：", current_level_name)
+	
+	# 同时更新SaveManager的current_level_name
+	var save_manager = get_node_or_null("/root/SaveManager")
+	if save_manager and current_level_name != "":
+		save_manager.current_level_name = current_level_name
+		print("LevelBase: 已更新SaveManager的当前关卡：", current_level_name)
 
 	# 连接出口门的打开信号
 	if exit_door:
@@ -204,6 +238,9 @@ func init_level() -> void:
 	print("步骤 4: 确保从入口到出口有一条可行路径...")
 	ensure_path_from_entrance_to_exit()
 
+	print("步骤 4.5: 验证和改进迷宫质量...")
+	validate_and_improve_maze_quality()
+
 	print("步骤 5: 重新绘制迷宫...")
 	await draw_maze_to_tilemap()
 
@@ -211,21 +248,27 @@ func init_level() -> void:
 	reposition_enemies_and_items_optimized()
 	print("步骤 6: 敌人和物品重新定位完成")
 
+	# 最终导航网格更新和验证
+	print("步骤 7: 最终导航网格更新...")
+	var nav_maps = NavigationServer2D.get_maps()
+	if not nav_maps.is_empty():
+		NavigationServer2D.map_force_update(nav_maps[0])
+		await get_tree().create_timer(0.5).timeout  # 更长的等待时间
+		print("LevelBase: 最终导航网格更新完成")
+
+	# 设置位置跟踪（统一到Level1方案）
+	_setup_position_tracking()
+
 	draw_path()
 	print("=== 迷宫生成完成 ===")
 
 func _process(_delta):
 	# 处理路径显示按键
 	if Input.is_action_just_pressed("way_to_key"):  # F1
-		show_path_to_key = !show_path_to_key
-		show_path_to_door = false
+		_handle_key_navigation()
 	
 	if Input.is_action_just_pressed("way_to_door"):  # F2
-		show_path_to_door = !show_path_to_door
-		show_path_to_key = false
-
-	# 实时更新路径
-	update_paths()
+		_handle_door_navigation()
 
 	# 玩家与出口门的交互逻辑
 	if Input.is_action_just_pressed("interact"):
@@ -247,6 +290,23 @@ func _process(_delta):
 func on_exit_door_has_opened():
 	print("出口门已打开，当前关卡完成！")
 	
+	# 播放关卡完成音效和特效
+	var audio_manager = get_node_or_null("/root/AudioManager")
+	if audio_manager:
+		audio_manager.play_level_complete_sound()
+	
+	var effects_manager = get_node_or_null("/root/EffectsManager")
+	if effects_manager and exit_door and is_instance_valid(exit_door):
+		print("LevelBase: 播放关卡完成特效")
+		effects_manager.play_level_complete_effect(exit_door.global_position)
+	else:
+		print("LevelBase: 跳过特效播放 - EffectsManager或exit_door无效")
+	
+	# 更新胜利管理器
+	var victory_manager = get_node_or_null("/root/VictoryManager")
+	if victory_manager:
+		victory_manager.mark_level_completed(current_level_name)
+	
 	# 确保游戏处于非暂停状态再切换场景
 	get_tree().paused = false
 	
@@ -264,7 +324,7 @@ func on_exit_door_has_opened():
 			print("错误：找不到LevelManager")
 	else:
 		print("恭喜！您已完成所有关卡！")
-		# 这里可以添加游戏结束的处理逻辑
+		# 游戏结束处理将由VictoryManager自动处理
 
 # 获取下一个关卡名称
 func get_next_level_name() -> String:
@@ -295,6 +355,8 @@ func draw_maze_to_tilemap():
 	if not tile_map:
 		return
 	tile_map.clear()
+	
+	# 绘制迷宫到TileMap
 	for y in range(maze_height):
 		for x in range(maze_width):
 			var cell_type = maze_grid[y][x]
@@ -303,16 +365,28 @@ func draw_maze_to_tilemap():
 				tile_map.set_cell(0, tile_pos, 0, wall_tile_id)
 			else:
 				tile_map.set_cell(0, tile_pos, 0, floor_tile_id)
+	
+	# 添加边界墙
 	for x in range(maze_width):
 		tile_map.set_cell(0, Vector2i(x, 0), 0, wall_tile_id)
 		tile_map.set_cell(0, Vector2i(x, maze_height - 1), 0, wall_tile_id)
 	for y in range(maze_height):
 		tile_map.set_cell(0, Vector2i(0, y), 0, wall_tile_id)
 		tile_map.set_cell(0, Vector2i(maze_width - 1, y), 0, wall_tile_id)
+	
+	# 强制更新导航网格（修复穿墙问题）
 	await get_tree().process_frame
+	await get_tree().process_frame  # 双重等待确保更新完成
+	
 	var nav_maps = NavigationServer2D.get_maps()
 	if not nav_maps.is_empty():
+		print("LevelBase: 强制更新导航网格...")
 		NavigationServer2D.map_force_update(nav_maps[0])
+		# 等待导航网格更新完成
+		await get_tree().create_timer(0.3).timeout
+		print("LevelBase: 导航网格更新完成")
+	else:
+		print("LevelBase: 警告 - 没有找到导航网格")
 
 func setup_player_and_doors_fixed():
 	# 防止 maze_grid 未初始化导致越界
@@ -797,43 +871,153 @@ func _prepare_entities_for_placement(p_desired_counts: Dictionary) -> Dictionary
 	return entities_map
 
 func draw_path():
-	var player = get_node("Player")
-	var key = get_node_or_null("Key")
-	var door_exit = get_node("DoorRoot/Door_exit")
-	var tile_map = get_node("TileMap")
+	# 查找目标（统一查找方式）
+	var key = _find_key_in_scene()
+	var door_exit = get_node_or_null("DoorRoot/Door_exit")
 	
 	# 如果钥匙不存在且正在显示到钥匙的路径，则关闭路径显示
 	if not key and show_path_to_key:
 		show_path_to_key = false
-		print("钥匙已被收集，关闭到钥匙的路径显示")
-	
-	if not (player and door_exit and tile_map):
+		print("LevelBase: 钥匙不存在或已被收集，关闭钥匙路径显示")
 		return
 
+	# 绘制钥匙路径
+	if show_path_to_key and key:
+		# 添加调试信息
+		print("LevelBase: 计算钥匙路径 - 从 ", player.global_position, " 到 ", key.global_position)
+		var path_to_key = _get_safe_navigation_path(player.global_position, key.global_position)
+		
+		# 验证路径有效性
+		if path_to_key.size() > 1:
+			_draw_single_path(path_to_key, PATH_COLORS["key"])
+			print("LevelBase: 绘制到钥匙的路径，包含 ", path_to_key.size(), " 个点")
+			_debug_path_validity(path_to_key, "钥匙")
+		else:
+			print("LevelBase: 警告 - 到钥匙的路径无效或为空")
+
+	# 绘制门路径
+	if show_path_to_door and door_exit:
+		# 添加调试信息
+		print("LevelBase: 计算门路径 - 从 ", player.global_position, " 到 ", door_exit.global_position)
+		var path_to_door = _get_safe_navigation_path(player.global_position, door_exit.global_position)
+		
+		# 验证路径有效性
+		if path_to_door.size() > 1:
+			_draw_single_path(path_to_door, PATH_COLORS["door"])
+			print("LevelBase: 绘制到门的路径，包含 ", path_to_door.size(), " 个点")
+			_debug_path_validity(path_to_door, "门")
+		else:
+			print("LevelBase: 警告 - 到门的路径无效或为空")
+
+# 新增：智能路径计算函数
+func _get_safe_navigation_path(from_pos: Vector2, to_pos: Vector2) -> PackedVector2Array:
+	"""智能计算导航路径，自动处理目标不可达的情况"""
 	var nav_maps = NavigationServer2D.get_maps()
 	if nav_maps.is_empty():
-		print("警告：没有可用的导航地图")
+		print("LevelBase: 没有可用的导航地图")
+		return PackedVector2Array()
+	
+	var navigation_map = nav_maps[0]
+	
+	# 首先尝试直接路径
+	var direct_path = NavigationServer2D.map_get_path(navigation_map, from_pos, to_pos, true)
+	if direct_path.size() > 1:
+		return direct_path
+	
+	# 如果直接路径失败，寻找最近的可导航点
+	print("LevelBase: 直接路径失败，寻找最近的可导航点...")
+	var closest_navigable_pos = _find_closest_navigable_position(to_pos)
+	if closest_navigable_pos != Vector2.ZERO:
+		print("LevelBase: 找到最近可导航点: ", closest_navigable_pos)
+		return NavigationServer2D.map_get_path(navigation_map, from_pos, closest_navigable_pos, true)
+	
+	print("LevelBase: 无法找到有效的导航路径")
+	return PackedVector2Array()
+
+# 新增：寻找最近的可导航位置
+func _find_closest_navigable_position(target_pos: Vector2) -> Vector2:
+	"""在目标位置周围寻找最近的可导航瓦片"""
+	if not tile_map:
+		return Vector2.ZERO
+	
+	var target_tile = tile_map.local_to_map(tile_map.to_local(target_pos))
+	var search_radius = 10  # 搜索半径（瓦片数）
+	
+	# 螺旋搜索最近的地板瓦片
+	for radius in range(1, search_radius + 1):
+		for angle in range(0, 360, 15):  # 每15度检查一次
+			var radian = deg_to_rad(angle)
+			var check_x = target_tile.x + int(radius * cos(radian))
+			var check_y = target_tile.y + int(radius * sin(radian))
+			var check_tile = Vector2i(check_x, check_y)
+			
+			# 检查边界
+			if check_x < 0 or check_x >= maze_width or check_y < 0 or check_y >= maze_height:
+				continue
+			
+			# 检查是否是地板瓦片
+			var atlas_coords = tile_map.get_cell_atlas_coords(0, check_tile)
+			var source_id = tile_map.get_cell_source_id(0, check_tile)
+			
+			if source_id != -1 and atlas_coords == floor_tile_id:
+				# 找到地板瓦片，转换为世界坐标
+				var local_pos = tile_map.map_to_local(check_tile)
+				var world_pos = tile_map.to_global(local_pos)
+				return world_pos
+	
+	return Vector2.ZERO
+
+# 新增：路径有效性调试函数
+func _debug_path_validity(path: PackedVector2Array, target_name: String):
+	"""调试路径是否穿墙"""
+	if not tile_map or path.size() < 2:
 		return
-		
-	var nav_map = nav_maps[0]
-
-	if show_path_to_key and key:  # 只有在钥匙存在时才显示到钥匙的路径
-		var path_to_key = NavigationServer2D.map_get_path(nav_map, player.global_position, key.global_position, true)
-		draw_path_lines(path_to_key, Color(1, 0, 0))  # 红色表示到钥匙的路径
-
-	if show_path_to_door:
-		var path_to_door = NavigationServer2D.map_get_path(nav_map, player.global_position, door_exit.global_position, true)
-		draw_path_lines(path_to_door, Color(0, 0, 1))  # 蓝色表示到门的路径
-
-func draw_path_lines(path: PackedVector2Array, color: Color):
+	
+	var wall_intersections = 0
 	for i in range(path.size() - 1):
+		var start_point = path[i]
+		var end_point = path[i + 1]
+		
+		# 检查线段是否穿过墙壁
+		var steps = int(start_point.distance_to(end_point) / 8.0)  # 每8像素检查一次
+		for step in range(steps + 1):
+			var check_point = start_point.lerp(end_point, float(step) / max(steps, 1))
+			var tile_pos = tile_map.local_to_map(tile_map.to_local(check_point))
+			
+			# 检查该点是否在墙壁上
+			var atlas_coords = tile_map.get_cell_atlas_coords(0, tile_pos)
+			var source_id = tile_map.get_cell_source_id(0, tile_pos)
+			
+			if source_id != -1 and atlas_coords == wall_tile_id:
+				wall_intersections += 1
+				print("LevelBase: 警告 - ", target_name, "路径在点", check_point, "穿过墙壁(瓦片", tile_pos, ")")
+	
+	if wall_intersections > 0:
+		print("LevelBase: 错误 - ", target_name, "路径总共穿过", wall_intersections, "个墙壁点")
+	else:
+		print("LevelBase: ", target_name, "路径验证通过，没有穿墙")
+
+# 统一的单路径绘制方法
+func _draw_single_path(path: PackedVector2Array, color: Color):
+	if path.size() > 1:
 		var line = Line2D.new()
-		line.add_point(path[i])
-		line.add_point(path[i + 1])
-		line.width = 2
+		line.width = path_width
 		line.default_color = color
+		line.z_index = 10
+		
+		# 添加高级样式（如果启用）
+		if path_smoothing:
+			line.antialiased = true
+		
 		add_child(line)
 		path_lines.append(line)
+		
+		for point in path:
+			line.add_point(point)
+
+func draw_path_lines(path: PackedVector2Array, color: Color):
+	# 保留原方法以兼容，但改为调用新的统一方法
+	_draw_single_path(path, color)
 
 func update_paths():
 	# 清除所有现有的路径线
@@ -845,58 +1029,91 @@ func update_paths():
 	# 如果需要显示路径，则重新绘制
 	if show_path_to_key or show_path_to_door:
 		draw_path()
+	else:
+		print("LevelBase: 所有路径已关闭，清除完成")
 
 # 递归分割法：将区域分割成更小的子区域并添加墙体
+# 保守改进版本：只做必要的导航优化
 func _recursive_divide(x1: int, y1: int, x2: int, y2: int):
-	# 减小最小区域大小，让分割更细致
-	if x2 - x1 < 6 or y2 - y1 < 6:  # 从8改为6
+	# 适度增加最小区域大小，平衡迷宫复杂度和导航需求
+	var min_room_size = 8  # 从6适度增加到8，保持迷宫复杂度
+	if x2 - x1 < min_room_size or y2 - y1 < min_room_size:
 		return
+	
 	var width = x2 - x1
 	var height = y2 - y1
 	var horizontal = width < height
-	if horizontal and height > 4:  # 从6改为4
-		var wall_space = height - 4  # 从6改为4
-		var wall_pos = 1  # 从2改为1
-		if wall_space > 0:
-			wall_pos = randi() % wall_space
-		var wall_y = y1 + 1 + wall_pos  # 从2改为1
+	
+	if horizontal and height > min_room_size:
+		# 水平分割：适度的墙壁边距
+		var min_wall_margin = 3  # 保守的边距，从原来的1增加到3
+		var available_space = height - 2 * min_wall_margin
+		if available_space <= 0:
+			return
+		
+		var wall_offset = randi() % available_space
+		var wall_y = y1 + min_wall_margin + wall_offset
+		
+		# 创建水平墙
 		for x in range(x1, x2 + 1):
 			if x >= 0 and x < maze_width:
 				maze_grid[wall_y][x] = CellType.WALL
-		var door_space = width - 2  # 从4改为2
-		if door_space < 3:  # 确保至少3格宽的门（从5改为3）
-			door_space = 3
-		var door_x = x1 + 1 + randi() % max(1, door_space - 2)  # 从2改为1，为3格宽门留空间
-		if door_x >= 0 and door_x < maze_width:
-			for dx in range(-1, 2):  # 创建3格宽的门洞（从-2,3改为-1,2）
+		
+		# 适度增加门洞宽度
+		var door_width = 4  # 从3增加到4，平衡导航和挑战性
+		var door_margin = 2  # 保守的门洞边距
+		var door_available_space = width - 2 * door_margin
+		
+		if door_available_space >= door_width:
+			var door_offset = randi() % max(1, door_available_space - door_width + 1)
+			var door_x = x1 + door_margin + door_offset
+			
+			# 创建门洞
+			for dx in range(door_width):
 				var x = door_x + dx
-				if x >= x1 and x < x2 + 1 and x >= 0 and x < maze_width:
+				if x >= x1 and x <= x2 and x >= 0 and x < maze_width:
 					maze_grid[wall_y][x] = CellType.PATH
-		if wall_y - y1 > 2:  # 从3改为2
+		
+		# 递归分割（保持原有的分割逻辑）
+		if wall_y - y1 >= min_room_size:
 			_recursive_divide(x1, y1, x2, wall_y - 1)
-		if y2 - wall_y > 2:  # 从3改为2
+		if y2 - wall_y >= min_room_size:
 			_recursive_divide(x1, wall_y + 1, x2, y2)
-	elif width > 4:  # 从6改为4
-		var wall_space = width - 4  # 从6改为4
-		var wall_pos = 1  # 从2改为1
-		if wall_space > 0:
-			wall_pos = randi() % wall_space
-		var wall_x = x1 + 1 + wall_pos  # 从2改为1
+			
+	elif width > min_room_size:
+		# 垂直分割：适度的墙壁边距
+		var min_wall_margin = 3  # 保守的边距
+		var available_space = width - 2 * min_wall_margin
+		if available_space <= 0:
+			return
+		
+		var wall_offset = randi() % available_space
+		var wall_x = x1 + min_wall_margin + wall_offset
+		
+		# 创建垂直墙
 		for y in range(y1, y2 + 1):
 			if y >= 0 and y < maze_height:
 				maze_grid[y][wall_x] = CellType.WALL
-		var door_space = height - 2  # 从4改为2
-		if door_space < 3:  # 确保至少3格高的门（从5改为3）
-			door_space = 3
-		var door_y = y1 + 1 + randi() % max(1, door_space - 2)  # 从2改为1，为3格高门留空间
-		if door_y >= 0 and door_y < maze_height:
-			for dy in range(-1, 2):  # 创建3格高的门洞（从-2,3改为-1,2）
+		
+		# 适度增加门洞宽度
+		var door_height = 4  # 从3增加到4
+		var door_margin = 2  # 保守的门洞边距
+		var door_available_space = height - 2 * door_margin
+		
+		if door_available_space >= door_height:
+			var door_offset = randi() % max(1, door_available_space - door_height + 1)
+			var door_y = y1 + door_margin + door_offset
+			
+			# 创建门洞
+			for dy in range(door_height):
 				var y = door_y + dy
-				if y >= y1 and y < y2 + 1 and y >= 0 and y < maze_height:
+				if y >= y1 and y <= y2 and y >= 0 and y < maze_height:
 					maze_grid[y][wall_x] = CellType.PATH
-		if wall_x - x1 > 2:  # 从3改为2
+		
+		# 递归分割
+		if wall_x - x1 >= min_room_size:
 			_recursive_divide(x1, y1, wall_x - 1, y2)
-		if x2 - wall_x > 2:  # 从3改为2
+		if x2 - wall_x >= min_room_size:
 			_recursive_divide(wall_x + 1, y1, x2, y2)
 
 func create_entrance_and_exit_fixed():
@@ -904,20 +1121,28 @@ func create_entrance_and_exit_fixed():
 	var entrance_y = int(maze_height / 2)
 	var exit_x = maze_width - 1
 	var exit_y = int(maze_height / 2)
-	for i in range(5):
-		var y = entrance_y + i - 2
+	
+	# 适度增加入口出口区域（从5x5增加到7x7）
+	var area_size = 7  # 保守增加区域大小，保持迷宫复杂度
+	var half_size = area_size / 2
+	
+	for i in range(area_size):
+		var y = entrance_y + i - half_size
 		if y >= 0 and y < maze_height:
-			for x in range(5):
+			for x in range(area_size):
 				var cur_x = entrance_x + x
 				if cur_x >= 0 and cur_x < maze_width:
 					maze_grid[y][cur_x] = CellType.PATH
-	for i in range(5):
-		var y = exit_y + i - 2
+	
+	# 创建对应的出口区域
+	for i in range(area_size):
+		var y = exit_y + i - half_size
 		if y >= 0 and y < maze_height:
-			for x in range(5):
+			for x in range(area_size):
 				var cur_x = exit_x - x
 				if cur_x >= 0 and cur_x < maze_width:
 					maze_grid[y][cur_x] = CellType.PATH
+	
 	entrance_pos = Vector2i(int(entrance_x), int(entrance_y))
 	exit_pos = Vector2i(int(exit_x), int(exit_y))
 
@@ -949,31 +1174,47 @@ func create_path_between(x1: int, y1: int, x2: int, y2: int):
 		maze_grid[y2][x2] = CellType.PATH
 
 func widen_specific_path(x1: int, y1: int, x2: int, y2: int):
-	var width = 2
+	# 适度增加主路径宽度，平衡导航需求和迷宫复杂度
+	var width = 3  # 从2适度增加到3，保持合理的迷宫密度
 	var current_x = x1
 	var current_y = y1
+	
+	# 创建从起点到终点的主要通道
 	while current_x != x2:
+		# 在当前位置创建适宽通道
 		for dy in range(-width, width + 1):
 			for dx in range(-width, width + 1):
 				var nx = current_x + dx
 				var ny = current_y + dy
 				if nx >= 0 and nx < maze_width and ny >= 0 and ny < maze_height:
 					maze_grid[ny][nx] = CellType.PATH
+		
 		if current_x < x2:
 			current_x += 1
 		else:
 			current_x -= 1
+	
 	while current_y != y2:
+		# 在当前位置创建适宽通道
 		for dy in range(-width, width + 1):
 			for dx in range(-width, width + 1):
 				var nx = current_x + dx
 				var ny = current_y + dy
 				if nx >= 0 and nx < maze_width and ny >= 0 and ny < maze_height:
 					maze_grid[ny][nx] = CellType.PATH
+		
 		if current_y < y2:
 			current_y += 1
 		else:
 			current_y -= 1
+	
+	# 确保终点有合理的空间
+	for dy in range(-width, width + 1):
+		for dx in range(-width, width + 1):
+			var nx = x2 + dx
+			var ny = y2 + dy
+			if nx >= 0 and nx < maze_width and ny >= 0 and ny < maze_height:
+				maze_grid[ny][nx] = CellType.PATH
 	
 # 检查位置是否真正安全（严格检查）
 func _is_truly_safe_position(x: int, y: int) -> bool:
@@ -1088,4 +1329,175 @@ func toggle_pause():
 		print("Base_Level: 暂停菜单可见性设置为: ", pause_menu.visible)
 	else:
 		print("Base_Level: 错误 - 暂停菜单节点为null!")
+
+# 智能钥匙导航处理（统一到Level1方案）
+func _handle_key_navigation():
+	var notification_manager = get_node_or_null("/root/NotificationManager")
+	
+	if _is_key_collected():
+		# 钥匙已收集
+		if notification_manager:
+			notification_manager.notify_key_already_collected()
+		show_path_to_key = false
+		print("LevelBase: 钥匙已被收集，提示玩家导航到出口门")
+	else:
+		# 钥匙还在，切换显示
+		show_path_to_key = !show_path_to_key
+		show_path_to_door = false
+		
+		if notification_manager:
+			if show_path_to_key:
+				notification_manager.notify_navigation_to_key()
+			else:
+				notification_manager.notify_navigation_disabled()
+		print("LevelBase: 切换钥匙路径显示状态: ", show_path_to_key)
+	
+	update_paths()
+
+# 门导航处理（统一到Level1方案）
+func _handle_door_navigation():
+	show_path_to_door = !show_path_to_door
+	show_path_to_key = false
+	
+	var notification_manager = get_node_or_null("/root/NotificationManager")
+	if notification_manager:
+		if show_path_to_door:
+			notification_manager.notify_navigation_to_door()
+		else:
+			notification_manager.notify_navigation_disabled()
+	
+	update_paths()
+
+# 统一的钥匙状态检查（Level1方案）
+func _is_key_collected() -> bool:
+	# 检查玩家背包
+	if player and player.has_method("has_key"):
+		if player.has_key("master_key"):
+			return true
+	
+	# 检查场景中是否还有钥匙
+	return not _key_exists_in_scene()
+
+func _key_exists_in_scene() -> bool:
+	var key = _find_key_in_scene()
+	return key != null
+
+func _find_key_in_scene() -> Node:
+	# 智能钥匙查找（适用于两种关卡）
+	var items = get_tree().get_nodes_in_group("items")
+	for item in items:
+		if item.name.begins_with("Key") and item.visible and is_instance_valid(item):
+			return item
+	
+	# 备用查找（Level_base兼容）
+	return get_node_or_null("Key")
+
+# 设置位置跟踪（统一到Level1方案）
+func _setup_position_tracking():
+	if player:
+		# 检查玩家是否有position_changed信号
+		if player.has_signal("position_changed"):
+			player.position_changed.connect(_on_player_position_changed)
+		else:
+			# 使用定时器定期更新路径
+			var timer = Timer.new()
+			timer.wait_time = 0.1  # 每0.1秒更新一次
+			timer.timeout.connect(_on_player_position_changed)
+			timer.autostart = true
+			add_child(timer)
+			print("LevelBase: 使用定时器更新路径")
+
+func _on_player_position_changed():
+	"""当玩家位置改变时更新路径"""
+	if show_path_to_key or show_path_to_door:
+		update_paths()
+
+# 强制清除所有路径（统一到Level1方案）
+func clear_all_paths():
+	"""立即清除所有绘制的路径线条"""
+	for line in path_lines:
+		if is_instance_valid(line):
+			line.queue_free()
+	path_lines.clear()
+	show_path_to_key = false
+	show_path_to_door = false
+	print("LevelBase: 强制清除所有路径完成")
+
+# 清理方法（统一到Level1方案）
+func _exit_tree():
+	"""场景退出时清理资源"""
+	for line in path_lines:
+		if is_instance_valid(line):
+			line.queue_free()
+	path_lines.clear()
+
+# 新增：迷宫质量验证和优化函数
+func validate_and_improve_maze_quality():
+	"""保守的迷宫质量验证，仅修复严重的导航问题"""
+	print("LevelBase: 开始验证和改进迷宫质量...")
+	
+	var improvements_made = 0
+	var min_corridor_width = 2  # 降低最小通道宽度要求，保持迷宫复杂度
+	
+	# 只检测和修复严重的过窄通道（1格宽的死胡同）
+	for y in range(2, maze_height - 2):  # 缩小检测范围
+		for x in range(2, maze_width - 2):
+			if maze_grid[y][x] == CellType.PATH:
+				# 只修复极窄的通道
+				if _is_isolated_narrow_corridor(x, y):
+					_carefully_widen_corridor(x, y)
+					improvements_made += 1
+	
+	print("LevelBase: 迷宫质量改进完成，进行了 ", improvements_made, " 处保守改进")
+
+# 检测是否是孤立的狭窄通道
+func _is_isolated_narrow_corridor(x: int, y: int) -> bool:
+	if maze_grid[y][x] != CellType.PATH:
+		return false
+	
+	# 检查是否被墙壁严重包围（只有很少的连通出口）
+	var path_neighbors = 0
+	var directions = [Vector2i(-1,0), Vector2i(1,0), Vector2i(0,-1), Vector2i(0,1)]
+	
+	for dir in directions:
+		var check_x = x + dir.x
+		var check_y = y + dir.y
+		if check_x >= 0 and check_x < maze_width and check_y >= 0 and check_y < maze_height:
+			if maze_grid[check_y][check_x] == CellType.PATH:
+				path_neighbors += 1
+	
+	# 只有1个或更少出口的点才被认为是问题通道
+	return path_neighbors <= 1
+
+# 小心谨慎地拓宽通道
+func _carefully_widen_corridor(center_x: int, center_y: int):
+	# 只在直接相邻的位置创建路径，避免破坏迷宫结构
+	var directions = [Vector2i(-1,0), Vector2i(1,0), Vector2i(0,-1), Vector2i(0,1)]
+	
+	for dir in directions:
+		var nx = center_x + dir.x
+		var ny = center_y + dir.y
+		if nx >= 1 and nx < maze_width - 1 and ny >= 1 and ny < maze_height - 1:
+			# 只在不会破坏迷宫结构的地方创建路径
+			if _safe_to_create_path(nx, ny):
+				maze_grid[ny][nx] = CellType.PATH
+
+# 检查在指定位置创建路径是否安全
+func _safe_to_create_path(x: int, y: int) -> bool:
+	# 确保不会创建过大的空旷区域
+	var surrounding_paths = 0
+	for dy in range(-1, 2):
+		for dx in range(-1, 2):
+			if dx == 0 and dy == 0:
+				continue
+			var check_x = x + dx
+			var check_y = y + dy
+			if check_x >= 0 and check_x < maze_width and check_y >= 0 and check_y < maze_height:
+				if maze_grid[check_y][check_x] == CellType.PATH:
+					surrounding_paths += 1
+	
+	# 如果周围已经有太多路径，就不再创建
+	return surrounding_paths <= 3
+
+# 移除了过于激进的通道检测函数，采用更保守的质量验证策略
 

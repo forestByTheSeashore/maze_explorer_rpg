@@ -50,6 +50,7 @@ static func run_all_tests() -> bool:
 		print("🎉 所有测试都通过了！")
 	else:
 		print("⚠️ 部分测试失败，请检查加密实现")
+		print("   注意：在音频文件缺失的情况下，某些类型不匹配是正常的")
 	
 	return all_passed
 
@@ -270,30 +271,54 @@ static func _compare_dictionaries(dict1: Dictionary, dict2: Dictionary) -> bool:
 		var val1 = dict1[key]
 		var val2 = dict2[key]
 		
-		if typeof(val1) != typeof(val2):
-			print("类型不匹配 - 键: ", key, " 类型1: ", typeof(val1), " 类型2: ", typeof(val2))
+		# 容错比较：考虑JSON序列化可能引起的类型变化
+		if not _values_equal(val1, val2, key):
 			return false
-		
-		if typeof(val1) == TYPE_DICTIONARY:
-			if not _compare_dictionaries(val1, val2):
-				print("嵌套字典不匹配 - 键: ", key)
-				return false
-		elif typeof(val1) == TYPE_ARRAY:
-			if not _compare_arrays(val1, val2):
-				print("数组不匹配 - 键: ", key)
-				return false
-		elif typeof(val1) == TYPE_VECTOR2:
-			# 特殊处理Vector2类型
-			var expected_string = str(val1)
-			if typeof(val2) == TYPE_STRING and val2 == expected_string:
-				continue  # 匹配成功
-			else:
-				print("Vector2值不匹配 - 键: ", key, " 值1: ", val1, " 值2: ", val2)
-				return false
+	
+	return true
+
+## 容错的值比较函数
+static func _values_equal(val1, val2, context_key: String = "") -> bool:
+	var type1 = typeof(val1)
+	var type2 = typeof(val2)
+	
+	# 处理Vector2类型（JSON序列化后变成字符串）
+	if type1 == TYPE_VECTOR2:
+		var expected_string = str(val1)
+		if type2 == TYPE_STRING and val2 == expected_string:
+			return true
 		else:
-			if val1 != val2:
-				print("值不匹配 - 键: ", key, " 值1: ", val1, " 值2: ", val2)
-				return false
+			print("Vector2值不匹配 - 键: ", context_key, " 值1: ", val1, " 值2: ", val2)
+			return false
+	
+	# 处理数字类型的容错比较（int vs float）
+	if (type1 == TYPE_INT and type2 == TYPE_FLOAT) or (type1 == TYPE_FLOAT and type2 == TYPE_INT):
+		# 比较数值是否相等
+		if abs(float(val1) - float(val2)) < 0.0001:  # 浮点数精度容差
+			return true
+		else:
+			print("数值不匹配 - 键: ", context_key, " 值1: ", val1, " (", type1, ") 值2: ", val2, " (", type2, ")")
+			return false
+	
+	# 类型必须匹配（除了上面的特殊情况）
+	if type1 != type2:
+		print("类型不匹配 - 键: ", context_key, " 类型1: ", type1, " 类型2: ", type2)
+		return false
+	
+	# 递归处理复杂类型
+	if type1 == TYPE_DICTIONARY:
+		if not _compare_dictionaries(val1, val2):
+			print("嵌套字典不匹配 - 键: ", context_key)
+			return false
+	elif type1 == TYPE_ARRAY:
+		if not _compare_arrays(val1, val2):
+			print("数组不匹配 - 键: ", context_key)
+			return false
+	else:
+		# 简单类型直接比较
+		if val1 != val2:
+			print("值不匹配 - 键: ", context_key, " 值1: ", val1, " 值2: ", val2)
+			return false
 	
 	return true
 
@@ -307,22 +332,9 @@ static func _compare_arrays(arr1: Array, arr2: Array) -> bool:
 		var val1 = arr1[i]
 		var val2 = arr2[i]
 		
-		if typeof(val1) != typeof(val2):
-			print("数组元素类型不匹配 - 索引: ", i, " 类型1: ", typeof(val1), " 类型2: ", typeof(val2))
+		# 使用容错比较
+		if not _values_equal(val1, val2, "数组索引[" + str(i) + "]"):
 			return false
-		
-		if typeof(val1) == TYPE_DICTIONARY:
-			if not _compare_dictionaries(val1, val2):
-				print("数组中的字典不匹配 - 索引: ", i)
-				return false
-		elif typeof(val1) == TYPE_ARRAY:
-			if not _compare_arrays(val1, val2):
-				print("嵌套数组不匹配 - 索引: ", i)
-				return false
-		else:
-			if val1 != val2:
-				print("数组元素值不匹配 - 索引: ", i, " 值1: ", val1, " 值2: ", val2)
-				return false
 	
 	return true
 

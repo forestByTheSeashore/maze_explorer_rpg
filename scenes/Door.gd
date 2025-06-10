@@ -181,6 +181,11 @@ func _try_open_locked_door():
     if player.has_method("has_key") and player.has_key(required_key_type):
         print("玩家有钥匙，正在开门...")
         
+        # 显示钥匙使用通知
+        var notification_manager = get_node_or_null("/root/NotificationManager")
+        if notification_manager:
+            notification_manager.notify_key_used(required_key_type)
+        
         # 使用钥匙（如果设置为消耗）
         if consume_key_on_open:
             if player.has_method("use_key"):
@@ -190,13 +195,28 @@ func _try_open_locked_door():
         # 打开门
         open_door()
         
+        # 显示门打开通知
+        if notification_manager:
+            notification_manager.notify_door_opened()
+        
     else:
         # 玩家没有钥匙
         print("这扇门被锁着，需要", required_key_type, "才能打开")
+        
+        # 显示门被锁住的通知
+        var notification_manager = get_node_or_null("/root/NotificationManager")
+        if notification_manager:
+            notification_manager.notify_key_required(required_key_type)
+        
         _play_locked_door_feedback()
 
 # 新增：锁门反馈效果
 func _play_locked_door_feedback():
+    # 播放锁门音效
+    var audio_manager = get_node_or_null("/root/AudioManager")
+    if audio_manager:
+        audio_manager.play_door_locked_sound()
+    
     # 播放锁门音效或动画
     if animated_sprite:
         # 简单的晃动效果表示门被锁住

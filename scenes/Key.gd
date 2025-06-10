@@ -49,11 +49,29 @@ func collect_key(player_node):
     if player_node.has_method("add_key"):
         player_node.add_key(key_type)
         print("玩家获得了", key_type)
+        
+        # 显示钥匙拾取通知
+        var notification_manager = get_node_or_null("/root/NotificationManager")
+        if notification_manager:
+            notification_manager.notify_key_obtained(key_type)
+    
+    # 更新统计
+    var victory_manager = get_node_or_null("/root/VictoryManager")
+    if victory_manager:
+        victory_manager.increment_items_collected()
     
     # 播放拾取音效
-    if audio_player and pickup_sound:
+    var audio_manager = get_node_or_null("/root/AudioManager")
+    if audio_manager:
+        audio_manager.play_pickup_sound()
+    elif audio_player and pickup_sound:
         audio_player.stream = pickup_sound
         audio_player.play()
+    
+    # 播放拾取特效
+    var effects_manager = get_node_or_null("/root/EffectsManager")
+    if effects_manager:
+        effects_manager.play_pickup_effect(global_position)
     
     # 播放拾取动画或效果
     _play_pickup_effect()

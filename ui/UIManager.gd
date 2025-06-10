@@ -54,6 +54,9 @@ func _ready():
 	
 	# 延迟更新关卡信息，确保所有系统都已初始化
 	call_deferred("_update_level_display")
+	
+	# 再次延迟更新，确保存档加载等操作完成后能正确显示
+	call_deferred("_delayed_level_update")
 
 func _process(delta: float):
 	# 如果没有玩家引用，定期尝试重新连接
@@ -175,6 +178,11 @@ func _update_level_display(level_name: String = ""):
 func update_level_info(level_name: String):
 	"""公共接口：更新关卡信息"""
 	_update_level_display(level_name)
+
+func _delayed_level_update():
+	"""延迟的关卡信息更新，确保所有数据都已加载"""
+	await get_tree().create_timer(0.2).timeout  # 等待200毫秒
+	_update_level_display()
 
 # ============================================================================
 # 按钮事件处理

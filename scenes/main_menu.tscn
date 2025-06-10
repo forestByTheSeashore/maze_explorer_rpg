@@ -25,13 +25,13 @@ layout_mode = 1
 anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
-offset_left = -200.0
-offset_top = 100.0
-offset_right = 200.0
-offset_bottom = 200.0
+offset_left = -255.0
+offset_top = 61.0
+offset_right = 272.0
+offset_bottom = 161.0
 grow_horizontal = 2
 theme_override_font_sizes/font_size = 48
-text = "Forest By The Seashore"
+text = "Maze Fighting Explorer"
 horizontal_alignment = 1
 
 [node name="VBoxContainer" type="VBoxContainer" parent="."]
@@ -58,6 +58,11 @@ text = "开始游戏"
 custom_minimum_size = Vector2(200, 50)
 layout_mode = 2
 text = "继续游戏"
+
+[node name="TutorialButton" type="Button" parent="VBoxContainer"]
+custom_minimum_size = Vector2(200, 50)
+layout_mode = 2
+text = "玩法说明"
 
 [node name="SettingsButton" type="Button" parent="VBoxContainer"]
 custom_minimum_size = Vector2(200, 50)

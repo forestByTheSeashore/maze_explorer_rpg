@@ -103,16 +103,20 @@ func _physics_process(_delta: float) -> void:
 		weapon_system.handle_weapon_input()
 	_handle_inventory_input()
 
-	# 1. 处理攻击输入
+	# 1. 处理攻击输入 (添加输入验证)
 	if Input.is_action_just_pressed("attack"): # "attack" 应该映射到 'J' 键
-		if current_state != PlayerState.ATTACK: # 避免在攻击时再次攻击
-			_enter_state(PlayerState.ATTACK)
-			return # 进入攻击状态后，本帧不处理移动
+		# 验证攻击输入频率
+		if not InputValidator or InputValidator.validate_attack_input():
+			if current_state != PlayerState.ATTACK: # 避免在攻击时再次攻击
+				_enter_state(PlayerState.ATTACK)
+				return # 进入攻击状态后，本帧不处理移动
 
-	# 2. 处理移动输入 (只有在非攻击状态下)
+	# 2. 处理移动输入 (只有在非攻击状态下，添加输入验证)
 	var input_direction := Vector2.ZERO
 	if current_state != PlayerState.ATTACK:
-		input_direction = Input.get_vector("move_left", "move_right", "move_up", "move_down")
+		var raw_input = Input.get_vector("move_left", "move_right", "move_up", "move_down")
+		# 验证和净化移动输入
+		input_direction = InputValidator.validate_movement_input(raw_input)
 
 	if input_direction.length_squared() > 0:
 		facing_direction_vector = input_direction.normalized() # 更新朝向
@@ -303,23 +307,34 @@ func _play_attack_animation():
 					hit_enemies.append(enemy)
 					print("扩大范围检测命中: ", enemy.name, " 距离: ", distance)
 	
+	# 播放攻击音效
+	var audio_manager = get_node_or_null("/root/AudioManager")
+	if audio_manager:
+		audio_manager.play_attack_sound()
+	
 	# 对所有命中的敌人造成伤害
 	for enemy in hit_enemies:
 		var damage_dealt = enemy.receive_player_attack(get_total_attack())
 		print("玩家攻击命中: ", enemy.name, " 造成伤害: ", damage_dealt)
 		
-		# 可以在这里添加命中特效
+		# 添加命中特效和音效
 		_create_hit_effect(enemy.global_position)
+		if audio_manager:
+			audio_manager.play_enemy_hit_sound()
 	
 	if hit_enemies.size() == 0:
 		print("玩家攻击未命中任何敌人")
 	
 	attack_hitbox.monitoring = false
 
-		# 新增：创建命中特效（可选）
+		# 新增：创建命中特效
 func _create_hit_effect(hit_position: Vector2):
-	# 这里可以添加粒子效果、音效等
 	print("在位置 ", hit_position, " 创建命中特效")
+	
+	# 添加粒子特效
+	var effects_manager = get_node_or_null("/root/EffectsManager")
+	if effects_manager:
+		effects_manager.play_hit_effect(hit_position)
 
 # 你需要添加或确保有 get_total_attack() 函数
 var base_attack: int = 20 # 示例基础攻击力
@@ -366,6 +381,12 @@ var current_exp: int = 0
 var exp_to_next_level: int = 50
 func gain_experience(amount: int):
 	current_exp += amount
+	
+	# 显示经验值获得通知
+	var notification_manager = get_node_or_null("/root/NotificationManager")
+	if notification_manager:
+		notification_manager.show_pickup("✨ 获得经验值 +" + str(amount), 2.5)
+	
 	if current_exp >= exp_to_next_level:
 		level_up()
 	update_ui()
@@ -376,6 +397,12 @@ func level_up():
 	max_hp += 20
 	current_hp = max_hp
 	base_attack += 2
+	
+	# 显示升级通知
+	var notification_manager = get_node_or_null("/root/NotificationManager")
+	if notification_manager:
+		notification_manager.show_achievement("🆙 升级了！HP和攻击力提升", 4.0)
+	
 	update_ui()
 	print("HP上限提升至: ", max_hp, ", 攻击力提升至: ", base_attack)
 
@@ -493,6 +520,21 @@ func heal(amount: int):
 
 func _handle_game_over_logic():
 	print("玩家已死亡 - 显示Game Over页面！")
+	
+	# 更新胜利管理器统计
+	var victory_manager = get_node_or_null("/root/VictoryManager")
+	if victory_manager:
+		victory_manager.increment_deaths()
+	
+	# 播放死亡音效
+	var audio_manager = get_node_or_null("/root/AudioManager")
+	if audio_manager:
+		audio_manager.play_player_hurt_sound()
+	
+	# 播放死亡特效
+	var effects_manager = get_node_or_null("/root/EffectsManager")
+	if effects_manager:
+		effects_manager.create_screen_flash(Color.RED, 0.5)
 	
 	# 停止玩家的所有物理处理
 	set_physics_process(false)

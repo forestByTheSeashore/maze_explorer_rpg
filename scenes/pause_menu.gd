@@ -8,6 +8,7 @@ var save_manager
 @onready var resume_button = $VBoxContainer/ResumeButton
 @onready var save_button = $VBoxContainer/SaveButton
 @onready var load_button = $VBoxContainer/LoadButton
+@onready var tutorial_button = get_node_or_null("VBoxContainer/TutorialButton")  # 可选节点
 # @onready var settings_button = $VBoxContainer/SettingsButton # 已删除
 @onready var main_menu_button = $VBoxContainer/MainMenuButton
 @onready var quit_button = $VBoxContainer/QuitButton
@@ -44,6 +45,8 @@ func _ready():
 		save_button.pressed.connect(_on_save_button_pressed)
 	if load_button:
 		load_button.pressed.connect(_on_load_button_pressed)
+	if tutorial_button:
+		tutorial_button.pressed.connect(_on_tutorial_button_pressed)
 	if main_menu_button:
 		main_menu_button.pressed.connect(_on_main_menu_button_pressed)
 	if quit_button:
@@ -60,6 +63,9 @@ func _ready():
 	
 	# 确保暂停菜单在游戏暂停时显示
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	
+	# 添加到暂停菜单组，便于查找
+	add_to_group("pause_menu")
 	
 	# 延迟更新存档信息显示
 	call_deferred("_update_save_info")
@@ -142,28 +148,29 @@ func _on_load_button_pressed():
 		# 恢复游戏状态并切换场景
 		get_tree().paused = false
 		
-		# 尝试切换到保存的关卡
-		var scene_path = "res://levels/" + level_name + ".tscn"
-		if FileAccess.file_exists(scene_path):
-			game_manager.change_scene(scene_path)
+		# 根据关卡选择场景文件
+		if level_name == "level_1":
+			print("暂停菜单: 直接加载level_1场景")
+			game_manager.change_scene("res://levels/level_1.tscn")
 		else:
-			# 如果找不到确切的场景文件，尝试一些常见的变体
-			var alternative_paths = [
-				"res://scenes/" + level_name + ".tscn",
-				"res://levels/" + level_name.to_lower() + ".tscn",
-				"res://scenes/" + level_name.to_lower() + ".tscn"
-			]
-			
-			var found_scene = false
-			for path in alternative_paths:
-				if FileAccess.file_exists(path):
-					game_manager.change_scene(path)
-					found_scene = true
-					break
-			
-			if not found_scene:
-				_show_status("找不到关卡文件: " + level_name, Color.RED)
-				load_button.disabled = false
+			# 通过LevelManager处理其他关卡加载
+			var level_manager = get_node_or_null("/root/LevelManager")
+			if level_manager:
+				# 设置LevelManager的next_level_name为正确的关卡名称
+				level_manager.next_level_name = level_name
+				level_manager.prepare_next_level()
+				print("暂停菜单: 设置LevelManager加载关卡: ", level_name)
+				print("暂停菜单: 加载base_level场景用于关卡: ", level_name)
+				game_manager.change_scene("res://levels/base_level.tscn")
+			else:
+				print("错误: 找不到LevelManager，使用备用方法")
+				# 尝试切换到保存的关卡
+				var scene_path = "res://levels/" + level_name + ".tscn"
+				if FileAccess.file_exists(scene_path):
+					game_manager.change_scene(scene_path)
+				else:
+					_show_status("找不到关卡文件: " + level_name, Color.RED)
+					load_button.disabled = false
 	else:
 		_show_status("存档数据无效!", Color.RED)
 		load_button.disabled = false
@@ -173,6 +180,27 @@ func _on_load_button_pressed():
 #	...
 # func _on_settings_closed():
 #	...
+
+func _on_tutorial_button_pressed():
+	# 显示玩法说明界面
+	print("暂停菜单: 玩法说明按钮被点击")
+	
+	# 加载玩法说明场景
+	var tutorial_scene = preload("res://scenes/tutorial.tscn")
+	var tutorial_instance = tutorial_scene.instantiate()
+	
+	# 标记为从暂停菜单打开
+	tutorial_instance.opened_from_pause_menu = true
+	
+	# 添加到当前场景
+	get_parent().add_child(tutorial_instance)
+	
+	# 确保在最上层显示
+	tutorial_instance.z_index = 1001  # 比暂停菜单层级更高
+	tutorial_instance.process_mode = Node.PROCESS_MODE_WHEN_PAUSED
+	
+	# 暂时隐藏暂停菜单
+	hide()
 
 func _on_main_menu_button_pressed():
 	print("Main Menu button pressed in pause menu")
@@ -253,13 +281,28 @@ func _update_save_info():
 func _on_encryption_toggle_changed(pressed: bool):
 	if save_manager:
 		print("暂停菜单: 加密设置已更改为: ", pressed)
-		save_manager.set_encryption_mode(pressed, true)
 		
-		# 显示状态消息
-		if pressed:
-			_show_status("已启用存档加密", Color.GREEN)
+		# 检查是否有存档需要转换
+		var had_save_before = save_manager.has_save()
+		
+		save_manager.set_encryption_mode(pressed, false)  # 禁用动态密钥
+		
+		# 如果之前有存档，检查转换是否成功
+		if had_save_before:
+			var has_save_after = save_manager.has_save()
+			if has_save_after:
+				if pressed:
+					_show_status("已启用存档加密，存档已转换", Color.GREEN)
+				else:
+					_show_status("已禁用存档加密，存档已转换", Color.ORANGE)
+			else:
+				_show_status("加密设置更新失败，存档转换出错", Color.RED)
 		else:
-			_show_status("已禁用存档加密", Color.ORANGE)
+			# 显示状态消息
+			if pressed:
+				_show_status("已启用存档加密", Color.GREEN)
+			else:
+				_show_status("已禁用存档加密", Color.ORANGE)
 		
 		# 更新存档信息
 		_update_save_info()

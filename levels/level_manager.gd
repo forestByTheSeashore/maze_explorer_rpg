@@ -179,9 +179,12 @@ func initialize_level():
 		
 	print("找到当前关卡场景: ", current_scene.name)
 	# 设置关卡属性
+	print("LevelManager: 尝试获取关卡配置 - ", next_level_name)
+	print("LevelManager: 可用的关卡配置列表: ", LEVEL_CONFIGS.keys())
+	
 	var config = LEVEL_CONFIGS.get(next_level_name)
 	if config == null:
-		push_error("未找到关卡配置: " + next_level_name)
+		push_error("未找到关卡配置: " + next_level_name + "。可用配置: " + str(LEVEL_CONFIGS.keys()))
 		return
 		
 	print("找到关卡配置，开始设置属性")
@@ -214,6 +217,13 @@ func initialize_level():
 	await current_scene.init_level()
 		
 	print("关卡初始化完成")
+	
+	# 通知UI系统更新关卡信息
+	var ui_managers = get_tree().get_nodes_in_group("ui_manager")
+	for ui in ui_managers:
+		if ui.has_method("update_level_info"):
+			ui.update_level_info(current_scene.current_level_name)
+			print("LevelManager: 通知UI管理器更新关卡信息: ", current_scene.current_level_name)
 	
 	# 清除下一关名称和初始化标记
 	next_level_name = ""

@@ -95,6 +95,12 @@ func _on_body_entered(body):
         )
         if equipped:
             print("玩家获得了新武器：", config.weapon_name, "（攻击力：", config.attack_power, "）")
+            
+            # 显示武器获得通知
+            var notification_manager = get_node_or_null("/root/NotificationManager")
+            if notification_manager:
+                notification_manager.notify_weapon_obtained(config.weapon_name, config.attack_power)
+            
             _play_pickup_effect()
             await get_tree().create_timer(0.5).timeout
             queue_free()
