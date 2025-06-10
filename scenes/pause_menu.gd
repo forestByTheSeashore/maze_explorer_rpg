@@ -15,6 +15,9 @@ var save_manager
 # 状态显示标签
 @onready var status_label = $VBoxContainer/StatusLabel
 
+# 加密设置控件
+@onready var encryption_toggle = $VBoxContainer/EncryptionContainer/EncryptionToggle
+
 # 场景路径常量
 # const SETTINGS_SCENE_PATH = "res://scenes/settings.tscn" # 不再需要，注释掉或删除
 const MAIN_MENU_SCENE_PATH = "res://scenes/main_menu.tscn"
@@ -45,6 +48,12 @@ func _ready():
 		main_menu_button.pressed.connect(_on_main_menu_button_pressed)
 	if quit_button:
 		quit_button.pressed.connect(_on_quit_button_pressed)
+	
+	# 连接加密设置信号
+	if encryption_toggle:
+		encryption_toggle.toggled.connect(_on_encryption_toggle_changed)
+		# 初始化加密设置状态
+		encryption_toggle.button_pressed = save_manager.encryption_enabled if save_manager else true
 	
 	# 连接SaveManager信号 - 延迟执行
 	call_deferred("_connect_save_manager_signals")
@@ -232,8 +241,28 @@ func _update_save_info():
 				tooltip_text += "关卡: " + save_info.get("level_name", "未知") + "\n"
 				tooltip_text += "时间: " + save_info.get("timestamp", "未知") + "\n"
 				tooltip_text += "生命值: " + str(save_info.get("player_hp", 0)) + "/" + str(save_info.get("player_max_hp", 0))
+				if save_info.has("encryption_enabled"):
+					tooltip_text += "\n加密状态: " + ("已加密" if save_info["encryption_enabled"] else "未加密")
 				load_button.tooltip_text = tooltip_text
 			else:
 				load_button.tooltip_text = "点击加载游戏"
 		else:
-			load_button.tooltip_text = "没有可用的存档" 
+			load_button.tooltip_text = "没有可用的存档"
+
+# 加密设置切换回调
+func _on_encryption_toggle_changed(pressed: bool):
+	if save_manager:
+		print("暂停菜单: 加密设置已更改为: ", pressed)
+		save_manager.set_encryption_mode(pressed, true)
+		
+		# 显示状态消息
+		if pressed:
+			_show_status("已启用存档加密", Color.GREEN)
+		else:
+			_show_status("已禁用存档加密", Color.ORANGE)
+		
+		# 更新存档信息
+		_update_save_info()
+	else:
+		print("暂停菜单: 警告 - 无法找到SaveManager")
+		_show_status("无法更改加密设置", Color.RED) 

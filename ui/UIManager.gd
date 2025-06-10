@@ -33,6 +33,11 @@ func _ready():
 	add_to_group("ui_manager")
 	print("UIManager 初始化完成，初始 max_hp = ", _last_max_hp)
 	
+	# 禁用按钮的键盘焦点，只允许鼠标点击
+	btn_nav.focus_mode = Control.FOCUS_NONE
+	btn_inventory.focus_mode = Control.FOCUS_NONE
+	btn_map.focus_mode = Control.FOCUS_NONE
+
 	# 尝试连接玩家
 	_try_connect_player()
 	

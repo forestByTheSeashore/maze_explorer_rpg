@@ -23,7 +23,7 @@ func update_hp(current_hp: int, max_hp: int):
 func update_exp(current_exp: int, max_exp: int):
 	if exp_bar:
 		exp_bar.max_value = max_exp
-		exp_bar.value = current_exp
+		exp_bar.value = current_exp 
 
 func update_level_info(level_name: String = ""):
 	"""更新关卡信息显示"""

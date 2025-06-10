@@ -411,11 +411,11 @@ func _play_hit_feedback():
 	# 保存原始颜色
 	var original_modulate = animated_sprite.modulate
 	
-	# 变红表示受击
+	# 立即变红表示受击，增强视觉反馈
 	animated_sprite.modulate = Color.RED
 	
-	# 短暂闪烁效果
-	await get_tree().create_timer(0.15).timeout
+	# 增加受击反馈持续时间，让效果更明显
+	await get_tree().create_timer(0.2).timeout
 	
 	# 确保节点仍然存在再恢复颜色
 	if animated_sprite:
@@ -632,8 +632,9 @@ func try_equip_weapon(weapon_id: String, weapon_name: String, weapon_attack: int
 	"""尝试装备新武器（向后兼容接口）"""
 	if weapon_system:
 		return weapon_system.try_equip_weapon(weapon_id, weapon_name, weapon_attack)
-	return false
-
+	else:
+		return false
+	
 func switch_to_next_weapon():
 	"""切换到下一把武器（向后兼容接口）"""
 	if weapon_system:

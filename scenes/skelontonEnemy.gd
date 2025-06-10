@@ -385,19 +385,18 @@ func _perform_attack():
 	_update_visual_animation("attack")
 	can_attack = false
 	
-	# 不检查距离限制，直接执行攻击
-	print(name, " 跳过距离检查，直接攻击")
-	
 	# 配置攻击判定框
 	_setup_attack_hitbox()
 	
-	# 等待攻击判定
-	await get_tree().create_timer(0.3).timeout
+	# 等待挥刀动作完成后再执行攻击判定
+	# attack_right动画有10帧，速度5.0fps，总时长2秒
+	# 在第6-7帧（约1.2-1.4秒）执行攻击判定，此时挥刀动作已完成
+	await get_tree().create_timer(1.2).timeout
 	
 	if not is_attacking:
 		return
 	
-	# 执行攻击判定
+	# 执行攻击判定 - 刀子挥到玩家身上时才受击
 	_execute_attack_check()
 	
 	# 攻击冷却

@@ -21,6 +21,7 @@ LevelManager="*res://levels/level_manager.gd"
 GameManager="*res://scripts/GameManager.gd"
 SaveManager="*res://scripts/SaveManager.gd"
 NotificationManager="*res://scripts/NotificationManager.gd"
+EncryptionManager="*res://scripts/EncryptionManager.gd"
 
 [display]
 

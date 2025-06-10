@@ -86,23 +86,31 @@ func _perform_attack():
 	if animated_sprite and animated_sprite.sprite_frames.has_animation("attack_right"):
 		animated_sprite.play("attack_right")
 		animated_sprite.flip_h = facing_direction.x < 0
+		
+		# 连接动画帧变化信号，监听跳跃攻击的关键帧
+		if not animated_sprite.frame_changed.is_connected(_on_attack_frame_changed):
+			animated_sprite.frame_changed.connect(_on_attack_frame_changed)
 	
 	# 设置攻击判定框
 	_setup_attack_hitbox()
 	
-	# 创建攻击时序
+	# 创建攻击时序（备用方案）
 	_handle_attack_timing()
 
 func _handle_attack_timing():
 	"""处理攻击时序"""
-	# 等待攻击判定时机
-	await get_tree().create_timer(0.3).timeout
+	# 备用攻击时序：如果帧监听失败，在合适时机执行攻击
+	# 等待goblin跳下来的时机（第5帧约1.0秒）
+	await get_tree().create_timer(1.0).timeout
 	
 	if not is_attacking:
 		return
 	
-	# 执行攻击判定
-	_execute_attack()
+	# 检查是否已经通过帧监听执行过攻击判定
+	# 如果还没有执行，则作为备用方案执行
+	if attack_hitbox and attack_hitbox.monitoring:
+		print(name, " 备用攻击时序：goblin跳下来时执行攻击判定")
+		_execute_attack()
 	
 	# 攻击冷却
 	await get_tree().create_timer(attack_cooldown).timeout
@@ -297,3 +305,22 @@ func _on_animation_finished():
 	elif animated_sprite.animation == "attack_right":
 		# 攻击动画完成，状态由_handle_attack_timing管理
 		pass
+
+func _on_attack_frame_changed():
+	"""监听攻击动画帧变化，在关键帧执行攻击判定"""
+	if not is_attacking or not animated_sprite:
+		return
+		
+	# 只在攻击动画时监听
+	if not animated_sprite.animation == "attack_right":
+		return
+	
+	# 在第5帧时执行攻击判定（goblin跳下来的瞬间）
+	# 注意：frame是从0开始计数的，所以第5帧是frame=4
+	if animated_sprite.frame == 4:
+		print(name, " 检测到goblin跳下来的关键帧，执行攻击判定")
+		_execute_attack()
+		
+		# 断开信号连接，避免重复执行
+		if animated_sprite.frame_changed.is_connected(_on_attack_frame_changed):
+			animated_sprite.frame_changed.disconnect(_on_attack_frame_changed)

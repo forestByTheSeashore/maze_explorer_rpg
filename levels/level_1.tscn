@@ -26,7 +26,6 @@ layer_0/tile_data = PackedInt32Array(0, 393216, 0, 2, 393216, 0, 3, 393216, 0, 5
 
 [node name="Player" parent="." instance=ExtResource("4_vvk68")]
 position = Vector2(52, 81)
-scale = Vector2(1.68, 1.68)
 
 [node name="HPBeanRoot" type="Node2D" parent="."]
 
@@ -73,7 +72,6 @@ sword_type = 3
 position = Vector2(460, 89)
 
 [node name="CanvasLayer" type="CanvasLayer" parent="."]
-visible = false
 
 [node name="MiniMap" parent="CanvasLayer" instance=ExtResource("12_sntum")]
 offset_left = -433.0
@@ -84,4 +82,3 @@ offset_bottom = 219.0
 [node name="PauseMenu" parent="CanvasLayer" instance=ExtResource("13_jwtdq")]
 
 [node name="GameOverScreen" parent="CanvasLayer" instance=ExtResource("14_ukrcy")]
-visible = false
