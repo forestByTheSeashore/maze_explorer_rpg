@@ -18,6 +18,10 @@ var current_hp: int = 100
 var max_hp: int = 100 # Previous code was 500, use GDD's initial value if defined
 var facing_direction_vector: Vector2 = Vector2.DOWN # Used to record player's facing direction, used for attack and idle states
 
+# --- Audio Variables ---
+var move_sound_timer: float = 0.0
+var move_sound_interval: float = 0.4  # Play move sound every 0.4 seconds while walking
+
 # --- System Component References ---
 var inventory_system: InventorySystem
 var weapon_system: WeaponSystem
@@ -131,14 +135,18 @@ func _physics_process(_delta: float) -> void:
 		PlayerState.WALK:
 			velocity = input_direction * speed
 			_update_walk_animation()
+			_handle_move_sound(_delta)
 		PlayerState.IDLE:
 			velocity = Vector2.ZERO
 			_update_idle_animation() # Ensure idle animation based on correct facing_direction_vector
+			move_sound_timer = 0.0  # Reset move sound timer when not walking
 		PlayerState.ATTACK:
 			velocity = Vector2.ZERO # Usually no movement allowed during attack
 			# Attack animation triggered in _enter_state(PlayerState.ATTACK)
+			move_sound_timer = 0.0  # Reset move sound timer when not walking
 		PlayerState.DEATH:
 			velocity = Vector2.ZERO
+			move_sound_timer = 0.0  # Reset move sound timer when not walking
 	
 	# Handle enemy separation - don't interfere during attack
 	if current_state != PlayerState.ATTACK:
@@ -405,6 +413,19 @@ func level_up():
 	
 	update_ui()
 	print("HP cap increased to: ", max_hp, ", Attack power increased to: ", base_attack)
+
+func _handle_move_sound(delta: float):
+	"""Handle move sound timing"""
+	move_sound_timer += delta
+	if move_sound_timer >= move_sound_interval:
+		move_sound_timer = 0.0
+		_play_move_sound()
+
+func _play_move_sound():
+	"""Play movement sound effect"""
+	var audio_manager = get_node_or_null("/root/AudioManager")
+	if audio_manager:
+		audio_manager.play_move_sound()
 
 func _play_death_animation():
 	if animated_sprite.sprite_frames.has_animation("death"):

@@ -41,6 +41,19 @@ func _on_body_entered(body):
         if notification_manager:
             notification_manager.notify_hp_increased(hp_increase)
     
+    # Play pickup sound effect
+    var audio_manager = get_node_or_null("/root/AudioManager")
+    if audio_manager:
+        audio_manager.play_pickup_sound()
+    elif audio_player and pickup_sound:
+        audio_player.stream = pickup_sound
+        audio_player.play()
+    
+    # Play pickup effects
+    var effects_manager = get_node_or_null("/root/EffectsManager")
+    if effects_manager:
+        effects_manager.play_pickup_effect(global_position)
+    
     # Play pickup effect
     _play_pickup_effect()
     

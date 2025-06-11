@@ -79,6 +79,14 @@ func _ready():
 	print("Current scene name: ", scene_file_path)
 	print("Current node name: ", name)
 	
+	# Play game music
+	var audio_manager = get_node_or_null("/root/AudioManager")
+	if audio_manager:
+		audio_manager.play_game_music()
+		print("LevelBase: Started playing game music")
+	else:
+		print("LevelBase: AudioManager not found")
+	
 	# Initialize path state (unified with Level1 approach)
 	show_path_to_key = false
 	show_path_to_door = false

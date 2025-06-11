@@ -101,6 +101,19 @@ func _on_body_entered(body):
             if notification_manager:
                 notification_manager.notify_weapon_obtained(config.weapon_name, config.attack_power)
             
+            # Play pickup sound effect
+            var audio_manager = get_node_or_null("/root/AudioManager")
+            if audio_manager:
+                audio_manager.play_pickup_sound()
+            elif audio_player and pickup_sound:
+                audio_player.stream = pickup_sound
+                audio_player.play()
+            
+            # Play pickup effects
+            var effects_manager = get_node_or_null("/root/EffectsManager")
+            if effects_manager:
+                effects_manager.play_pickup_effect(global_position)
+            
             _play_pickup_effect()
             await get_tree().create_timer(0.5).timeout
             queue_free()

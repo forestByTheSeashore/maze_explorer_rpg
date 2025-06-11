@@ -40,9 +40,13 @@ func _ready():
 	_initialize_audio_system()
 	_load_audio_settings()
 	
+	# Preload all audio files
+	call_deferred("preload_audio")
+	
 	if OS.is_debug_build():
 		call_deferred("check_audio_files_status")
 		call_deferred("test_audio_system")
+		call_deferred("diagnose_audio_issues")
 
 func _initialize_audio_system():
 	print("AudioManager: Initializing simplified audio system")
@@ -85,17 +89,21 @@ func _apply_volume_settings():
 
 ## Play sound effect
 func play_sfx(effect_name: String, volume_db: float = 0.0):
+	print("AudioManager: Attempting to play SFX - ", effect_name)
 	var audio_stream = _get_audio_stream(effect_name, sfx_cache, audio_config)
 	if not audio_stream:
+		print("AudioManager: Failed to get audio stream for - ", effect_name)
 		return
 	
 	var player = _get_available_sfx_player()
 	if not player:
+		print("AudioManager: No available SFX player found")
 		return
 	
 	player.stream = audio_stream
 	player.volume_db = volume_db
 	player.play()
+	print("AudioManager: Successfully started playing SFX - ", effect_name, " on player: ", player.name)
 
 ## Play background music
 func play_music(music_name: String, loop: bool = true):
@@ -153,9 +161,14 @@ func _get_audio_stream(audio_name: String, cache: Dictionary, config: Dictionary
 
 func _get_available_sfx_player() -> AudioStreamPlayer:
 	"""Get available SFX player"""
-	for player in sfx_players:
+	for i in range(sfx_players.size()):
+		var player = sfx_players[i]
 		if not player.playing:
+			print("AudioManager: Found available SFX player: ", player.name)
 			return player
+	
+	# If all players are busy, use the first one (interrupt)
+	print("AudioManager: All SFX players busy, using first player (interrupting)")
 	return sfx_players[0] if not sfx_players.is_empty() else null
 
 ## Set volume
@@ -302,4 +315,42 @@ func test_audio_system():
 	print("Music player status: ", music_player.playing if music_player else "null")
 	print("SFX player count: ", sfx_players.size())
 	
-	print("====================") 
+	# Test SFX player states
+	for i in range(sfx_players.size()):
+		var player = sfx_players[i]
+		print("SFX Player ", i, " (", player.name, ") - Playing: ", player.playing)
+	
+	print("====================")
+
+func diagnose_audio_issues():
+	"""Diagnose common audio issues"""
+	print("=== Audio System Diagnosis ===")
+	
+	# Check file existence
+	var missing_files = []
+	for effect_name in audio_config.keys():
+		var audio_path = audio_config[effect_name]
+		if not FileAccess.file_exists(audio_path):
+			missing_files.append(effect_name + " -> " + audio_path)
+	
+	if missing_files.size() > 0:
+		print("MISSING AUDIO FILES:")
+		for file in missing_files:
+			print("  ❌ ", file)
+	else:
+		print("✅ All SFX files exist")
+	
+	# Check cache status
+	print("Cache status:")
+	print("  SFX cached: ", sfx_cache.size(), "/", audio_config.size())
+	print("  Music cached: ", music_cache.size(), "/", music_config.size())
+	
+	# Check volume levels
+	if AudioServer.get_bus_index("SFX") != -1:
+		var sfx_volume = db_to_linear(AudioServer.get_bus_volume_db(AudioServer.get_bus_index("SFX")))
+		if sfx_volume < 0.1:
+			print("⚠️  SFX volume is very low: ", sfx_volume)
+		else:
+			print("✅ SFX volume: ", sfx_volume)
+	
+	print("===============================") 
