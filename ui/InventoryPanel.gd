@@ -1,4 +1,4 @@
-# InventoryPanel.gd - 背包界面管理
+# InventoryPanel.gd - Inventory Interface Management
 extends Control
 
 @onready var weapons_list: VBoxContainer = $WeaponsSection/WeaponsList
@@ -8,25 +8,25 @@ extends Control
 var player_reference: Node = null
 var weapon_button_group: ButtonGroup
 var update_timer: float = 0.0
-var update_interval: float = 0.5  # 更新间隔（秒）
+var update_interval: float = 0.5  # Update interval (seconds)
 var connection_retry_timer: float = 0.0
-var connection_retry_interval: float = 1.0  # 重试连接玩家的间隔
+var connection_retry_interval: float = 1.0  # Retry interval for player connection
 
 func _ready():
-	# 设置背景（如果需要在代码中调整）
-	background.color = Color(0, 0, 0, 0.7)  # 半透明黑色背景
+	# Set background (if adjustment needed in code)
+	background.color = Color(0, 0, 0, 0.7)  # Semi-transparent black background
 	
-	# 创建武器按钮组（用于单选）
+	# Create weapon button group (for single selection)
 	weapon_button_group = ButtonGroup.new()
 	
-	# 尝试连接玩家
+	# Try to connect to player
 	_try_connect_player()
 	
-	# 默认隐藏
+	# Hidden by default
 	visible = false
 
 func _process(delta: float):
-	# 如果没有玩家引用，定期尝试重新连接
+	# If no player reference, periodically try to reconnect
 	if not player_reference:
 		connection_retry_timer += delta
 		if connection_retry_timer >= connection_retry_interval:
@@ -34,77 +34,77 @@ func _process(delta: float):
 			_try_connect_player()
 
 func _try_connect_player():
-	# 查找玩家
+	# Find player
 	player_reference = get_tree().get_first_node_in_group("player")
 	if player_reference:
-		# 检查是否已经连接了信号
+		# Check if signal is already connected
 		if player_reference.has_signal("inventory_changed"):
-			# 先断开可能已存在的连接，避免重复连接
+			# Disconnect existing connections to avoid duplicates
 			if player_reference.inventory_changed.is_connected(_on_inventory_changed):
 				player_reference.inventory_changed.disconnect(_on_inventory_changed)
-			# 重新连接信号
+			# Reconnect signal
 			player_reference.inventory_changed.connect(_on_inventory_changed)
-			print("背包UI: 成功连接玩家的inventory_changed信号")
+			print("Inventory UI: Successfully connected to player's inventory_changed signal")
 		else:
-			print("背包UI: 警告 - 玩家没有inventory_changed信号")
+			print("Inventory UI: Warning - Player does not have inventory_changed signal")
 		
-		# 连接成功后立即更新显示
+		# Update display immediately after successful connection
 		_update_display()
 	else:
-		print("背包UI: 警告 - 未找到玩家引用，将在稍后重试")
+		print("Inventory UI: Warning - Player reference not found, will retry later")
 
 func _on_inventory_changed():
-	# 当玩家背包发生变化时立即更新显示（即使背包不可见也要准备更新）
-	print("背包UI: 收到inventory_changed信号，更新显示")
+	# Update display immediately when player inventory changes (even if inventory is not visible)
+	print("Inventory UI: Received inventory_changed signal, updating display")
 	if visible:
 		_update_display()
-	# 即使不可见，也标记需要更新，这样下次显示时会是最新状态
-	# 这里可以添加一个标志来记录需要更新
+	# Even if not visible, mark for update, so it will be up to date next time it's shown
+	# A flag could be added here to record update needs
 
 func _update_display():
 	if not player_reference:
-		print("背包UI: 没有玩家引用，无法更新显示")
-		_try_connect_player()  # 再次尝试连接
+		print("Inventory UI: No player reference, cannot update display")
+		_try_connect_player()  # Try to connect again
 		return
 	
 	_update_weapons_display()
 	_update_keys_display()
 
 func _update_weapons_display():
-	# 清除现有武器显示
+	# Clear existing weapon display
 	for child in weapons_list.get_children():
 		child.queue_free()
 	
 	if not player_reference:
-		print("背包UI: 没有玩家引用")
+		print("Inventory UI: No player reference")
 		return
 	
-	# 检查玩家是否有武器系统方法
+	# Check if player has weapon system methods
 	if not player_reference.has_method("get_available_weapons"):
-		print("背包UI: 玩家没有武器系统方法")
+		print("Inventory UI: Player has no weapon system methods")
 		return
 	
 	var weapons = player_reference.get_available_weapons()
 	var current_weapon = player_reference.get_current_weapon()
 	var current_weapon_index = -1
 	
-	# 通过武器系统获取当前武器索引（如果武器系统存在）
+	# Get current weapon index through weapon system (if weapon system exists)
 	if player_reference.weapon_system:
 		current_weapon_index = player_reference.weapon_system.get_current_weapon_index()
 	else:
-		# 向后兼容：通过查找当前武器在数组中的位置来获取索引
+		# Backward compatibility: Get index by finding current weapon position in array
 		if current_weapon:
 			for i in range(weapons.size()):
 				if weapons[i].weapon_id == current_weapon.weapon_id:
 					current_weapon_index = i
 					break
 	
-	print("背包UI: 更新武器显示，共有", weapons.size(), "把武器")
-	print("背包UI: 当前武器:", current_weapon.weapon_name if current_weapon else "无", "索引:", current_weapon_index)
+	print("Inventory UI: Updating weapon display, total weapons:", weapons.size())
+	print("Inventory UI: Current weapon:", current_weapon.weapon_name if current_weapon else "None", "Index:", current_weapon_index)
 	for i in range(weapons.size()):
-		print("背包UI: 武器", i, ":", weapons[i].weapon_name, "攻击力:", weapons[i].attack_power)
+		print("Inventory UI: Weapon", i, ":", weapons[i].weapon_name, "Attack Power:", weapons[i].attack_power)
 	
-	# 暂时禁用UI更新标志，防止在重建UI时触发选择事件
+	# Temporarily disable UI update flag to prevent selection events during UI rebuild
 	is_updating_from_ui = true
 	
 	for i in range(weapons.size()):
@@ -113,41 +113,41 @@ func _update_weapons_display():
 		var weapon_button = _create_weapon_button(weapon, i, is_current)
 		weapons_list.add_child(weapon_button)
 	
-	# 重新启用UI更新
+	# Re-enable UI updates
 	await get_tree().process_frame
 	is_updating_from_ui = false
 
 func _create_weapon_button(weapon: WeaponData, index: int, is_current: bool) -> Control:
 	var button_container = HBoxContainer.new()
 	
-	# 武器选择按钮（单选按钮）
+	# Weapon selection button (radio button)
 	var radio_button = CheckBox.new()
 	radio_button.button_group = weapon_button_group
 	radio_button.button_pressed = is_current
 	radio_button.custom_minimum_size = Vector2(20, 20)
 	
-	# 数字键标签
+	# Number key label
 	var number_label = Label.new()
 	number_label.text = "[%d]" % (index + 1)
 	number_label.custom_minimum_size = Vector2(30, 20)
 	number_label.add_theme_font_size_override("font_size", 10)
 	number_label.modulate = Color.CYAN
 	
-	# 武器信息标签
+	# Weapon info label
 	var weapon_label = Label.new()
-	weapon_label.text = "%s (攻击力: %d)" % [weapon.weapon_name, weapon.attack_power]
+	weapon_label.text = "%s (Attack: %d)" % [weapon.weapon_name, weapon.attack_power]
 	weapon_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	# 设置武器标签的字体大小
+	# Set weapon label font size
 	weapon_label.add_theme_font_size_override("font_size", 10)
 	
-	# 连接按钮信号
+	# Connect button signal
 	radio_button.toggled.connect(_on_weapon_selected.bind(index))
 	
-	# 如果是当前武器，高亮显示
+	# Highlight if current weapon
 	if is_current:
 		weapon_label.modulate = Color.YELLOW
 		number_label.modulate = Color.YELLOW
-		print("标记当前选中武器: ", weapon.weapon_name)
+		print("Marking current selected weapon: ", weapon.weapon_name)
 	
 	button_container.add_child(radio_button)
 	button_container.add_child(number_label)
@@ -155,63 +155,63 @@ func _create_weapon_button(weapon: WeaponData, index: int, is_current: bool) -> 
 	
 	return button_container
 
-var is_updating_from_ui: bool = false  # 防止UI更新循环
+var is_updating_from_ui: bool = false  # Prevent UI update loops
 
 func _on_weapon_selected(index: int, pressed: bool):
 	if pressed and player_reference and not is_updating_from_ui:
 		var current_index = -1
 		if player_reference.weapon_system:
 			current_index = player_reference.weapon_system.get_current_weapon_index()
-		print("背包UI: 选择武器索引:", index, "当前玩家武器索引:", current_index)
+		print("Inventory UI: Selected weapon index:", index, "Current player weapon index:", current_index)
 		is_updating_from_ui = true
 		player_reference.switch_to_weapon_by_index(index)
-		# 延迟重置标志，确保信号处理完毕
+		# Delay resetting flag to ensure signal processing is complete
 		await get_tree().process_frame
 		is_updating_from_ui = false
 
 func _update_keys_display():
-	# 清除现有钥匙显示
+	# Clear existing keys display
 	for child in keys_list.get_children():
 		child.queue_free()
 	
 	if not player_reference:
-		print("背包UI: 没有玩家引用，无法显示钥匙")
+		print("Inventory UI: No player reference, cannot display keys")
 		return
 	
-	# 检查玩家是否有钥匙系统方法
+	# Check if player has key system methods
 	if not player_reference.has_method("get_keys"):
-		print("背包UI: 玩家没有钥匙系统方法")
+		print("Inventory UI: Player has no key system methods")
 		return
 	
 	var keys = player_reference.get_keys()
-	print("背包UI: 更新钥匙显示，共有", keys.size(), "把钥匙:", keys)
+	print("Inventory UI: Updating keys display, total keys:", keys.size(), "Keys:", keys)
 	
 	if keys.is_empty():
 		var no_keys_label = Label.new()
-		no_keys_label.text = "没有钥匙"
+		no_keys_label.text = "No keys"
 		no_keys_label.modulate = Color.GRAY
-		# 设置字体大小
+		# Set font size
 		no_keys_label.add_theme_font_size_override("font_size", 10)
 		keys_list.add_child(no_keys_label)
 	else:
 		for key in keys:
 			var key_label = Label.new()
 			key_label.text = "🔑 " + key
-			# 设置字体大小
+			# Set font size
 			key_label.add_theme_font_size_override("font_size", 10)
 			keys_list.add_child(key_label)
 
 func toggle_visibility():
 	visible = !visible
 	if visible:
-		# 当显示背包时确保有玩家连接并立即更新一次
+		# When displaying inventory, ensure player connection and update immediately
 		if not player_reference:
 			_try_connect_player()
 		_update_display()
 
 func show_inventory():
 	visible = true
-	# 确保有玩家连接并立即更新显示
+	# Ensure player connection and update display immediately
 	if not player_reference:
 		_try_connect_player()
 	_update_display()

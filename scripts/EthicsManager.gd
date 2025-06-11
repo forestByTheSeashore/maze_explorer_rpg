@@ -1,105 +1,105 @@
 extends Node
 
-## 游戏伦理管理器
-## 确保游戏内容符合伦理标准，保护用户体验
+## Game Ethics Manager
+## Ensures game content meets ethical standards and protects user experience
 
-# 注意：作为autoload使用，不需要class_name
+# Note: Used as autoload, no class_name needed
 
-# 内容过滤器
-const INAPPROPRIATE_WORDS = ["暴力", "血腥", "恶意"]  # 示例，实际应该更完整
-const MAX_VIOLENCE_LEVEL = 2  # 暴力等级限制 (1-5, 5为最暴力)
+# Content filters
+const INAPPROPRIATE_WORDS = ["violence", "gore", "malicious"]  # Example, should be more complete in practice
+const MAX_VIOLENCE_LEVEL = 2  # Violence level limit (1-5, 5 being most violent)
 
-# 用户隐私保护
+# User privacy protection
 var user_data_consent: bool = false
 var data_collection_enabled: bool = false
 
-## 初始化伦理系统
+## Initialize ethics system
 func _ready():
 	add_to_group("ethics_manager")
 	_initialize_content_guidelines()
 	_setup_privacy_protection()
 
-## 初始化内容指导原则
+## Initialize content guidelines
 func _initialize_content_guidelines():
-	print("EthicsManager: 初始化内容指导原则")
-	# 设置内容过滤规则
-	# 确保游戏内容适合所有年龄段
+	print("EthicsManager: Initializing content guidelines")
+	# Set content filtering rules
+	# Ensure game content is suitable for all age groups
 
-## 验证用户生成内容
-## @param content: 用户输入的内容
-## @return: 过滤后的安全内容
+## Validate user-generated content
+## @param content: User input content
+## @return: Filtered safe content
 static func filter_user_content(content: String) -> String:
 	var filtered_content = content
 	
-	# 移除或替换不当内容
+	# Remove or replace inappropriate content
 	for word in INAPPROPRIATE_WORDS:
 		if filtered_content.to_lower().contains(word.to_lower()):
 			filtered_content = filtered_content.replace(word, "***")
-			print("EthicsManager: 过滤了不当内容: ", word)
+			print("EthicsManager: Filtered inappropriate content: ", word)
 	
 	return filtered_content
 
-## 检查暴力内容等级
-## @param violence_level: 暴力等级 (1-5)
-## @return: 是否符合伦理标准
+## Check violence content level
+## @param violence_level: Violence level (1-5)
+## @return: Whether it meets ethical standards
 static func check_violence_level(violence_level: int) -> bool:
 	if violence_level > MAX_VIOLENCE_LEVEL:
-		print("EthicsManager: 暴力等级过高，已限制")
+		print("EthicsManager: Violence level too high, restricted")
 		return false
 	return true
 
-## 用户隐私保护设置
+## User privacy protection settings
 func _setup_privacy_protection():
-	print("EthicsManager: 设置隐私保护")
-	# 默认不收集用户数据
+	print("EthicsManager: Setting up privacy protection")
+	# Don't collect user data by default
 	data_collection_enabled = false
 	
-	# 提示用户隐私政策
+	# Show privacy policy notice
 	_show_privacy_notice()
 
 func _show_privacy_notice():
-	print("=== 隐私保护通知 ===")
-	print("本游戏保护您的隐私，仅收集必要的游戏进度数据")
-	print("所有数据都在本地加密存储，不会上传到任何服务器")
+	print("=== Privacy Protection Notice ===")
+	print("This game protects your privacy and only collects necessary game progress data")
+	print("All data is encrypted and stored locally, never uploaded to any servers")
 	print("==================")
 
-## 获取用户数据使用同意
-## @return: 用户是否同意数据使用
+## Get user data usage consent
+## @return: Whether user consents to data usage
 func request_data_consent() -> bool:
-	# 在实际游戏中，这里应该显示用户协议对话框
-	print("EthicsManager: 请求用户数据使用同意")
-	user_data_consent = true  # 简化处理
+	# In actual game, this should show a user agreement dialog
+	print("EthicsManager: Requesting user data usage consent")
+	user_data_consent = true  # Simplified handling
 	return user_data_consent
 
-## 无障碍功能支持
+## Accessibility features support
 func enable_accessibility_features():
-	print("EthicsManager: 启用无障碍功能")
-	# 可以添加：
-	# - 颜色盲友好的色彩方案
-	# - 键盘导航支持
-	# - 字体大小调整
-	# - 音频提示
+	print("EthicsManager: Enabling accessibility features")
+	# Can add:
+	# - Colorblind-friendly color schemes
+	# - Keyboard navigation support
+	# - Font size adjustment
+	# - Audio cues
 
-## 公平游戏机制
+## Fair gameplay mechanics
 func ensure_fair_gameplay():
-	print("EthicsManager: 确保公平游戏机制")
-	# 防止作弊
-	# 确保所有玩家的平等体验
+	print("EthicsManager: Ensuring fair gameplay mechanics")
+	# Prevent cheating
+	# Ensure equal experience for all players
 
-## 内容适龄性检查
-## @param content_type: 内容类型
-## @return: 是否适合当前用户
+## Content age appropriateness check
+## @param content_type: Content type
+## @return: Whether suitable for current user
 static func check_age_appropriateness(content_type: String) -> bool:
-	# 根据内容类型检查是否适龄
+	# Check age appropriateness based on content type
 	match content_type:
 		"violence":
-			return true  # 当前是轻度卡通暴力，适合所有年龄
+			return true  # Currently mild cartoon violence, suitable for all ages
 		"language":
-			return true  # 无不当语言
+			return true  # No inappropriate language
 		_:
 			return true
 
-## 生成伦理报告
+## Generate ethics report
 func generate_ethics_report() -> Dictionary:
 	return {
 		"content_filtering_active": true,

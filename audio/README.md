@@ -1,104 +1,104 @@
-# 简化版音频配置说明
+# Simplified Audio Configuration Guide
 
-## 目录结构
+## Directory Structure
 
 ```
 audio/
-├── sfx/          # 音效文件
-├── music/        # 背景音乐文件
-└── README.md     # 本说明文件
+├── sfx/          # Sound effects files
+├── music/        # Background music files
+└── README.md     # This guide
 ```
 
-## 需要的音频文件（已简化）
+## Required Audio Files (Simplified)
 
-### 音效文件 (audio/sfx/)
-- `move.ogg` - 移动音效（脚步声）
-- `attack.ogg` - 攻击音效
-- `pickup.ogg` - 拾取物品音效
-- `door.ogg` - 开门音效
-- `button.ogg` - 按钮点击/菜单音效
-- `victory.ogg` - 胜利音效
+### Sound Effects (audio/sfx/)
+- `move.ogg` - Movement sound (footsteps)
+- `attack.ogg` - Attack sound effect
+- `pickup.ogg` - Item pickup sound
+- `door.ogg` - Door opening sound
+- `button.ogg` - Button click/menu sound
+- `victory.ogg` - Victory sound
 
-### 背景音乐文件 (audio/music/)
-- `menu.ogg` - 菜单背景音乐
-- `game.ogg` - 游戏内背景音乐
+### Background Music Files (audio/music/)
+- `menu.ogg` - Menu background music
+- `game.ogg` - In-game background music
 
-## 音频格式要求
+## Audio Format Requirements
 
-- **格式**: 推荐使用 `.ogg` 格式（Vorbis编码）
-- **采样率**: 44.1kHz
-- **声道**: 立体声或单声道
-- **码率**: 128 kbps（适合游戏使用）
+- **Format**: Recommended to use `.ogg` format (Vorbis encoding)
+- **Sample Rate**: 44.1kHz
+- **Channels**: Stereo or mono
+- **Bitrate**: 128 kbps (suitable for games)
 
-## 音频文件时长建议
+## Recommended Audio File Durations
 
-### 音效文件（短音效）
-- **移动音效**: 0.2-0.5秒
-- **攻击音效**: 0.3-0.8秒  
-- **拾取音效**: 0.2-0.5秒
-- **开门音效**: 0.5-1.0秒
-- **按钮音效**: 0.1-0.3秒
-- **胜利音效**: 1.0-3.0秒
+### Sound Effects (Short Sounds)
+- **Movement Sound**: 0.2-0.5 seconds
+- **Attack Sound**: 0.3-0.8 seconds
+- **Pickup Sound**: 0.2-0.5 seconds
+- **Door Sound**: 0.5-1.0 seconds
+- **Button Sound**: 0.1-0.3 seconds
+- **Victory Sound**: 1.0-3.0 seconds
 
-### 背景音乐（循环音乐）
-- **菜单音乐**: 30-60秒（循环）
-- **游戏音乐**: 60-120秒（循环）
+### Background Music (Looping Music)
+- **Menu Music**: 30-60 seconds (looping)
+- **Game Music**: 60-120 seconds (looping)
 
-## 推荐的免费音效资源
+## Recommended Free Sound Resources
 
-### 通用音效库
-- **Freesound.org** - 海量免费音效，需注册
-- **Zapsplat.com** - 高质量音效库，需注册  
-- **OpenGameArt.org** - 游戏开发专用资源
+### General Sound Libraries
+- **Freesound.org** - Vast collection of free sounds, registration required
+- **Zapsplat.com** - High-quality sound library, registration required
+- **OpenGameArt.org** - Game development specific resources
 
-### 针对性搜索关键词
-- 移动音效: "footstep", "step", "walk"
-- 攻击音效: "sword", "hit", "strike", "slash"
-- 拾取音效: "pickup", "coin", "item", "collect"
-- 开门音效: "door", "open", "creak"
-- 按钮音效: "click", "button", "menu"
-- 胜利音效: "victory", "success", "win", "achievement"
-- 菜单音乐: "ambient", "menu", "peaceful"
-- 游戏音乐: "adventure", "exploration", "forest"
+### Targeted Search Keywords
+- Movement sounds: "footstep", "step", "walk"
+- Attack sounds: "sword", "hit", "strike", "slash"
+- Pickup sounds: "pickup", "coin", "item", "collect"
+- Door sounds: "door", "open", "creak"
+- Button sounds: "click", "button", "menu"
+- Victory sounds: "victory", "success", "win", "achievement"
+- Menu music: "ambient", "menu", "peaceful"
+- Game music: "adventure", "exploration", "forest"
 
-## 系统特性
+## System Features
 
-- ✅ **鲁棒设计**: 缺失音频文件时游戏正常运行
-- ✅ **自动检测**: 添加文件后自动加载
-- ✅ **向后兼容**: 保持与旧版本代码的兼容性
-- ✅ **简化配置**: 只包含maze+rpg游戏必需的音效
+- ✅ **Robust Design**: Game runs normally when audio files are missing
+- ✅ **Auto Detection**: Automatically loads newly added files
+- ✅ **Backward Compatible**: Maintains compatibility with older code versions
+- ✅ **Simplified Configuration**: Only includes essential sounds for maze+rpg game
 
-## 添加音频文件步骤
+## Steps to Add Audio Files
 
-1. 下载或创建符合要求的音频文件
-2. 将文件放入对应目录（`audio/sfx/` 或 `audio/music/`）
-3. 确保文件名与配置完全匹配
-4. 重启游戏即可使用新音频
+1. Download or create audio files meeting requirements
+2. Place files in corresponding directory (`audio/sfx/` or `audio/music/`)
+3. Ensure filenames match configuration exactly
+4. Restart game to use new audio
 
-## 文件大小建议
+## File Size Recommendations
 
-- **音效文件**: < 100KB
-- **音乐文件**: < 2MB
-- **总音频包**: < 5MB
+- **Sound Effects**: < 100KB
+- **Music Files**: < 2MB
+- **Total Audio Package**: < 5MB
 
-这样的配置适合交作业，参考资料易于管理，同时保持游戏的基本音频体验。
+This configuration is suitable for assignment submission, reference materials are easy to manage while maintaining basic audio experience.
 
 ---
 
-## 📋 快速音频文件清单
+## 📋 Quick Audio File Checklist
 
-**您需要准备以下8个音频文件：**
+**You need to prepare the following 8 audio files:**
 
-### 音效文件（放在 audio/sfx/ 文件夹）
-1. **move.ogg** - 玩家移动脚步声
-2. **attack.ogg** - 玩家攻击/敌人受击音效  
-3. **pickup.ogg** - 拾取道具音效
-4. **door.ogg** - 开门音效
-5. **button.ogg** - 菜单按钮点击音效
-6. **victory.ogg** - 胜利/完成关卡音效
+### Sound Effects (place in audio/sfx/ folder)
+1. **move.ogg** - Player movement footsteps
+2. **attack.ogg** - Player attack/enemy hit sound
+3. **pickup.ogg** - Item pickup sound
+4. **door.ogg** - Door opening sound
+5. **button.ogg** - Menu button click sound
+6. **victory.ogg** - Victory/level complete sound
 
-### 音乐文件（放在 audio/music/ 文件夹）
-7. **menu.ogg** - 主菜单背景音乐
-8. **game.ogg** - 游戏内背景音乐
+### Music Files (place in audio/music/ folder)
+7. **menu.ogg** - Main menu background music
+8. **game.ogg** - In-game background music
 
-**总共只需要8个文件，简单易管理！** 
+**Only 8 files needed in total, simple to manage!** 

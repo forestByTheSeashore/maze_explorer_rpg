@@ -1,4 +1,4 @@
-# WeaponData.gd - 武器数据资源类
+# WeaponData.gd - Weapon data resource class
 class_name WeaponData
 extends Resource
 

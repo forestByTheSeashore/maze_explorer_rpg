@@ -1,4 +1,4 @@
-# StatusBar.gd - 状态栏脚本
+# StatusBar.gd - Status Bar Script
 extends Control
 
 @onready var hp_bar = $LeftSection/BarsContainer/HPContainer/HPBar
@@ -8,11 +8,11 @@ extends Control
 func _ready():
 	print("StatusBar initialized")
 	
-	# 检查必要的节点是否存在
+	# Check if required nodes exist
 	if not level_value:
-		print("警告：StatusBar - LevelValue节点未找到，关卡信息显示功能将被禁用")
+		print("Warning: StatusBar - LevelValue node not found, level display functionality will be disabled")
 	
-	# 初始化关卡信息
+	# Initialize level information
 	_update_level_info()
 
 func update_hp(current_hp: int, max_hp: int):
@@ -26,63 +26,63 @@ func update_exp(current_exp: int, max_exp: int):
 		exp_bar.value = current_exp 
 
 func update_level_info(level_name: String = ""):
-	"""更新关卡信息显示"""
+	"""Update level information display"""
 	if level_value:
 		var display_text = _format_level_name(level_name)
 		level_value.text = display_text
-		print("StatusBar: 关卡信息更新为: ", display_text)
+		print("StatusBar: Level information updated to: ", display_text)
 	else:
-		print("StatusBar: LevelValue节点不存在，无法更新关卡信息: ", level_name)
+		print("StatusBar: LevelValue node does not exist, cannot update level info: ", level_name)
 
 func _format_level_name(level_name: String) -> String:
-	"""格式化关卡名称为显示文本"""
+	"""Format level name for display text"""
 	if level_name == "":
 		level_name = _get_current_level_name()
 	
-	# 转换 level_1 -> 1, level_2 -> 2 等
+	# Convert level_1 -> 1, level_2 -> 2 etc.
 	if level_name.begins_with("level_"):
-		var level_number = level_name.substr(6)  # 去掉 "level_" 前缀
+		var level_number = level_name.substr(6)  # Remove "level_" prefix
 		return level_number
 	
-	# 如果不是标准格式，直接返回
+	# If not standard format, return as is
 	return level_name if level_name != "" else "?"
 
 func _get_current_level_name() -> String:
-	"""获取当前关卡名称"""
-	# 首先尝试从SaveManager获取当前关卡（适用于加载存档的情况）
+	"""Get current level name"""
+	# First try to get current level from SaveManager (for loaded saves)
 	var save_manager = get_node_or_null("/root/SaveManager")
 	if save_manager and save_manager.current_level_name != "":
 		return save_manager.current_level_name
 	
-	# 尝试从LevelManager获取
+	# Try to get from LevelManager
 	if LevelManager and LevelManager.next_level_name != "":
 		return LevelManager.next_level_name
 	
-	# 尝试从当前场景获取
+	# Try to get from current scene
 	var current_scene = get_tree().current_scene
 	if current_scene and current_scene.has_method("get_current_level_name"):
 		return current_scene.get_current_level_name()
 	elif current_scene and "current_level_name" in current_scene:
 		return current_scene.current_level_name
 	
-	# 尝试从场景名称推断
+	# Try to infer from scene name
 	if current_scene:
 		var scene_name = current_scene.name.to_lower()
-		# 特殊处理：如果是base_level场景，可能是level_2或更高
+		# Special handling: if base_level scene, could be level_2 or higher
 		if scene_name == "base_level":
-			# 优先从场景文件路径推断
+			# Priority to infer from scene file path
 			if current_scene.scene_file_path.contains("base_level"):
-				return "level_2"  # base_level场景默认为level_2
+				return "level_2"  # base_level scene defaults to level_2
 		elif scene_name.contains("level"):
-			# 从场景名中提取关卡信息
+			# Extract level info from scene name
 			for i in range(1, 10):
 				if scene_name.contains(str(i)):
 					return "level_" + str(i)
 	
-	# 默认返回level_1
+	# Default to level_1
 	return "level_1"
 
 func _update_level_info():
-	"""初始化或更新关卡信息"""
+	"""Initialize or update level information"""
 	var level_name = _get_current_level_name()
 	update_level_info(level_name) 

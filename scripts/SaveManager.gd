@@ -4,13 +4,13 @@ const SAVE_PATH := "user://user_data/save_game.dat"
 const ENCRYPTED_SAVE_PATH := "user://user_data/save_game_encrypted.dat"
 const SETTINGS_PATH := "user://user_data/save_settings.cfg"
 
-# 加密设置
-var encryption_enabled := false  # 默认关闭加密功能
-var use_dynamic_key := false     # 暂时禁用动态密钥，使用静态密钥保证稳定性
+# Encryption settings
+var encryption_enabled := false  # Encryption disabled by default
+var use_dynamic_key := false     # Dynamic key temporarily disabled, using static key for stability
 
 var current_level_name : String = ""
 
-# 游戏保存数据结构
+# Game save data structure
 var save_data = {
 	"current_level": "",
 	"player_hp": 100,
@@ -22,53 +22,53 @@ var save_data = {
 	"game_version": "1.0"
 }
 
-# 保存结果信号
+# Save result signals
 signal save_completed(success: bool, message: String)
 signal load_completed(success: bool, message: String)
 
 func _ready():
-	print("SaveManager: 初始化开始...")
+	print("SaveManager: Initialization started...")
 	
-	# 首先加载用户的加密设置偏好
+	# First load user's encryption preference settings
 	_load_encryption_settings()
 	
-	print("SaveManager: 当前加密设置 - 启用:", encryption_enabled, " 动态密钥:", use_dynamic_key)
+	print("SaveManager: Current encryption settings - Enabled:", encryption_enabled, " Dynamic Key:", use_dynamic_key)
 	
-	# 检查存档文件状态
+	# Check save file status
 	if FileAccess.file_exists(ENCRYPTED_SAVE_PATH):
-		print("SaveManager: 检测到加密存档文件")
+		print("SaveManager: Encrypted save file detected")
 	if FileAccess.file_exists(SAVE_PATH):
-		print("SaveManager: 检测到普通存档文件")
+		print("SaveManager: Regular save file detected")
 	
-	# 如果没有设置过加密偏好，根据现有存档类型自动设置
+	# If no encryption preference is set, automatically set based on existing save type
 	if not _has_saved_encryption_preference():
 		if FileAccess.file_exists(ENCRYPTED_SAVE_PATH) and not FileAccess.file_exists(SAVE_PATH):
-			# 只有加密存档，启用加密
+			# Only encrypted save exists, enable encryption
 			encryption_enabled = true
-			print("SaveManager: 自动检测到加密存档，启用加密模式")
+			print("SaveManager: Automatically detected encrypted save, enabling encryption mode")
 		elif FileAccess.file_exists(SAVE_PATH) and not FileAccess.file_exists(ENCRYPTED_SAVE_PATH):
-			# 只有普通存档，禁用加密
+			# Only regular save exists, disable encryption
 			encryption_enabled = false
-			print("SaveManager: 自动检测到普通存档，禁用加密模式")
-		# 保存自动检测的设置
+			print("SaveManager: Automatically detected regular save, disabling encryption mode")
+		# Save automatically detected settings
 		_save_encryption_settings()
 	
-	print("SaveManager: 初始化完成")
+	print("SaveManager: Initialization complete")
 	
-	# 在开发模式下运行加密测试
+	# Run encryption tests in development mode
 	if OS.is_debug_build():
-		print("SaveManager: 启动开发模式功能测试...")
+		print("SaveManager: Starting development mode functionality tests...")
 		call_deferred("_run_encryption_tests")
 
 func has_save() -> bool:
-	# 检查当前设置对应的存档文件
+	# Check save file corresponding to current settings
 	var current_save_exists = false
 	if encryption_enabled:
 		current_save_exists = FileAccess.file_exists(ENCRYPTED_SAVE_PATH)
 	else:
 		current_save_exists = FileAccess.file_exists(SAVE_PATH)
 	
-	# 如果当前设置的存档不存在，检查另一种格式的存档是否存在
+	# If current format save doesn't exist, check if alternative format exists
 	if not current_save_exists:
 		var alternative_exists = false
 		if encryption_enabled:
@@ -76,12 +76,12 @@ func has_save() -> bool:
 		else:
 			alternative_exists = FileAccess.file_exists(ENCRYPTED_SAVE_PATH)
 		
-		# 如果找到了另一种格式的存档，尝试转换
+		# If alternative format save found, try to convert
 		if alternative_exists:
-			print("SaveManager: 发现不同格式的存档，尝试转换...")
+			print("SaveManager: Found different format save, attempting conversion...")
 			_convert_save_format()
 			
-			# 重新检查
+			# Recheck
 			if encryption_enabled:
 				current_save_exists = FileAccess.file_exists(ENCRYPTED_SAVE_PATH)
 			else:
@@ -89,15 +89,15 @@ func has_save() -> bool:
 	
 	return current_save_exists
 
-# 增强的保存进度函数
+# Enhanced save progress function
 func save_progress(level_name: String, player_data: Dictionary = {}) -> bool:
-	print("SaveManager: 开始保存游戏进度...")
+	print("SaveManager: Starting to save game progress...")
 	
 	current_level_name = level_name
 	save_data["current_level"] = level_name
 	save_data["save_timestamp"] = Time.get_datetime_string_from_system()
 	
-	# 如果提供了玩家数据，则更新保存数据
+	# Update save data if player data is provided
 	if not player_data.is_empty():
 		if player_data.has("hp"):
 			save_data["player_hp"] = player_data["hp"]
@@ -110,143 +110,143 @@ func save_progress(level_name: String, player_data: Dictionary = {}) -> bool:
 		if player_data.has("position"):
 			save_data["player_position"] = player_data["position"]
 	
-	# 确保保存目录存在
+	# Ensure save directory exists
 	var save_dir = SAVE_PATH.get_base_dir()
-	print("SaveManager: 检查保存目录:", save_dir)
+	print("SaveManager: Checking save directory:", save_dir)
 	
 	if not DirAccess.dir_exists_absolute(save_dir):
-		print("SaveManager: 创建保存目录:", save_dir)
+		print("SaveManager: Creating save directory:", save_dir)
 		var result = DirAccess.make_dir_recursive_absolute(save_dir)
 		if result != OK:
-			var error_msg = "无法创建保存目录: " + str(result)
-			print("SaveManager 错误: ", error_msg)
+			var error_msg = "Cannot create save directory: " + str(result)
+			print("SaveManager Error: ", error_msg)
 			save_completed.emit(false, error_msg)
 			
-			# 显示错误通知
+			# Show error notification
 			var notification_manager = get_node_or_null("/root/NotificationManager")
 			if notification_manager and notification_manager.has_method("show_error"):
-				notification_manager.show_error("保存失败: " + error_msg)
+				notification_manager.show_error("Save failed: " + error_msg)
 			
 			return false
 	
-	# 根据加密设置选择保存方式
+	# Choose save method based on encryption settings
 	var save_success = false
 	
 	if encryption_enabled:
-		# 使用加密保存
+		# Use encrypted save
 		save_success = _save_encrypted_data(save_data)
 	else:
-		# 使用普通保存
+		# Use regular save
 		save_success = _save_plain_data(save_data)
 	
 	if not save_success:
-		var error_msg = "存档保存失败"
-		print("SaveManager 错误: ", error_msg)
+		var error_msg = "Failed to save game"
+		print("SaveManager Error: ", error_msg)
 		save_completed.emit(false, error_msg)
 		
-		# 显示错误通知
+		# Show error notification
 		var notification_manager = get_node_or_null("/root/NotificationManager")
 		if notification_manager and notification_manager.has_method("show_error"):
-			notification_manager.show_error("保存失败: " + error_msg)
+			notification_manager.show_error("Save failed: " + error_msg)
 		
 		return false
 	
-	var success_msg = "游戏已成功保存到: " + level_name
+	var success_msg = "Game successfully saved to: " + level_name
 	print("SaveManager: ", success_msg)
 	save_completed.emit(true, success_msg)
 	
-	# 显示成功通知
+	# Show success notification
 	var notification_manager = get_node_or_null("/root/NotificationManager")
 	if notification_manager and notification_manager.has_method("show_success"):
-		notification_manager.show_success("游戏保存成功!")
+		notification_manager.show_success("Game saved successfully!")
 	
 	return true
 
-# 增强的读取进度函数
+# Enhanced load progress function
 func load_progress() -> Dictionary:
-	print("SaveManager: 开始读取游戏进度...")
+	print("SaveManager: Starting to load game progress...")
 	
 	if not has_save():
-		var error_msg = "未找到存档文件"
+		var error_msg = "No save file found"
 		print("SaveManager: ", error_msg)
 		load_completed.emit(false, error_msg)
 		
-		# 显示错误通知
+		# Show error notification
 		var notification_manager = get_node_or_null("/root/NotificationManager")
 		if notification_manager and notification_manager.has_method("show_error"):
-			notification_manager.show_error("没有找到存档文件")
+			notification_manager.show_error("No save file found")
 		
 		return {}
 	
-	# 根据加密设置选择加载方式
+	# Choose load method based on encryption settings
 	var data = {}
 	
 	if encryption_enabled:
-		# 使用加密加载
+		# Use encrypted load
 		data = _load_encrypted_data()
 	else:
-		# 使用普通加载
+		# Use regular load
 		data = _load_plain_data()
 	
 	if data.is_empty():
-		var error_msg = "存档数据加载失败"
-		print("SaveManager 错误: ", error_msg)
+		var error_msg = "Failed to load save data"
+		print("SaveManager Error: ", error_msg)
 		load_completed.emit(false, error_msg)
 		
-		# 显示错误通知
+		# Show error notification
 		var notification_manager = get_node_or_null("/root/NotificationManager")
 		if notification_manager and notification_manager.has_method("show_error"):
-			notification_manager.show_error("存档数据加载失败")
+			notification_manager.show_error("Failed to load save data")
 		
 		return {}
 	
-	# 验证数据有效性
+	# Validate data
 	if typeof(data) != TYPE_DICTIONARY:
-		var error_msg = "存档文件数据格式无效"
-		print("SaveManager 错误: ", error_msg)
+		var error_msg = "Invalid save file data format"
+		print("SaveManager Error: ", error_msg)
 		load_completed.emit(false, error_msg)
 		
-		# 显示错误通知
+		# Show error notification
 		var notification_manager = get_node_or_null("/root/NotificationManager")
 		if notification_manager and notification_manager.has_method("show_error"):
-			notification_manager.show_error("存档文件数据格式无效")
+			notification_manager.show_error("Invalid save file data format")
 		
 		return {}
 	
-	# 检查必要字段
+	# Check required fields
 	if not data.has("current_level"):
-		var error_msg = "存档文件缺少关键数据"
-		print("SaveManager 错误: ", error_msg)
+		var error_msg = "Save file missing critical data"
+		print("SaveManager Error: ", error_msg)
 		load_completed.emit(false, error_msg)
 		
-		# 显示错误通知
+		# Show error notification
 		var notification_manager = get_node_or_null("/root/NotificationManager")
 		if notification_manager and notification_manager.has_method("show_error"):
-			notification_manager.show_error("存档文件缺少关键数据")
+			notification_manager.show_error("Save file missing critical data")
 		
 		return {}
 	
-	# 更新当前数据
+	# Update current data
 	save_data = data
 	current_level_name = data.get("current_level", "")
 	
-	var success_msg = "存档读取成功: " + current_level_name
+	var success_msg = "Save file loaded successfully: " + current_level_name
 	print("SaveManager: ", success_msg)
 	load_completed.emit(true, success_msg)
 	
-	# 显示成功通知
+	# Show success notification
 	var notification_manager = get_node_or_null("/root/NotificationManager")
 	if notification_manager and notification_manager.has_method("show_success"):
-		notification_manager.show_success("存档加载成功!")
+		notification_manager.show_success("Save file loaded successfully!")
 	
 	return data
 
-# 获取存档信息
+# Get save information
 func get_save_info() -> Dictionary:
 	if not has_save():
 		return {}
 	
-	# 根据加密设置选择加载方式
+	# Choose load method based on encryption settings
 	var data = {}
 	
 	if encryption_enabled:
@@ -256,8 +256,8 @@ func get_save_info() -> Dictionary:
 	
 	if typeof(data) == TYPE_DICTIONARY and not data.is_empty():
 		return {
-			"level_name": data.get("current_level", "未知关卡"),
-			"timestamp": data.get("save_timestamp", "未知时间"),
+			"level_name": data.get("current_level", "Unknown level"),
+			"timestamp": data.get("save_timestamp", "Unknown time"),
 			"player_hp": data.get("player_hp", 100),
 			"player_max_hp": data.get("player_max_hp", 100),
 			"player_exp": data.get("player_exp", 0),
@@ -266,104 +266,104 @@ func get_save_info() -> Dictionary:
 	
 	return {}
 
-# 快速保存当前游戏状态
+# Quick save current game state
 func quick_save() -> bool:
-	print("SaveManager: ===== 开始执行快速保存 =====")
-	# 尝试获取当前玩家数据
+	print("SaveManager: ===== Starting quick save =====")
+	# Try to get current player data
 	var player_data = {}
-	print("SaveManager: 步骤1 - 初始化player_data完成")
+	print("SaveManager: Step 1 - Initialization of player_data completed")
 	
 	var player = get_tree().get_first_node_in_group("player")
-	print("SaveManager: 步骤2 - 尝试获取player节点")
+	print("SaveManager: Step 2 - Trying to get player node")
 	
 	if player:
-		print("SaveManager: 步骤3 - 找到玩家节点:", player.name)
-		print("SaveManager: 步骤3.1 - 玩家节点类型:", player.get_class())
-		# 检查属性是否存在
-		print("SaveManager: 步骤3.2 - 检查current_hp属性:", "current_hp" in player)
-		print("SaveManager: 步骤3.3 - 检查max_hp属性:", "max_hp" in player)
+		print("SaveManager: Step 3 - Found player node:", player.name)
+		print("SaveManager: Step 3.1 - Player node type:", player.get_class())
+		# Check attribute existence
+		print("SaveManager: Step 3.2 - Checking current_hp attribute:", "current_hp" in player)
+		print("SaveManager: Step 3.3 - Checking max_hp attribute:", "max_hp" in player)
 		var hp_value = 100
 		var max_hp_value = 100
 		var position_value = Vector2.ZERO
-		# 安全获取HP值
+		# Safe get HP value
 		if "current_hp" in player:
-			print("SaveManager: 步骤3.4 - 尝试获取current_hp")
+			print("SaveManager: Step 3.4 - Trying to get current_hp")
 			hp_value = player.current_hp
-			print("SaveManager: 步骤3.5 - current_hp值:", hp_value)
+			print("SaveManager: Step 3.5 - current_hp value:", hp_value)
 		else:
-			print("SaveManager: 警告 - current_hp属性不存在，使用默认值")
-		# 安全获取最大HP值
+			print("SaveManager: Warning - current_hp attribute does not exist, using default value")
+		# Safe get max HP value
 		if "max_hp" in player:
-			print("SaveManager: 步骤3.6 - 尝试获取max_hp")
+			print("SaveManager: Step 3.6 - Trying to get max_hp")
 			max_hp_value = player.max_hp
-			print("SaveManager: 步骤3.7 - max_hp值:", max_hp_value)
+			print("SaveManager: Step 3.7 - max_hp value:", max_hp_value)
 		else:
-			print("SaveManager: 警告 - max_hp属性不存在，使用默认值")
-		# 安全获取位置
-		print("SaveManager: 步骤3.8 - 尝试获取global_position")
+			print("SaveManager: Warning - max_hp attribute does not exist, using default value")
+		# Safe get position
+		print("SaveManager: Step 3.8 - Trying to get global_position")
 		position_value = player.global_position
-		print("SaveManager: 步骤3.9 - position值:", position_value)
-		# 构建player_data
-		print("SaveManager: 步骤4 - 开始构建player_data字典")
+		print("SaveManager: Step 3.9 - position value:", position_value)
+		# Build player_data
+		print("SaveManager: Step 4 - Starting to build player_data dictionary")
 		player_data = {
 			"hp": hp_value,
 			"max_hp": max_hp_value,
-			"exp": 0,  # 玩家暂时没有经验系统
-			"exp_to_next": 50,  # 使用默认值
+			"exp": 0,  # Player temporarily has no experience system
+			"exp_to_next": 50,  # Use default value
 			"position": position_value
 		}
-		print("SaveManager: 步骤5 - player_data构建完成:", player_data)
+		print("SaveManager: Step 5 - player_data built completed:", player_data)
 	else:
-		print("SaveManager: 步骤3 - 警告：未找到玩家节点")
-	# 尝试获取当前关卡名称
-	print("SaveManager: 步骤6 - 开始获取当前关卡名称")
+		print("SaveManager: Step 3 - Warning: Player node not found")
+	# Try to get current level name
+	print("SaveManager: Step 6 - Starting to get current level name")
 	var current_scene = get_tree().current_scene
-	print("SaveManager: 步骤6.1 - current_scene:", current_scene)
+	print("SaveManager: Step 6.1 - current_scene:", current_scene)
 	if current_scene == null:
-		print("SaveManager: 错误 - current_scene为null")
+		print("SaveManager: Error - current_scene is null")
 		return false
 	
-	# 优先从场景的current_level_name属性获取关卡名称
+	# Priority get level name from current_level_name attribute of scene
 	var current_level_name_to_save = ""
 	if "current_level_name" in current_scene and current_scene.current_level_name != "":
 		current_level_name_to_save = current_scene.current_level_name
-		print("SaveManager: 从场景的current_level_name获取: ", current_level_name_to_save)
+		print("SaveManager: Get from current_level_name of scene:", current_level_name_to_save)
 	elif current_level_name != "":
-		# 如果SaveManager自己有记录的当前关卡名
+		# If SaveManager has recorded current level name
 		current_level_name_to_save = current_level_name
-		print("SaveManager: 从SaveManager记录获取: ", current_level_name_to_save)
+		print("SaveManager: Get from SaveManager record:", current_level_name_to_save)
 	else:
-		# 备选方案：从场景文件名推断
+		# Backup plan: Infer from scene file name
 		var scene_file_path = current_scene.scene_file_path
-		print("SaveManager: 步骤6.2 - scene_file_path:", scene_file_path)
+		print("SaveManager: Step 6.2 - scene_file_path:", scene_file_path)
 		var scene_name = scene_file_path.get_file().get_basename()
-		print("SaveManager: 从场景文件名推断: ", scene_name)
+		print("SaveManager: Infer from scene file name:", scene_name)
 		
-		# 特殊处理base_level场景
+		# Special handling for base_level scene
 		if scene_name == "base_level":
-			# 从LevelManager获取关卡名称
+			# Get level name from LevelManager
 			var level_manager = get_node_or_null("/root/LevelManager")
 			if level_manager and level_manager.next_level_name != "":
 				current_level_name_to_save = level_manager.next_level_name
-				print("SaveManager: 从LevelManager获取: ", current_level_name_to_save)
+				print("SaveManager: Get from LevelManager:", current_level_name_to_save)
 			else:
-				current_level_name_to_save = "level_2"  # 默认为level_2
-				print("SaveManager: 使用默认值: ", current_level_name_to_save)
+				current_level_name_to_save = "level_2"  # Default to level_2
+				print("SaveManager: Use default value:", current_level_name_to_save)
 		else:
 			current_level_name_to_save = scene_name
 	
-	print("SaveManager: 步骤7 - 最终确定的关卡名称:", current_level_name_to_save)
-	print("SaveManager: 步骤8 - 准备调用save_progress")
+	print("SaveManager: Step 7 - Final determined level name:", current_level_name_to_save)
+	print("SaveManager: Step 8 - Preparing to call save_progress")
 	var result = save_progress(current_level_name_to_save, player_data)
-	print("SaveManager: 步骤9 - save_progress调用完成，结果:", result)
+	print("SaveManager: Step 9 - save_progress call completed, result:", result)
 	
-	# 显示保存结果通知
+	# Show save result notification
 	var notification_manager = get_node_or_null("/root/NotificationManager")
 	if notification_manager:
 		if result:
 			notification_manager.notify_game_saved()
 		else:
-			notification_manager.show_error("保存失败！请检查磁盘空间", 4.0)
+			notification_manager.show_error("Save failed! Please check disk space", 4.0)
 	
 	return result
 
@@ -382,166 +382,166 @@ func clear_progress() -> void:
 	
 	if FileAccess.file_exists(SAVE_PATH):
 		DirAccess.remove_absolute(SAVE_PATH)
-		print("SaveManager: 存档已清除")
+		print("SaveManager: Save cleared")
 	
 	if FileAccess.file_exists(ENCRYPTED_SAVE_PATH):
 		DirAccess.remove_absolute(ENCRYPTED_SAVE_PATH)
-		print("SaveManager: 加密存档已清除")
+		print("SaveManager: Encrypted save cleared")
 
 # ============================================================================
-# 加密相关私有函数
+# Encryption related private functions
 # ============================================================================
 
-## 保存加密数据
+## Save encrypted data
 func _save_encrypted_data(data: Dictionary) -> bool:
-	print("SaveManager: 保存加密数据...")
-	print("SaveManager: 要保存的数据: ", data)
+	print("SaveManager: Saving encrypted data...")
+	print("SaveManager: Data to save: ", data)
 	
-	# 获取加密密钥
+	# Get encryption key
 	var encryption_key = EncryptionManager.ENCRYPTION_KEY
 	if use_dynamic_key:
 		encryption_key = EncryptionManager.generate_dynamic_key()
-		print("SaveManager: 使用动态密钥保存")
+		print("SaveManager: Using dynamic key for save")
 	else:
-		print("SaveManager: 使用静态密钥保存: ", encryption_key)
+		print("SaveManager: Using static key for save: ", encryption_key)
 	
-	# 加密数据
+	# Encrypt data
 	var encrypted_bytes = EncryptionManager.encrypt_data(data, encryption_key)
 	if encrypted_bytes.is_empty():
-		print("SaveManager: 数据加密失败")
+		print("SaveManager: Data encryption failed")
 		return false
 	
-	print("SaveManager: 加密完成，加密数据大小: ", encrypted_bytes.size(), " 字节")
+	print("SaveManager: Encryption completed, encrypted data size: ", encrypted_bytes.size(), " bytes")
 	
-	# 写入加密文件
+	# Write encrypted file
 	var file = FileAccess.open(ENCRYPTED_SAVE_PATH, FileAccess.WRITE)
 	if file == null:
-		print("SaveManager: 无法创建加密存档文件: ", FileAccess.get_open_error())
+		print("SaveManager: Cannot create encrypted save file: ", FileAccess.get_open_error())
 		return false
 	
 	file.store_buffer(encrypted_bytes)
 	file.close()
 	
-	print("SaveManager: 加密存档保存完成到: ", ENCRYPTED_SAVE_PATH)
+	print("SaveManager: Encrypted save saved to: ", ENCRYPTED_SAVE_PATH)
 	return true
 
-## 保存普通数据
+## Save regular data
 func _save_plain_data(data: Dictionary) -> bool:
-	print("SaveManager: 保存普通数据...")
+	print("SaveManager: Saving regular data...")
 	
 	var file = FileAccess.open(SAVE_PATH, FileAccess.WRITE)
 	if file == null:
-		print("SaveManager: 无法创建存档文件: ", FileAccess.get_open_error())
+		print("SaveManager: Cannot create save file: ", FileAccess.get_open_error())
 		return false
 	
 	file.store_var(data)
 	file.close()
 	
-	print("SaveManager: 普通存档保存完成")
+	print("SaveManager: Regular save saved")
 	return true
 
-## 加载加密数据
+## Load encrypted data
 func _load_encrypted_data() -> Dictionary:
-	print("SaveManager: 加载加密数据...")
+	print("SaveManager: Loading encrypted data...")
 	
 	if not FileAccess.file_exists(ENCRYPTED_SAVE_PATH):
-		print("SaveManager: 加密存档文件不存在")
+		print("SaveManager: Encrypted save file does not exist")
 		return {}
 	
 	var file = FileAccess.open(ENCRYPTED_SAVE_PATH, FileAccess.READ)
 	if file == null:
-		print("SaveManager: 无法打开加密存档文件: ", FileAccess.get_open_error())
+		print("SaveManager: Cannot open encrypted save file: ", FileAccess.get_open_error())
 		return {}
 	
 	var encrypted_bytes = file.get_buffer(file.get_length())
 	file.close()
 	
-	print("SaveManager: 读取到加密文件，大小: ", encrypted_bytes.size(), " 字节")
+	print("SaveManager: Read encrypted file, size: ", encrypted_bytes.size(), " bytes")
 	
-	# 获取解密密钥
+	# Get decryption key
 	var encryption_key = EncryptionManager.ENCRYPTION_KEY
 	if use_dynamic_key:
 		encryption_key = EncryptionManager.generate_dynamic_key()
-		print("SaveManager: 使用动态密钥")
+		print("SaveManager: Using dynamic key")
 	else:
-		print("SaveManager: 使用静态密钥: ", encryption_key)
+		print("SaveManager: Using static key: ", encryption_key)
 	
-	# 验证文件完整性
+	# Verify file integrity
 	if not EncryptionManager.verify_encrypted_file(ENCRYPTED_SAVE_PATH):
-		print("SaveManager: 错误 - 加密文件完整性验证失败")
+		print("SaveManager: Error - Encrypted file integrity verification failed")
 		return {}
 	
-	# 解密数据
+	# Decrypt data
 	var decrypted_data = EncryptionManager.decrypt_data(encrypted_bytes, encryption_key)
 	if decrypted_data.is_empty():
-		print("SaveManager: 数据解密失败")
+		print("SaveManager: Data decryption failed")
 		
-		# 尝试获取文件信息进行调试
+		# Try to get file information for debugging
 		var file_info = EncryptionManager.get_encrypted_file_info(ENCRYPTED_SAVE_PATH)
-		print("SaveManager: 文件信息: ", file_info)
+		print("SaveManager: File information: ", file_info)
 		
 		return {}
 	
-	print("SaveManager: 加密数据加载完成，解密数据: ", decrypted_data)
+	print("SaveManager: Encrypted data loaded successfully, decrypted data: ", decrypted_data)
 	return decrypted_data
 
-## 加载普通数据
+## Load regular data
 func _load_plain_data() -> Dictionary:
-	print("SaveManager: 加载普通数据...")
+	print("SaveManager: Loading regular data...")
 	
 	if not FileAccess.file_exists(SAVE_PATH):
-		print("SaveManager: 普通存档文件不存在")
+		print("SaveManager: Regular save file does not exist")
 		return {}
 	
 	var file = FileAccess.open(SAVE_PATH, FileAccess.READ)
 	if file == null:
-		print("SaveManager: 无法打开存档文件: ", FileAccess.get_open_error())
+		print("SaveManager: Cannot open save file: ", FileAccess.get_open_error())
 		return {}
 	
 	var data = file.get_var()
 	file.close()
 	
 	if typeof(data) != TYPE_DICTIONARY:
-		print("SaveManager: 存档数据格式无效")
+		print("SaveManager: Invalid save data format")
 		return {}
 	
-	print("SaveManager: 普通数据加载完成")
+	print("SaveManager: Regular data loaded successfully")
 	return data
 
-## 设置加密模式
-## @param enabled: 是否启用加密
-## @param dynamic_key: 是否使用动态密钥
+## Set encryption mode
+## @param enabled: Whether to enable encryption
+## @param dynamic_key: Whether to use dynamic key
 func set_encryption_mode(enabled: bool, dynamic_key: bool = true):
 	var old_enabled = encryption_enabled
 	encryption_enabled = enabled
 	use_dynamic_key = dynamic_key
-	print("SaveManager: 加密模式设置 - 启用:", enabled, " 动态密钥:", dynamic_key)
+	print("SaveManager: Encryption mode set - Enabled:", enabled, " Dynamic Key:", dynamic_key)
 	
-	# 保存用户的加密设置偏好
+	# Save user's encryption preference settings
 	_save_encryption_settings()
 	
-	# 如果加密设置发生了变化，并且存在存档，尝试转换格式
+	# If encryption settings changed and existing save exists, try to convert format
 	if old_enabled != enabled:
-		print("SaveManager: 加密设置发生变化，检查是否需要转换存档格式...")
+		print("SaveManager: Encryption settings changed, check if need to convert save format...")
 		
-		# 检查旧格式的存档是否存在
+		# Check old format save exists
 		var old_format_exists = false
 		if enabled:
-			# 现在要启用加密，检查是否有普通格式的存档
+			# Now to enable encryption, check if there is regular format save
 			old_format_exists = FileAccess.file_exists(SAVE_PATH)
 		else:
-			# 现在要禁用加密，检查是否有加密格式的存档
+			# Now to disable encryption, check if there is encrypted format save
 			old_format_exists = FileAccess.file_exists(ENCRYPTED_SAVE_PATH)
 		
 		if old_format_exists:
-			print("SaveManager: 发现旧格式存档，开始转换...")
+			print("SaveManager: Found old format save, starting conversion...")
 			_convert_save_format()
 		else:
-			print("SaveManager: 没有找到需要转换的旧格式存档")
+			print("SaveManager: No old format save found to convert")
 	
-	print("SaveManager: 加密模式设置完成")
+	print("SaveManager: Encryption mode set completed")
 
-## 获取存档文件信息
+## Get save file information
 func get_save_file_info() -> Dictionary:
 	var info = {}
 	
@@ -562,118 +562,118 @@ func get_save_file_info() -> Dictionary:
 	
 	return info
 
-## 运行加密测试（仅在开发模式下）
+## Run encryption tests (only in development mode)
 func _run_encryption_tests():
-	print("SaveManager: 开始运行加密功能测试...")
+	print("SaveManager: Starting to run encryption functionality tests...")
 	
-	# 延迟一下以确保所有系统都已初始化
+	# Delay a bit to ensure all systems are initialized
 	await get_tree().create_timer(1.0).timeout
 	
-	# 检查EncryptionTest是否可用
+	# Check if EncryptionTest is available
 	if not EncryptionTest:
-		print("SaveManager: 警告 - EncryptionTest类不可用，跳过测试")
+		print("SaveManager: Warning - EncryptionTest class not available, skipping test")
 		return
 	
 	var test_passed = EncryptionTest.run_all_tests()
 	
 	if test_passed:
-		print("SaveManager: ✅ 加密功能测试全部通过！")
+		print("SaveManager: ✅ Encryption functionality tests passed all!")
 		
-		# 显示成功通知
+		# Show success notification
 		var notification_manager = get_node_or_null("/root/NotificationManager")
 		if notification_manager and notification_manager.has_method("show_success"):
-			notification_manager.show_success("加密功能测试通过!")
+			notification_manager.show_success("Encryption test passed!")
 	else:
-		print("SaveManager: ⚠️ 部分加密功能测试失败，请检查实现")
+		print("SaveManager: ⚠️ Some encryption functionality tests failed, please check implementation")
 		
-		# 在开发模式显示更温和的通知
+		# Show more gentle notification in development mode
 		var notification_manager = get_node_or_null("/root/NotificationManager")
 		if notification_manager and notification_manager.has_method("show_info"):
-			notification_manager.show_info("存档系统就绪 (部分测试未通过)")
+			notification_manager.show_info("Save system ready (some tests failed)")
 		elif notification_manager and notification_manager.has_method("notify_info"):
-			notification_manager.notify_info("存档系统就绪")
+			notification_manager.notify_info("Save system ready")
 
-## 手动运行加密测试（可在游戏中调用）
+## Manual run encryption tests (can be called in game)
 func run_encryption_test_manual():
-	print("SaveManager: 手动运行加密测试...")
+	print("SaveManager: Manual run encryption test...")
 	if EncryptionTest:
 		return EncryptionTest.run_all_tests()
 	else:
-		print("SaveManager: EncryptionTest不可用")
+		print("SaveManager: EncryptionTest not available")
 		return false
 
-## 调试：打印存档系统状态
+## Debug: Print save system status
 func debug_save_status():
-	print("=== SaveManager 状态调试 ===")
-	print("加密启用: ", encryption_enabled)
-	print("使用动态密钥: ", use_dynamic_key)
-	print("当前关卡名: ", current_level_name)
-	print("普通存档路径: ", SAVE_PATH)
-	print("加密存档路径: ", ENCRYPTED_SAVE_PATH)
-	print("普通存档存在: ", FileAccess.file_exists(SAVE_PATH))
-	print("加密存档存在: ", FileAccess.file_exists(ENCRYPTED_SAVE_PATH))
-	print("has_save()结果: ", has_save())
+	print("=== SaveManager Status Debug ===")
+	print("Encryption enabled: ", encryption_enabled)
+	print("Using dynamic key: ", use_dynamic_key)
+	print("Current level name: ", current_level_name)
+	print("Regular save path: ", SAVE_PATH)
+	print("Encrypted save path: ", ENCRYPTED_SAVE_PATH)
+	print("Regular save exists: ", FileAccess.file_exists(SAVE_PATH))
+	print("Encrypted save exists: ", FileAccess.file_exists(ENCRYPTED_SAVE_PATH))
+	print("has_save() result: ", has_save())
 	
-	# 获取当前场景信息
+	# Get current scene information
 	var current_scene = get_tree().current_scene
 	if current_scene:
-		print("当前场景文件: ", current_scene.scene_file_path)
-		print("当前场景名称: ", current_scene.name)
+		print("Current scene file: ", current_scene.scene_file_path)
+		print("Current scene name: ", current_scene.name)
 		if "current_level_name" in current_scene:
-			print("场景的关卡名: ", current_scene.current_level_name)
+			print("Scene level name: ", current_scene.current_level_name)
 	
 	if FileAccess.file_exists(SAVE_PATH):
 		var file = FileAccess.open(SAVE_PATH, FileAccess.READ)
 		if file:
-			print("普通存档大小: ", file.get_length(), " 字节")
+			print("Regular save size: ", file.get_length(), " bytes")
 			file.close()
 			
-		# 读取并显示存档内容
+		# Read and display save data
 		var save_data = _load_plain_data()
 		if not save_data.is_empty():
-			print("普通存档中的关卡: ", save_data.get("current_level", "未找到"))
+			print("Regular save level: ", save_data.get("current_level", "Not found"))
 	
 	if FileAccess.file_exists(ENCRYPTED_SAVE_PATH):
 		var file = FileAccess.open(ENCRYPTED_SAVE_PATH, FileAccess.READ)
 		if file:
-			print("加密存档大小: ", file.get_length(), " 字节")
+			print("Encrypted save size: ", file.get_length(), " bytes")
 			file.close()
 		
 		var file_info = EncryptionManager.get_encrypted_file_info(ENCRYPTED_SAVE_PATH)
-		print("加密存档信息: ", file_info)
+		print("Encrypted save information: ", file_info)
 		
-		# 读取并显示存档内容
+		# Read and display save data
 		var save_data = _load_encrypted_data()
 		if not save_data.is_empty():
-			print("加密存档中的关卡: ", save_data.get("current_level", "未找到"))
+			print("Encrypted save level: ", save_data.get("current_level", "Not found"))
 	
-	print("=== 状态调试结束 ===")
+	print("=== Status Debug End ===")
 
-## 加载加密设置偏好
+## Load encryption preference settings
 func _load_encryption_settings():
 	if FileAccess.file_exists(SETTINGS_PATH):
 		var config = ConfigFile.new()
 		if config.load(SETTINGS_PATH) == OK:
 			encryption_enabled = config.get_value("encryption", "enabled", false)
 			use_dynamic_key = config.get_value("encryption", "use_dynamic_key", false)
-			print("SaveManager: 加载了用户加密设置 - 启用:", encryption_enabled, " 动态密钥:", use_dynamic_key)
+			print("SaveManager: Loaded user encryption settings - Enabled:", encryption_enabled, " Dynamic Key:", use_dynamic_key)
 
-## 保存加密设置偏好
+## Save encryption preference settings
 func _save_encryption_settings():
 	var config = ConfigFile.new()
 	config.set_value("encryption", "enabled", encryption_enabled)
 	config.set_value("encryption", "use_dynamic_key", use_dynamic_key)
 	config.set_value("encryption", "has_preference", true)
 	
-	# 确保目录存在
+	# Ensure directory exists
 	var save_dir = SETTINGS_PATH.get_base_dir()
 	if not DirAccess.dir_exists_absolute(save_dir):
 		DirAccess.make_dir_recursive_absolute(save_dir)
 	
 	config.save(SETTINGS_PATH)
-	print("SaveManager: 已保存加密设置偏好")
+	print("SaveManager: Encryption settings saved")
 
-## 检查是否已保存过加密偏好
+## Check if encryption preference has been saved
 func _has_saved_encryption_preference() -> bool:
 	if FileAccess.file_exists(SETTINGS_PATH):
 		var config = ConfigFile.new()
@@ -681,35 +681,35 @@ func _has_saved_encryption_preference() -> bool:
 			return config.get_value("encryption", "has_preference", false)
 	return false
 
-## 转换存档格式（在加密设置改变时调用）
+## Convert save format (called when encryption settings change)
 func _convert_save_format():
-	print("SaveManager: 开始转换存档格式...")
+	print("SaveManager: Starting to convert save format...")
 	
 	var source_data = {}
 	var convert_success = false
 	
 	if encryption_enabled:
-		# 需要从普通格式转换为加密格式
+		# Need to convert from regular format to encrypted format
 		if FileAccess.file_exists(SAVE_PATH):
 			source_data = _load_plain_data()
 			if not source_data.is_empty():
 				convert_success = _save_encrypted_data(source_data)
 				if convert_success:
-					print("SaveManager: 成功转换为加密格式")
-					# 删除旧的普通格式文件
+					print("SaveManager: Successfully converted to encrypted format")
+					# Delete old regular format file
 					DirAccess.remove_absolute(SAVE_PATH)
 	else:
-		# 需要从加密格式转换为普通格式
+		# Need to convert from encrypted format to regular format
 		if FileAccess.file_exists(ENCRYPTED_SAVE_PATH):
 			source_data = _load_encrypted_data()
 			if not source_data.is_empty():
 				convert_success = _save_plain_data(source_data)
 				if convert_success:
-					print("SaveManager: 成功转换为普通格式")
-					# 删除旧的加密格式文件
+					print("SaveManager: Successfully converted to regular format")
+					# Delete old encrypted format file
 					DirAccess.remove_absolute(ENCRYPTED_SAVE_PATH)
 	
 	if not convert_success:
-		print("SaveManager: 存档格式转换失败")
+		print("SaveManager: Save format conversion failed")
 	
 	return convert_success

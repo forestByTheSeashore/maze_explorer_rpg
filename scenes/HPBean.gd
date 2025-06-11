@@ -1,7 +1,7 @@
-# HPBean.gd - 修正版
+# HPBean.gd - Revised Version
 extends Area2D
 
-@export var hp_increase: int = 20  # HP增加量
+@export var hp_increase: int = 20  # Amount of HP increase
 @export var pickup_sound: AudioStream
 
 @onready var animated_sprite: AnimatedSprite2D = $AnimatedSprite2D
@@ -31,17 +31,17 @@ func _on_body_entered(body):
     
     is_collected = true
     
-    # 提升玩家的当前HP（不是恢复，是永久增加）
+    # Increase player's current HP (not healing, permanent increase)
     if body.has_method("increase_hp_from_bean"):
         body.increase_hp_from_bean(hp_increase)
-        print("玩家的HP永久增加了 ", hp_increase, " 点！")
+        print("Player's HP permanently increased by ", hp_increase, " points!")
         
-        # 显示HP增加通知
+        # Show HP increase notification
         var notification_manager = get_node_or_null("/root/NotificationManager")
         if notification_manager:
             notification_manager.notify_hp_increased(hp_increase)
     
-    # 播放拾取效果
+    # Play pickup effect
     _play_pickup_effect()
     
     await get_tree().create_timer(0.5).timeout

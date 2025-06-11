@@ -1,60 +1,60 @@
 extends Node
 class_name EncryptionTest
 
-## 存档加密功能测试类
-## 用于验证加密和解密功能的正确性
+## Save file encryption test class
+## Used to verify the correctness of encryption and decryption functionality
 
-## 运行所有加密测试
+## Run all encryption tests
 static func run_all_tests() -> bool:
-	print("=== 开始加密功能测试 ===")
+	print("=== Starting Encryption Tests ===")
 	
 	var all_passed = true
 	
-	# 基础加密解密测试
+	# Basic encryption/decryption test
 	if not test_basic_encryption():
 		all_passed = false
-		print("❌ 基础加密解密测试失败")
+		print("❌ Basic encryption/decryption test failed")
 	else:
-		print("✅ 基础加密解密测试通过")
+		print("✅ Basic encryption/decryption test passed")
 	
-	# 空数据处理测试
+	# Empty data handling test
 	if not test_empty_data():
 		all_passed = false
-		print("❌ 空数据处理测试失败")
+		print("❌ Empty data handling test failed")
 	else:
-		print("✅ 空数据处理测试通过")
+		print("✅ Empty data handling test passed")
 	
-	# 复杂数据结构测试
+	# Complex data structure test
 	if not test_complex_data():
 		all_passed = false
-		print("❌ 复杂数据结构测试失败")
+		print("❌ Complex data structure test failed")
 	else:
-		print("✅ 复杂数据结构测试通过")
+		print("✅ Complex data structure test passed")
 	
-	# 密钥测试
+	# Different keys test
 	if not test_different_keys():
 		all_passed = false
-		print("❌ 不同密钥测试失败")
+		print("❌ Different keys test failed")
 	else:
-		print("✅ 不同密钥测试通过")
+		print("✅ Different keys test passed")
 	
-	# 文件完整性测试
+	# File integrity test
 	if not test_file_integrity():
 		all_passed = false
-		print("❌ 文件完整性测试失败")
+		print("❌ File integrity test failed")
 	else:
-		print("✅ 文件完整性测试通过")
+		print("✅ File integrity test passed")
 	
-	print("=== 加密功能测试完成 ===")
+	print("=== Encryption Tests Complete ===")
 	if all_passed:
-		print("🎉 所有测试都通过了！")
+		print("🎉 All tests passed!")
 	else:
-		print("⚠️ 部分测试失败，请检查加密实现")
-		print("   注意：在音频文件缺失的情况下，某些类型不匹配是正常的")
+		print("⚠️ Some tests failed, please check encryption implementation")
+		print("   Note: Some type mismatches are normal when audio files are missing")
 	
 	return all_passed
 
-## 基础加密解密测试
+## Basic encryption/decryption test
 static func test_basic_encryption() -> bool:
 	var test_data = {
 		"current_level": "level_1",
@@ -67,61 +67,61 @@ static func test_basic_encryption() -> bool:
 		"game_version": "1.0"
 	}
 	
-	# 加密数据
+	# Encrypt data
 	var encrypted = EncryptionManager.encrypt_data(test_data)
 	if encrypted.is_empty():
-		print("加密失败：返回空数据")
+		print("Encryption failed: returned empty data")
 		return false
 	
-	# 解密数据
+	# Decrypt data
 	var decrypted = EncryptionManager.decrypt_data(encrypted)
 	if decrypted.is_empty():
-		print("解密失败：返回空数据")
+		print("Decryption failed: returned empty data")
 		return false
 	
-	# 验证数据一致性
+	# Verify data consistency
 	for key in test_data.keys():
 		if not decrypted.has(key):
-			print("解密数据缺少键: ", key)
+			print("Decrypted data missing key: ", key)
 			return false
 		
 		var original_value = test_data[key]
 		var decrypted_value = decrypted[key]
 		
-		# 特殊处理Vector2类型（JSON序列化后会变成字符串）
+		# Special handling for Vector2 type (becomes string after JSON serialization)
 		if typeof(original_value) == TYPE_VECTOR2:
-			# Vector2在JSON中被序列化为字符串格式如"(120, 240)"
+			# Vector2 is serialized in JSON as string format like "(120, 240)"
 			var expected_string = str(original_value)
 			if typeof(decrypted_value) == TYPE_STRING and decrypted_value == expected_string:
-				continue  # 匹配成功
+				continue  # Match successful
 			else:
-				print("Vector2数据不匹配 - 键: ", key, " 原值: ", original_value, " 解密值: ", decrypted_value)
+				print("Vector2 data mismatch - Key: ", key, " Original: ", original_value, " Decrypted: ", decrypted_value)
 				return false
 		elif decrypted_value != original_value:
-			print("解密数据不匹配 - 键: ", key, " 原值: ", original_value, " 解密值: ", decrypted_value)
+			print("Decrypted data mismatch - Key: ", key, " Original: ", original_value, " Decrypted: ", decrypted_value)
 			return false
 	
 	return true
 
-## 空数据处理测试
+## Empty data handling test
 static func test_empty_data() -> bool:
-	# 测试空字典
+	# Test empty dictionary
 	var empty_dict = {}
 	var encrypted_empty = EncryptionManager.encrypt_data(empty_dict)
 	if not encrypted_empty.is_empty():
-		print("空字典加密应该返回空数据")
+		print("Empty dictionary encryption should return empty data")
 		return false
 	
-	# 测试空字节数组解密
+	# Test empty byte array decryption
 	var empty_bytes = PackedByteArray()
 	var decrypted_empty = EncryptionManager.decrypt_data(empty_bytes)
 	if not decrypted_empty.is_empty():
-		print("空字节数组解密应该返回空字典")
+		print("Empty byte array decryption should return empty dictionary")
 		return false
 	
 	return true
 
-## 复杂数据结构测试
+## Complex data structure test
 static func test_complex_data() -> bool:
 	var complex_data = {
 		"level_data": {
@@ -158,85 +158,85 @@ static func test_complex_data() -> bool:
 		}
 	}
 	
-	# 加密和解密
+	# Encrypt and decrypt
 	var encrypted = EncryptionManager.encrypt_data(complex_data)
 	if encrypted.is_empty():
-		print("复杂数据加密失败")
+		print("Complex data encryption failed")
 		return false
 	
 	var decrypted = EncryptionManager.decrypt_data(encrypted)
 	if decrypted.is_empty():
-		print("复杂数据解密失败")
+		print("Complex data decryption failed")
 		return false
 	
-	# 递归验证数据结构
+	# Recursively verify data structure
 	return _compare_dictionaries(complex_data, decrypted)
 
-## 不同密钥测试
+## Different keys test
 static func test_different_keys() -> bool:
 	var test_data = {
-		"test": "密钥测试数据",
+		"test": "Key test data",
 		"number": 42
 	}
 	
 	var key1 = "test_key_1"
 	var key2 = "test_key_2"
 	
-	# 使用密钥1加密
+	# Encrypt with key1
 	var encrypted1 = EncryptionManager.encrypt_data(test_data, key1)
 	if encrypted1.is_empty():
-		print("密钥1加密失败")
+		print("Key1 encryption failed")
 		return false
 	
-	# 使用密钥1解密 - 应该成功
+	# Decrypt with key1 - should succeed
 	var decrypted1 = EncryptionManager.decrypt_data(encrypted1, key1)
 	if decrypted1.is_empty() or decrypted1["test"] != test_data["test"]:
-		print("相同密钥解密失败")
+		print("Same key decryption failed")
 		return false
 	
-	# 使用密钥2解密 - 应该失败或得到错误数据
+	# Decrypt with key2 - should fail or get incorrect data
 	var decrypted2 = EncryptionManager.decrypt_data(encrypted1, key2)
 	if not decrypted2.is_empty() and decrypted2.get("test", "") == test_data["test"]:
-		print("不同密钥解密不应该成功")
+		print("Different key decryption should not succeed")
 		return false
 	
 	return true
 
-## 文件完整性测试
+## File integrity test
 static func test_file_integrity() -> bool:
-	# 创建测试文件路径
+	# Create test file path
 	var test_file_path = "user://encryption_test.dat"
 	
 	var test_data = {
 		"integrity_test": true,
-		"data": "文件完整性测试数据",
+		"data": "File integrity test data",
 		"checksum_test": 12345
 	}
 	
-	# 加密数据
+	# Encrypt data
 	var encrypted = EncryptionManager.encrypt_data(test_data)
 	if encrypted.is_empty():
-		print("完整性测试：加密失败")
+		print("Integrity test: Encryption failed")
 		return false
 	
-	# 写入文件
+	# Write to file
 	var file = FileAccess.open(test_file_path, FileAccess.WRITE)
 	if file == null:
-		print("完整性测试：无法创建测试文件")
+		print("Integrity test: Unable to create test file")
 		return false
 	
 	file.store_buffer(encrypted)
 	file.close()
 	
-	# 验证文件存在
+	# Verify file existence
 	if not EncryptionManager.verify_encrypted_file(test_file_path):
-		print("完整性测试：文件验证失败")
+		print("Integrity test: File verification failed")
 		return false
 	
-	# 读取并解密文件
+	# Read and decrypt file
 	var read_file = FileAccess.open(test_file_path, FileAccess.READ)
 	if read_file == null:
-		print("完整性测试：无法读取测试文件")
+		print("Integrity test: Unable to read test file")
 		return false
 	
 	var file_data = read_file.get_buffer(read_file.get_length())
@@ -244,112 +244,112 @@ static func test_file_integrity() -> bool:
 	
 	var decrypted = EncryptionManager.decrypt_data(file_data)
 	if decrypted.is_empty():
-		print("完整性测试：文件解密失败")
+		print("Integrity test: File decryption failed")
 		return false
 	
-	# 验证数据
+	# Verify data
 	if decrypted["integrity_test"] != true or decrypted["data"] != test_data["data"]:
-		print("完整性测试：解密数据不匹配")
+		print("Integrity test: Decrypted data mismatch")
 		return false
 	
-	# 清理测试文件
+	# Clean up test file
 	DirAccess.remove_absolute(test_file_path)
 	
 	return true
 
-## 递归比较字典
+## Recursively compare dictionaries
 static func _compare_dictionaries(dict1: Dictionary, dict2: Dictionary) -> bool:
 	if dict1.size() != dict2.size():
-		print("字典大小不匹配: ", dict1.size(), " vs ", dict2.size())
+		print("Dictionary size mismatch: ", dict1.size(), " vs ", dict2.size())
 		return false
 	
 	for key in dict1.keys():
 		if not dict2.has(key):
-			print("字典2缺少键: ", key)
+			print("Dictionary 2 missing key: ", key)
 			return false
 		
 		var val1 = dict1[key]
 		var val2 = dict2[key]
 		
-		# 容错比较：考虑JSON序列化可能引起的类型变化
+		# Fault-tolerant comparison: consider type changes from JSON serialization
 		if not _values_equal(val1, val2, key):
 			return false
 	
 	return true
 
-## 容错的值比较函数
+## Fault-tolerant value comparison function
 static func _values_equal(val1, val2, context_key: String = "") -> bool:
 	var type1 = typeof(val1)
 	var type2 = typeof(val2)
 	
-	# 处理Vector2类型（JSON序列化后变成字符串）
+	# Handle Vector2 type (becomes string after JSON serialization)
 	if type1 == TYPE_VECTOR2:
 		var expected_string = str(val1)
 		if type2 == TYPE_STRING and val2 == expected_string:
 			return true
 		else:
-			print("Vector2值不匹配 - 键: ", context_key, " 值1: ", val1, " 值2: ", val2)
+			print("Vector2 value mismatch - Key: ", context_key, " Value1: ", val1, " Value2: ", val2)
 			return false
 	
-	# 处理数字类型的容错比较（int vs float）
+	# Handle fault-tolerant number type comparison (int vs float)
 	if (type1 == TYPE_INT and type2 == TYPE_FLOAT) or (type1 == TYPE_FLOAT and type2 == TYPE_INT):
-		# 比较数值是否相等
-		if abs(float(val1) - float(val2)) < 0.0001:  # 浮点数精度容差
+		# Compare numerical values
+		if abs(float(val1) - float(val2)) < 0.0001:  # Floating point precision tolerance
 			return true
 		else:
-			print("数值不匹配 - 键: ", context_key, " 值1: ", val1, " (", type1, ") 值2: ", val2, " (", type2, ")")
+			print("Numerical mismatch - Key: ", context_key, " Value1: ", val1, " (", type1, ") Value2: ", val2, " (", type2, ")")
 			return false
 	
-	# 类型必须匹配（除了上面的特殊情况）
+	# Types must match (except for special cases above)
 	if type1 != type2:
-		print("类型不匹配 - 键: ", context_key, " 类型1: ", type1, " 类型2: ", type2)
+		print("Type mismatch - Key: ", context_key, " Type1: ", type1, " Type2: ", type2)
 		return false
 	
-	# 递归处理复杂类型
+	# Recursively handle complex types
 	if type1 == TYPE_DICTIONARY:
 		if not _compare_dictionaries(val1, val2):
-			print("嵌套字典不匹配 - 键: ", context_key)
+			print("Nested dictionary mismatch - Key: ", context_key)
 			return false
 	elif type1 == TYPE_ARRAY:
 		if not _compare_arrays(val1, val2):
-			print("数组不匹配 - 键: ", context_key)
+			print("Array mismatch - Key: ", context_key)
 			return false
 	else:
-		# 简单类型直接比较
+		# Direct comparison for simple types
 		if val1 != val2:
-			print("值不匹配 - 键: ", context_key, " 值1: ", val1, " 值2: ", val2)
+			print("Value mismatch - Key: ", context_key, " Value1: ", val1, " Value2: ", val2)
 			return false
 	
 	return true
 
-## 递归比较数组
+## Recursively compare arrays
 static func _compare_arrays(arr1: Array, arr2: Array) -> bool:
 	if arr1.size() != arr2.size():
-		print("数组大小不匹配: ", arr1.size(), " vs ", arr2.size())
+		print("Array size mismatch: ", arr1.size(), " vs ", arr2.size())
 		return false
 	
 	for i in range(arr1.size()):
 		var val1 = arr1[i]
 		var val2 = arr2[i]
 		
-		# 使用容错比较
-		if not _values_equal(val1, val2, "数组索引[" + str(i) + "]"):
+		# Use fault-tolerant comparison
+		if not _values_equal(val1, val2, "Array index[" + str(i) + "]"):
 			return false
 	
 	return true
 
-## 打印加密文件信息（用于调试）
+## Print encrypted file information (for debugging)
 static func print_file_info(file_path: String):
 	if not FileAccess.file_exists(file_path):
-		print("文件不存在: ", file_path)
+		print("File does not exist: ", file_path)
 		return
 	
 	var info = EncryptionManager.get_encrypted_file_info(file_path)
-	print("=== 加密文件信息 ===")
-	print("文件路径: ", file_path)
-	print("魔数标识: ", info.get("magic", "未知"))
-	print("文件版本: ", info.get("version", "未知"))
-	print("数据长度: ", info.get("data_length", 0), " 字节")
-	print("总文件大小: ", info.get("total_size", 0), " 字节")
-	print("文件有效性: ", "有效" if info.get("is_valid", false) else "无效")
+	print("=== Encrypted File Information ===")
+	print("File path: ", file_path)
+	print("Magic identifier: ", info.get("magic", "Unknown"))
+	print("File version: ", info.get("version", "Unknown"))
+	print("Data length: ", info.get("data_length", 0), " bytes")
+	print("Total file size: ", info.get("total_size", 0), " bytes")
+	print("File validity: ", "Valid" if info.get("is_valid", false) else "Invalid")
 	print("===================") 

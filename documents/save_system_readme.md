@@ -1,118 +1,118 @@
-# 游戏存档系统说明
+# Game Save System Documentation
 
-## 概述
-为你的迷宫探索游戏添加了完整的存档系统，包括暂停菜单存档、快速保存/加载功能，以及完善的错误处理机制。
+## Overview
+A complete save system has been added to your maze exploration game, including pause menu saves, quick save/load functionality, and comprehensive error handling mechanisms.
 
-## 功能特点
+## Features
 
-### 1. 暂停菜单存档功能
-- **位置**: 游戏暂停界面 (按ESC键打开)
-- **功能**: 
-  - 保存游戏按钮：保存当前游戏进度
-  - 加载游戏按钮：加载已保存的游戏进度
-  - 状态显示：实时显示保存/加载状态和结果
+### 1. Pause Menu Save Function
+- **Location**: Game pause interface (press ESC to open)
+- **Features**: 
+  - Save Game button: Save current game progress
+  - Load Game button: Load saved game progress
+  - Status Display: Real-time display of save/load status and results
 
-### 2. 快捷键功能
-- **F5**: 快速保存当前游戏状态
-- **F6**: 快速加载最近的存档
-- **ESC**: 打开/关闭暂停菜单
+### 2. Hotkey Functions
+- **F5**: Quick save current game state
+- **F6**: Quick load most recent save
+- **ESC**: Open/Close pause menu
 
-### 3. 保存的数据内容
-- 当前关卡名称
-- 玩家血量和最大血量
-- 玩家经验值和升级所需经验
-- 玩家当前位置
-- 保存时间戳
-- 游戏版本信息
+### 3. Saved Data Contents
+- Current level name
+- Player health and maximum health
+- Player experience and experience needed for level up
+- Player current position
+- Save timestamp
+- Game version information
 
-### 4. 错误处理机制
-- 文件访问错误检测
-- 数据格式验证
-- 关卡文件存在性检查
-- 用户友好的错误消息显示
+### 4. Error Handling Mechanisms
+- File access error detection
+- Data format validation
+- Level file existence check
+- User-friendly error message display
 
-### 5. 通知系统
-- 保存成功/失败通知
-- 加载成功/失败通知
-- 右上角浮动通知显示
-- 自动消失的动画效果
+### 5. Notification System
+- Save success/failure notifications
+- Load success/failure notifications
+- Top-right floating notifications
+- Auto-disappearing animation effects
 
-## 技术实现
+## Technical Implementation
 
-### 核心组件
-1. **SaveManager**: 全局存档管理器
-2. **NotificationManager**: 通知系统管理器
-3. **暂停菜单增强**: 添加存档/读档界面
+### Core Components
+1. **SaveManager**: Global save manager
+2. **NotificationManager**: Notification system manager
+3. **Pause Menu Enhancement**: Added save/load interface
 
-### 文件结构
+### File Structure
 ```
 scripts/
-├── SaveManager.gd          # 存档管理器
-├── NotificationManager.gd  # 通知管理器
-└── GameManager.gd          # 游戏管理器
+├── SaveManager.gd          # Save manager
+├── NotificationManager.gd  # Notification manager
+└── GameManager.gd          # Game manager
 
 scenes/
-├── pause_menu.gd          # 暂停菜单脚本
-└── pause_menu.tscn        # 暂停菜单场景
+├── pause_menu.gd          # Pause menu script
+└── pause_menu.tscn        # Pause menu scene
 
 levels/
-└── level_1.gd             # 关卡脚本(添加快捷键支持)
+└── level_1.gd             # Level script (added hotkey support)
 ```
 
-### 存档文件位置
-- **路径**: `user://save_game.dat`
-- **格式**: Godot VAR格式 (二进制)
-- **内容**: Dictionary结构的游戏数据
+### Save File Location
+- **Path**: `user://save_game.dat`
+- **Format**: Godot VAR format (binary)
+- **Content**: Dictionary structure of game data
 
-## 使用方法
+## Usage Instructions
 
-### 基本操作
-1. **保存游戏**: 
-   - 按ESC打开暂停菜单
-   - 点击"保存游戏"按钮
-   - 或者直接按F5快速保存
+### Basic Operations
+1. **Save Game**: 
+   - Press ESC to open pause menu
+   - Click "Save Game" button
+   - Or press F5 for quick save
 
-2. **加载游戏**:
-   - 按ESC打开暂停菜单
-   - 点击"加载游戏"按钮(需要有存档)
-   - 或者直接按F6快速加载
+2. **Load Game**:
+   - Press ESC to open pause menu
+   - Click "Load Game" button (requires existing save)
+   - Or press F6 for quick load
 
-### 高级功能
-- **存档信息预览**: 鼠标悬停在"加载游戏"按钮上可查看存档详情
-- **自动错误恢复**: 系统会自动处理各种错误情况
-- **场景切换支持**: 加载存档时自动切换到保存时的关卡
+### Advanced Features
+- **Save Info Preview**: Hover mouse over "Load Game" button to view save details
+- **Automatic Error Recovery**: System automatically handles various error scenarios
+- **Scene Transition Support**: Automatically switches to saved level when loading
 
-## 扩展建议
+## Extension Suggestions
 
-### 未来可以添加的功能
-1. **多存档位**: 支持多个存档槽位
-2. **存档缩略图**: 保存游戏截图作为存档预览
-3. **自动保存**: 定期自动保存游戏进度
-4. **云存档**: 支持云端存档同步
-5. **存档加密**: 防止存档文件被修改
+### Future Features to Add
+1. **Multiple Save Slots**: Support for multiple save slots
+2. **Save Thumbnails**: Save game screenshots as save previews
+3. **Auto Save**: Periodic automatic game progress saving
+4. **Cloud Saves**: Support for cloud save synchronization
+5. **Save Encryption**: Prevent save file modification
 
-### 自定义配置
-可以在`SaveManager.gd`中修改以下设置：
-- `SAVE_PATH`: 存档文件路径
-- 保存的数据结构和内容
-- 错误处理策略
+### Custom Configuration
+The following settings can be modified in `SaveManager.gd`:
+- `SAVE_PATH`: Save file path
+- Save data structure and content
+- Error handling strategies
 
-## 注意事项
+## Important Notes
 
-1. **性能考虑**: 存档操作在主线程进行，大型游戏可能需要异步处理
-2. **数据安全**: 当前版本不包含存档加密，适合单机游戏
-3. **兼容性**: 更新游戏时需要考虑存档格式的向后兼容性
-4. **存档位置**: 使用Godot的用户数据目录，跨平台兼容
+1. **Performance Considerations**: Save operations occur on main thread, large games may need async processing
+2. **Data Security**: Current version doesn't include save encryption, suitable for single-player games
+3. **Compatibility**: Consider save format backward compatibility when updating game
+4. **Save Location**: Uses Godot's user data directory, cross-platform compatible
 
-## 故障排除
+## Troubleshooting
 
-### 常见问题
-1. **保存失败**: 检查磁盘空间和文件权限
-2. **加载失败**: 确认存档文件存在且格式正确
-3. **按钮无响应**: 检查SaveManager是否正确配置为Autoload
-4. **通知不显示**: 确认NotificationManager已添加为全局单例
+### Common Issues
+1. **Save Failure**: Check disk space and file permissions
+2. **Load Failure**: Verify save file exists and format is correct
+3. **Unresponsive Buttons**: Check if SaveManager is correctly configured as Autoload
+4. **Missing Notifications**: Confirm NotificationManager is added as global singleton
 
-### 调试技巧
-- 查看控制台输出获取详细错误信息
-- 检查`user://`目录中的存档文件
-- 验证project.godot中的Autoload配置 
+### Debug Tips
+- Check console output for detailed error messages
+- Inspect save files in `user://` directory
+- Verify Autoload configuration in project.godot 

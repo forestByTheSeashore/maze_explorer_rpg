@@ -1,66 +1,66 @@
-# InventorySystem.gd - 背包系统管理
+# InventorySystem.gd - Inventory System Management
 class_name InventorySystem
 extends Node
 
-# === 信号 ===
+# === Signals ===
 signal inventory_changed
 signal key_added(key_type: String)
 signal key_used(key_type: String)
 
-# === 私有变量 ===
-var keys: Array[String] = []  # 玩家拥有的钥匙列表
-var hp_beans_consumed: int = 0  # 已消费的HP豆数量
+# === Private Variables ===
+var keys: Array[String] = []  # List of keys player owns
+var hp_beans_consumed: int = 0  # Number of HP beans consumed
 
-# === 钥匙管理 ===
+# === Key Management ===
 func add_key(key_type: String) -> bool:
-	"""添加钥匙到背包"""
+	"""Add key to inventory"""
 	if key_type not in keys:
 		keys.append(key_type)
-		print("InventorySystem: 获得钥匙：", key_type)
+		print("InventorySystem: Obtained key: ", key_type)
 		key_added.emit(key_type)
 		inventory_changed.emit()
 		return true
 	else:
-		print("InventorySystem: 已经拥有钥匙：", key_type)
+		print("InventorySystem: Already have key: ", key_type)
 		return false
 
 func has_key(key_type: String) -> bool:
-	"""检查是否拥有指定钥匙"""
+	"""Check if has specified key"""
 	var result = key_type in keys
-	print("InventorySystem: 检查钥匙 '", key_type, "'：", "有" if result else "没有")
+	print("InventorySystem: Check key '", key_type, "': ", "Yes" if result else "No")
 	return result
 
 func use_key(key_type: String) -> bool:
-	"""使用钥匙"""
+	"""Use key"""
 	if has_key(key_type):
 		keys.erase(key_type)
-		print("InventorySystem: 使用了钥匙：", key_type)
+		print("InventorySystem: Used key: ", key_type)
 		key_used.emit(key_type)
 		inventory_changed.emit()
 		return true
 	else:
-		print("InventorySystem: 没有钥匙：", key_type, "，无法使用")
+		print("InventorySystem: No key: ", key_type, ", cannot use")
 		return false
 
 func get_keys() -> Array[String]:
-	"""获取所有钥匙的副本"""
+	"""Get copy of all keys"""
 	return keys.duplicate()
 
-# === HP豆管理 ===
+# === HP Bean Management ===
 func consume_hp_bean():
-	"""记录HP豆消费"""
+	"""Record HP bean consumption"""
 	hp_beans_consumed += 1
 	inventory_changed.emit()
-	print("InventorySystem: HP豆消费总数：", hp_beans_consumed)
+	print("InventorySystem: Total HP beans consumed: ", hp_beans_consumed)
 
 func get_hp_beans_consumed() -> int:
-	"""获取已消费的HP豆数量"""
+	"""Get number of HP beans consumed"""
 	return hp_beans_consumed
 
-# === 调试信息 ===
+# === Debug Information ===
 func print_inventory_status():
-	"""打印背包状态"""
-	print("=== 背包状态 ===")
-	print("拥有钥匙：", keys)
-	print("已消费HP豆数量：", hp_beans_consumed)
+	"""Print inventory status"""
+	print("=== Inventory Status ===")
+	print("Owned keys: ", keys)
+	print("HP beans consumed: ", hp_beans_consumed)
 	print("===============") 

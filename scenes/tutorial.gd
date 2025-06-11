@@ -1,54 +1,54 @@
 extends Control
 
-# 按钮引用
+# Button references
 @onready var back_button = $BackButton
 @onready var close_button = $CloseButton
 
-# 场景路径常量
+# Scene path constants
 const MAIN_MENU_SCENE_PATH = "res://scenes/main_menu.tscn"
 
-# 标记是否从暂停菜单打开
+# Flag for whether opened from pause menu
 var opened_from_pause_menu: bool = false
 
 func _ready():
-	# 连接按钮信号
+	# Connect button signals
 	back_button.pressed.connect(_on_back_button_pressed)
 	close_button.pressed.connect(_on_close_button_pressed)
 	
-	# 如果在游戏中显示，设置为可在暂停时处理
+	# If shown in game, set to process when paused
 	if get_tree().get_first_node_in_group("player"):
 		process_mode = Node.PROCESS_MODE_WHEN_PAUSED
 	
-	# 设置初始状态
+	# Set initial state
 	_setup_ui()
 
 func _setup_ui():
-	"""设置界面初始状态"""
-	# 确保滚动容器从顶部开始
+	"""Set up initial UI state"""
+	# Ensure scroll container starts from top
 	var scroll_container = $ScrollContainer
 	if scroll_container:
 		scroll_container.scroll_vertical = 0
 
 func _on_back_button_pressed():
-	"""返回主菜单按钮事件"""
-	print("返回主菜单")
+	"""Back to main menu button event"""
+	print("Returning to main menu")
 	get_tree().change_scene_to_file(MAIN_MENU_SCENE_PATH)
 
 func _on_close_button_pressed():
-	"""关闭按钮事件 - 如果在游戏中打开则关闭界面，否则返回主菜单"""
-	print("关闭玩法说明")
+	"""Close button event - If opened in game, close UI, otherwise return to main menu"""
+	print("Closing tutorial")
 	
-	# 检查是否在游戏中（通过检查是否存在玩家节点）
+	# Check if in game (by checking for player node)
 	var player = get_tree().get_first_node_in_group("player")
 	if player:
-		# 隐藏界面
+		# Hide UI
 		queue_free()
 		
-		# 如果是从暂停菜单打开的，返回暂停菜单
+		# If opened from pause menu, return to pause menu
 		if opened_from_pause_menu:
 			var pause_menu = get_tree().get_first_node_in_group("pause_menu")
 			if not pause_menu:
-				# 尝试通过路径查找暂停菜单
+				# Try finding pause menu by path
 				var current_scene = get_tree().current_scene
 				if current_scene:
 					pause_menu = current_scene.get_node_or_null("CanvasLayer/PauseMenu")
@@ -57,40 +57,45 @@ func _on_close_button_pressed():
 			
 			if pause_menu:
 				pause_menu.show()
-				print("返回暂停菜单")
+				print("Returning to pause menu")
 			else:
 				get_tree().paused = false
-				print("找不到暂停菜单，恢复游戏")
+				print("Pause menu not found, resuming game")
 		else:
-			# 如果是通过F7键打开的，直接恢复游戏
+			# If opened via F7 key, resume game directly
 			get_tree().paused = false
-			print("恢复游戏")
+			print("Resuming game")
 	else:
-		# 不在游戏中，返回主菜单
+		# Not in game, return to main menu
 		get_tree().change_scene_to_file(MAIN_MENU_SCENE_PATH)
 
 func _input(event):
-	"""处理输入事件"""
-	# ESC键关闭界面
+	"""Handle input events"""
+	# ESC key closes UI
 	if event.is_action_pressed("ui_cancel"):
 		_on_close_button_pressed()
 
-# 静态方法：在游戏中显示玩法说明
+# Static method: Show tutorial in game
 static func show_tutorial_in_game():
-	"""在游戏中显示玩法说明界面的静态方法"""
-	var tutorial_scene = preload("res://scenes/tutorial.tscn")
+	"""Static method to show tutorial UI in game"""
+	# Dynamic load to avoid circular reference
+	var tutorial_scene = load("res://scenes/tutorial.tscn")
+	if not tutorial_scene:
+		print("Error: Cannot load tutorial scene")
+		return
+		
 	var tutorial_instance = tutorial_scene.instantiate()
 	
-	# 获取当前场景
+	# Get current scene
 	var current_scene = Engine.get_main_loop().current_scene
 	if current_scene:
-		# 暂停游戏
+		# Pause game
 		current_scene.get_tree().paused = true
-		# 添加到场景树
+		# Add to scene tree
 		current_scene.add_child(tutorial_instance)
-		# 确保在最上层显示
+		# Ensure displayed on top
 		tutorial_instance.z_index = 1000
 		
-		print("在游戏中显示玩法说明界面")
+		print("Showing tutorial UI in game")
 	else:
-		print("错误：无法获取当前场景") 
+		print("Error: Cannot get current scene") 

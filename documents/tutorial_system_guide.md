@@ -1,126 +1,126 @@
-# 玩法说明系统使用指南
+# Tutorial System User Guide
 
-## 概述
+## Overview
 
-这个项目现在包含了一个完整的玩法说明系统，玩家可以通过多种方式访问游戏操作指南。
+This project now includes a complete tutorial system where players can access game operation guides through multiple methods.
 
-## 功能特性
+## Features
 
-### 1. 主菜单访问
-- 在主菜单中新增了"玩法说明"按钮
-- 点击即可查看完整的游戏操作指南
-- 适合新玩家在开始游戏前了解操作
+### 1. Main Menu Access
+- Added "Tutorial" button in the main menu
+- Click to view complete game operation guide
+- Suitable for new players to learn controls before starting
 
-### 2. 游戏内快捷访问
-- **F7键** - 在游戏进行中随时按F7键查看玩法说明
-- 界面会暂停游戏，显示说明后可无缝返回游戏
-- 方便玩家在游戏中快速查阅操作方法
+### 2. In-Game Quick Access
+- **F7 Key** - Press F7 anytime during gameplay to view tutorial
+- Interface pauses the game, seamlessly returns after viewing
+- Convenient for players to quickly check controls during gameplay
 
-### 3. 暂停菜单集成
-- 在游戏暂停菜单中添加了"玩法说明"按钮
-- 从暂停菜单打开说明后，关闭时会自动返回暂停菜单
-- 提供了便捷的访问路径
+### 3. Pause Menu Integration
+- Added "Tutorial" button in the game pause menu
+- When opened from pause menu, automatically returns there upon closing
+- Provides convenient access path
 
-### 4. 游戏内便捷访问
-- 游戏内可通过F7键随时访问玩法说明
-- 无需通过菜单操作，直接键盘快捷键即可访问
-- 暂停游戏状态下显示，关闭后自动恢复游戏
+### 4. In-Game Convenient Access
+- Access tutorial anytime in-game via F7 key
+- Direct keyboard shortcut access without menu navigation
+- Displays in paused game state, automatically resumes game upon closing
 
-## 玩法说明内容
+## Tutorial Contents
 
-说明界面包含以下主要部分：
+The tutorial interface includes these main sections:
 
-### 🚶 角色移动
-- WASD键或方向键控制角色移动
-- 详细说明各方向键的功能
+### 🚶 Character Movement
+- WASD keys or arrow keys control character movement
+- Detailed explanation of directional key functions
 
-### 🔄 互动操作
-- F键与物品、门等进行互动
-- 拾取物品和开门的操作说明
+### 🔄 Interaction
+- F key to interact with items, doors, etc.
+- Instructions for picking up items and opening doors
 
-### ⚔️ 战斗系统
-- J键攻击敌人
-- 数字键1-4快速切换武器
-- Tab键切换武器的详细说明
+### ⚔️ Combat System
+- J key to attack enemies
+- Number keys 1-4 for quick weapon switching
+- Detailed explanation of Tab key weapon switching
 
-### 🎒 物品管理
-- I键打开/关闭物品栏
-- 物品栏功能说明
+### 🎒 Item Management
+- I key to open/close inventory
+- Inventory function explanation
 
-### 🧭 导航辅助
-- F1键显示到钥匙的路径
-- F2键显示到出口门的路径
-- M键打开/关闭小地图
+### 🧭 Navigation Assistance
+- F1 key shows path to keys
+- F2 key shows path to exit door
+- M key opens/closes minimap
 
-### 💾 保存/加载
-- F5键快速保存
-- F6键快速加载
-- F7键显示玩法说明
+### 💾 Save/Load
+- F5 key for quick save
+- F6 key for quick load
+- F7 key displays tutorial
 
-### ⏸️ 游戏暂停
-- ESC键暂停/恢复游戏
+### ⏸️ Game Pause
+- ESC key to pause/resume game
 
-### 🎯 游戏目标
-- 详细说明游戏的主要目标和任务
+### 🎯 Game Objectives
+- Detailed explanation of main game goals and tasks
 
-### 💡 游戏技巧
-- 提供探索和战斗的实用技巧
+### 💡 Game Tips
+- Provides useful exploration and combat tips
 
-## 技术实现
+## Technical Implementation
 
-### 文件结构
+### File Structure
 ```
 scenes/
-├── tutorial.tscn     # 玩法说明界面场景
-├── tutorial.gd       # 玩法说明界面脚本
-├── main_menu.tscn    # 主菜单（已修改）
-├── main_menu.gd      # 主菜单脚本（已修改）
-├── pause_menu.tscn   # 暂停菜单（已修改）
-└── pause_menu.gd     # 暂停菜单脚本（已修改）
+├── tutorial.tscn     # Tutorial interface scene
+├── tutorial.gd       # Tutorial interface script
+├── main_menu.tscn    # Main menu (modified)
+├── main_menu.gd      # Main menu script (modified)
+├── pause_menu.tscn   # Pause menu (modified)
+└── pause_menu.gd     # Pause menu script (modified)
 ```
 
-### 关键特性
-1. **响应式界面** - 使用ScrollContainer支持内容滚动
-2. **暂停兼容** - 正确处理游戏暂停状态
-3. **智能导航** - 根据调用方式智能返回到正确界面
-4. **颜色编码** - 使用BBCode为不同操作类型设置不同颜色
-5. **表情符号** - 使用表情符号增强视觉效果
+### Key Features
+1. **Responsive Interface** - Uses ScrollContainer for content scrolling
+2. **Pause Compatible** - Properly handles game pause state
+3. **Smart Navigation** - Intelligently returns to correct interface based on access method
+4. **Color Coding** - Uses BBCode to set different colors for different operation types
+5. **Emojis** - Uses emojis to enhance visual effect
 
-### 输入映射
-在`project.godot`中新增：
+### Input Mapping
+Added in `project.godot`:
 ```
 show_tutorial={
 "deadzone": 0.5,
-"events": [F7键事件]
+"events": [F7 key event]
 }
 ```
 
-## 使用方法
+## Usage Instructions
 
-### 对于玩家
-1. **首次游戏** - 从主菜单点击"玩法说明"了解操作
-2. **游戏中查阅** - 按F7键随时查看操作指南
-3. **暂停时访问** - 在暂停菜单中点击"玩法说明"
-4. **快捷访问** - 无论在任何游戏状态都可以通过F7键快速访问
+### For Players
+1. **First Time** - Click "Tutorial" in main menu to learn controls
+2. **In-Game Reference** - Press F7 key anytime to view operation guide
+3. **Pause Menu Access** - Click "Tutorial" in pause menu
+4. **Quick Access** - Access quickly via F7 key in any game state
 
-### 对于开发者
-1. **修改内容** - 编辑`tutorial.tscn`中的RichTextLabel内容
-2. **添加新操作** - 在相应的section中添加新的说明
-3. **样式调整** - 修改BBCode标记改变颜色和格式
+### For Developers
+1. **Modify Content** - Edit RichTextLabel content in `tutorial.tscn`
+2. **Add New Operations** - Add new instructions in appropriate sections
+3. **Style Adjustments** - Modify BBCode tags to change colors and formatting
 
-## 扩展建议
+## Extension Suggestions
 
-1. **多语言支持** - 可以添加语言切换功能
-2. **动态内容** - 根据游戏进度显示不同的技巧
-3. **交互式教程** - 添加实际操作演示
-4. **键位自定义** - 根据玩家自定义的键位动态更新说明
-5. **视频教程** - 集成视频播放功能
+1. **Multi-language Support** - Can add language switching functionality
+2. **Dynamic Content** - Display different tips based on game progress
+3. **Interactive Tutorial** - Add actual operation demonstrations
+4. **Custom Keybinds** - Dynamically update instructions based on player's custom keybinds
+5. **Video Tutorials** - Integrate video playback functionality
 
-## 注意事项
+## Important Notes
 
-1. 确保F7键没有与其他功能冲突
-2. 在游戏场景中调用`_show_tutorial_in_game()`方法时需要正确设置暂停状态
-3. 暂停菜单需要正确添加到"pause_menu"组中以便tutorial系统找到
-4. 所有tutorial相关的界面都应设置为`PROCESS_MODE_WHEN_PAUSED`模式
+1. Ensure F7 key doesn't conflict with other functions
+2. Correctly set pause state when calling `_show_tutorial_in_game()` method in game scenes
+3. Pause menu needs to be correctly added to "pause_menu" group for tutorial system to find it
+4. All tutorial-related interfaces should be set to `PROCESS_MODE_WHEN_PAUSED` mode
 
-这个玩法说明系统为玩家提供了便捷的操作指南访问方式，显著提升了游戏的用户体验。 
+This tutorial system provides players with convenient access to operation guides, significantly improving the game's user experience. 

@@ -1,11 +1,11 @@
 extends Control
 
-# 场景路径常量
+# Scene path constants
 const LEVEL_1_PATH = "res://levels/level_1.tscn"
 const SETTINGS_SCENE_PATH = "res://scenes/settings.tscn"
 const TUTORIAL_SCENE_PATH = "res://scenes/tutorial.tscn"
 
-# 按钮引用
+# Button references
 @onready var start_button = $VBoxContainer/StartButton
 @onready var continue_button = $VBoxContainer/ContinueButton
 @onready var tutorial_button = $VBoxContainer/TutorialButton
@@ -13,145 +13,152 @@ const TUTORIAL_SCENE_PATH = "res://scenes/tutorial.tscn"
 @onready var quit_button = $VBoxContainer/QuitButton
 
 func _ready():
-	print("主菜单: 初始化开始")
+	print("Main Menu: Initialization started")
 	
-	# 连接按钮信号
+	# Connect button signals
 	start_button.pressed.connect(_on_start_button_pressed)
 	continue_button.pressed.connect(_on_continue_button_pressed)
 	tutorial_button.pressed.connect(_on_tutorial_button_pressed)
 	settings_button.pressed.connect(_on_settings_button_pressed)
 	quit_button.pressed.connect(_on_quit_button_pressed)
 	
-	# 延迟检查存档状态，确保所有autoload都已初始化
+	# Delay checking save status to ensure all autoloads are initialized
 	call_deferred("_update_continue_button")
 	
-	# 播放主菜单音乐
+	# Play main menu music
 	call_deferred("_play_menu_music")
 	
-	print("主菜单: 初始化完成")
+	print("Main Menu: Initialization completed")
 
 func _play_menu_music():
-	"""播放主菜单背景音乐"""
+	"""Play main menu background music"""
 	var audio_manager = get_node_or_null("/root/AudioManager")
 	if audio_manager:
 		audio_manager.play_menu_music()
-		print("主菜单: 开始播放背景音乐")
+		print("Main Menu: Started playing background music")
 	else:
-		print("主菜单: 找不到AudioManager")
+		print("Main Menu: AudioManager not found")
 
 func _play_button_sound():
-	"""播放按钮点击音效"""
+	"""Play button click sound effect"""
 	var audio_manager = get_node_or_null("/root/AudioManager")
 	if audio_manager:
 		audio_manager.play_button_click_sound()
 
 func _update_continue_button():
-	# 检查存档文件是否存在
+	# Check if save file exists
 	var has_save = false
 	
-	# 尝试获取SaveManager
+	# Try to get SaveManager
 	var save_manager = get_node_or_null("/root/SaveManager")
 	if save_manager and save_manager.has_method("has_save"):
 		has_save = save_manager.has_save()
-		print("主菜单: 通过节点路径找到SaveManager, has_save = ", has_save)
+		print("Main Menu: Found SaveManager through node path, has_save = ", has_save)
 		
-		# 调试存档状态
+		# Debug save status
 		if save_manager.has_method("debug_save_status"):
 			save_manager.debug_save_status()
 	else:
-		# 备选方法：直接访问autoload
+		# Alternative method: Access autoload directly
 		if SaveManager and SaveManager.has_method("has_save"):
 			has_save = SaveManager.has_save()
-			print("主菜单: 通过autoload访问SaveManager, has_save = ", has_save)
+			print("Main Menu: Accessed SaveManager through autoload, has_save = ", has_save)
 			
-			# 调试存档状态
+			# Debug save status
 			if SaveManager.has_method("debug_save_status"):
 				SaveManager.debug_save_status()
 		else:
-			print("主菜单: 无法找到SaveManager")
+			print("Main Menu: SaveManager not found")
 	
 	continue_button.disabled = !has_save
-	print("主菜单: 继续游戏按钮状态 - disabled: ", continue_button.disabled)
+	print("Main Menu: Continue button status - disabled: ", continue_button.disabled)
 
 func _on_start_button_pressed():
-	# 开始新游戏
-	print("开始新游戏")
+	# Start new game
+	print("Starting new game")
 	_play_button_sound()
-	# 切换到第一关
+	# Switch to first level
 	get_tree().change_scene_to_file(LEVEL_1_PATH)
 
 func _on_continue_button_pressed():
-	# 继续游戏
-	print("继续游戏")
+	# Continue game
+	print("Continuing game")
 	_play_button_sound()
 	
-	# 获取SaveManager并读取存档
+	# Get SaveManager and load save
 	var save_manager = get_node_or_null("/root/SaveManager")
 	if not save_manager:
-		# 备选方法：直接访问autoload
+		# Alternative method: Access autoload directly
 		if SaveManager:
 			save_manager = SaveManager
 		else:
-			print("错误: 找不到SaveManager")
+			print("Error: SaveManager not found")
 			return
 	
 	if not save_manager.has_method("load_progress"):
-		print("错误: SaveManager没有load_progress方法")
+		print("Error: SaveManager does not have load_progress method")
 		return
 	
-	# 读取存档数据
+	# Load save data
 	var save_data = save_manager.load_progress()
 	
 	if save_data.is_empty():
-		print("错误: 存档数据为空")
+		print("Error: Save data is empty")
 		return
 	
-	# 获取保存的关卡名称
+	# Get saved level name
 	var level_name = save_data.get("current_level", "")
-	print("读取到关卡:", level_name)
+	print("Loaded level:", level_name)
 	
 	if level_name == "":
-		print("错误: 存档中没有关卡信息")
+		print("Error: No level information in save data")
 		return
 	
-	# 根据关卡选择场景文件
+	# Choose scene file based on level
 	if level_name == "level_1":
-		print("主菜单: 直接加载level_1场景")
+		print("Main Menu: Loading level_1 scene directly")
 		get_tree().change_scene_to_file(LEVEL_1_PATH)
 	else:
-		# 通过LevelManager处理其他关卡加载
+		# Handle other level loading through LevelManager
 		var level_manager = get_node_or_null("/root/LevelManager")
 		if level_manager:
-			# 设置LevelManager的next_level_name为正确的关卡名称
+			# Set LevelManager's next_level_name to the correct level name
 			level_manager.next_level_name = level_name
 			level_manager.prepare_next_level()
-			print("主菜单: 设置LevelManager加载关卡: ", level_name)
-			print("主菜单: 加载base_level场景用于关卡: ", level_name)
+			print("Main Menu: Set LevelManager to load level: ", level_name)
+			print("Main Menu: Loading base_level scene for level: ", level_name)
 			get_tree().change_scene_to_file("res://levels/base_level.tscn")
 		else:
-			print("错误: 找不到LevelManager，使用备用方法")
-			# 尝试直接切换场景（备用方法）
+			print("Error: LevelManager not found, using fallback method")
+			# Try to switch scene directly (fallback method)
 			var scene_path = "res://levels/" + level_name + ".tscn"
 			if FileAccess.file_exists(scene_path):
 				get_tree().change_scene_to_file(scene_path)
 			else:
-				print("错误: 找不到关卡文件，默认切换到第一关")
+				print("Error: Level file not found, defaulting to first level")
 				get_tree().change_scene_to_file(LEVEL_1_PATH)
 
 func _on_tutorial_button_pressed():
-	# 打开玩法说明界面
-	print("打开玩法说明")
+	# Open gameplay instructions screen
+	print("Open gameplay instructions")
 	_play_button_sound()
-	get_tree().change_scene_to_file(TUTORIAL_SCENE_PATH)
+	
+	# Dynamically load tutorial scene to avoid circular references
+	var tutorial_scene = load("res://scenes/tutorial.tscn")
+	if tutorial_scene:
+		get_tree().change_scene_to_packed(tutorial_scene)
+	else:
+		print("Error: Cannot load tutorial scene")
+		get_tree().change_scene_to_file(TUTORIAL_SCENE_PATH)
 
 func _on_settings_button_pressed():
-	# 打开设置界面
-	print("打开设置")
+	# Open settings screen
+	print("Opening settings")
 	_play_button_sound()
 	get_tree().change_scene_to_file(SETTINGS_SCENE_PATH)
 
 func _on_quit_button_pressed():
-	# 退出游戏
-	print("退出游戏")
+	# Quit game
+	print("Quitting game")
 	_play_button_sound()
 	get_tree().quit() 

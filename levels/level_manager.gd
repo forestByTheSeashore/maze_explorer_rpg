@@ -1,24 +1,24 @@
 extends Node
 
-# 下一关的名称
+# Name of the next level
 var next_level_name: String = ""
 
-# 关卡配置
+# Level configurations
 const LEVEL_CONFIGS = {
 	"level_1": {
-		"maze_width": 81,           # 较小的迷宫，适合新手
+		"maze_width": 81,           # Smaller maze, suitable for beginners
 		"maze_height": 81,
-		"corridor_width": 12,       # 较宽的走廊，便于移动
+		"corridor_width": 12,       # Wider corridors for easier movement
 		"enemies": {
-			"Goblin": 3,            # 适中的敌人数量
+			"Goblin": 3,            # Moderate number of enemies
 			"Skeleton": 2,
 			"Slime": 4
 		},
 		"items": {
 			"Key": 1,
-			"Hp_bean": 30,          # 充足的补给
+			"Hp_bean": 30,          # Abundant supplies
 			"IronSword": {
-				"type0": 3,         # 较多的武器选择
+				"type0": 3,         # More weapon choices
 				"type1": 2,
 				"type2": 2,
 				"type3": 1
@@ -26,17 +26,17 @@ const LEVEL_CONFIGS = {
 		}
 	},
 	"level_2": {
-		"maze_width": 81,           # 稍大的迷宫
+		"maze_width": 81,           # Slightly larger maze
 		"maze_height": 81,
-		"corridor_width": 10,       # 稍窄的走廊
+		"corridor_width": 10,       # Narrower corridors
 		"enemies": {
-			"Goblin": 5,            # 增加敌人数量
+			"Goblin": 5,            # Increased number of enemies
 			"Skeleton": 3,
 			"Slime": 6
 		},
 		"items": {
 			"Key": 1,
-			"Hp_bean": 25,          # 减少补给
+			"Hp_bean": 25,          # Reduced supplies
 			"IronSword": {
 				"type0": 2,
 				"type1": 2,
@@ -46,17 +46,17 @@ const LEVEL_CONFIGS = {
 		}
 	},
 	"level_3": {
-		"maze_width": 81,           # 更大的迷宫
+		"maze_width": 81,           # Even larger maze
 		"maze_height": 81,
-		"corridor_width": 8,        # 更窄的走廊，增加难度
+		"corridor_width": 8,        # Even narrower corridors, increasing difficulty
 		"enemies": {
-			"Goblin": 8,            # 显著增加敌人数量
+			"Goblin": 8,            # Significantly more enemies
 			"Skeleton": 5,
 			"Slime": 10
 		},
 		"items": {
 			"Key": 1,
-			"Hp_bean": 20,          # 继续减少补给
+			"Hp_bean": 20,          # Further reduced supplies
 			"IronSword": {
 				"type0": 2,
 				"type1": 2,
@@ -66,19 +66,19 @@ const LEVEL_CONFIGS = {
 		}
 	},
 	"level_4": {
-		"maze_width": 81,           # 最大的迷宫
+		"maze_width": 81,           # Largest maze
 		"maze_height": 81,
-		"corridor_width": 6,        # 最窄的走廊，最高难度
+		"corridor_width": 6,        # Narrowest corridors, highest difficulty
 		"enemies": {
-			"Goblin": 12,           # 大量敌人，最终挑战
+			"Goblin": 12,           # Many enemies, final challenge
 			"Skeleton": 8,
 			"Slime": 15
 		},
 		"items": {
 			"Key": 1,
-			"Hp_bean": 15,          # 最少的补给
+			"Hp_bean": 15,          # Minimal supplies
 			"IronSword": {
-				"type0": 1,         # 最少的武器，增加挑战性
+				"type0": 1,         # Minimal weapons, increasing challenge
 				"type1": 1,
 				"type2": 1,
 				"type3": 1
@@ -86,28 +86,28 @@ const LEVEL_CONFIGS = {
 		}
 	},
 	"level_5": {
-		"maze_width": 81,          # 终极挑战迷宫
+		"maze_width": 81,          # Ultimate challenge maze
 		"maze_height": 81,
-		"corridor_width": 4,        # 极窄走廊
+		"corridor_width": 4,        # Extremely narrow corridors
 		"enemies": {
-			"Goblin": 20,           # 终极敌人数量
+			"Goblin": 20,           # Ultimate enemy count
 			"Skeleton": 15,
 			"Slime": 25
 		},
 		"items": {
 			"Key": 1,
-			"Hp_bean": 10,          # 极少补给
+			"Hp_bean": 10,          # Very few supplies
 			"IronSword": {
 				"type0": 1,
 				"type1": 1,
-				"type2": 0,         # 高级武器稀缺
+				"type2": 0,         # Advanced weapons are scarce
 				"type3": 0
 			}
 		}
 	}
 }
 
-# 预制件路径
+# Prefab paths
 const PREFAB_PATHS = {
 	"Player": "res://scenes/Player.tscn",
 	"Door": "res://scenes/Door.tscn",
@@ -119,83 +119,83 @@ const PREFAB_PATHS = {
 	"Slime": "res://scenes/slime.tscn"
 }
 
-# 当前关卡实例
+# Current level instance
 var current_level: Node2D = null
-# 是否准备初始化下一关
+# Whether to initialize the next level
 var _should_initialize := false
-# 新增：信号，用于通知关卡场景已准备好初始化
+# New: Signal to notify when level scene is ready for initialization
 signal level_ready_to_initialize(level_name: String)
 
 func _ready():
-	print("=== LevelManager 初始化开始 ===")
-	print("LevelManager _ready 触发")
-	# 多等待几帧确保场景完全加载
+	print("=== LevelManager Initialization Start ===")
+	print("LevelManager _ready triggered")
+	# Wait a few frames to ensure scene is fully loaded
 	await get_tree().process_frame
 	await get_tree().process_frame
 	await get_tree().process_frame
 	
-	# 如果标记为应该初始化，则发出信号
+	# If marked for initialization and has valid next level name, emit signal
 	if _should_initialize and next_level_name != "":
-		print("LevelManager检测到初始化标记和有效的next_level_name: ", next_level_name)
-		# 发出信号，通知关卡场景初始化
-		await get_tree().process_frame  # 再等一帧确保场景已准备好
+		print("LevelManager detected initialization flag and valid next_level_name: ", next_level_name)
+		# Emit signal to notify level scene to initialize
+		await get_tree().process_frame  # Wait one more frame to ensure scene is ready
 		level_ready_to_initialize.emit(next_level_name)
 	else:
-		print("LevelManager未检测到初始化标记或next_level_name为空")
+		print("LevelManager did not detect initialization flag or next_level_name is empty")
 	
-	print("=== LevelManager _ready 完成 ===")
+	print("=== LevelManager _ready Complete ===")
 
-# 新增：准备初始化下一关的方法
+# New: Method to prepare next level initialization
 func prepare_next_level():
-	print("LevelManager: 准备初始化下一关 - ", next_level_name)
+	print("LevelManager: Preparing to initialize next level - ", next_level_name)
 	_should_initialize = true
-	print("_should_initialize已设置为true")
+	print("_should_initialize has been set to true")
 
-# 新增：分离出的初始化逻辑
+# New: Separated initialization logic
 func initialize_level():
-	print("LevelManager.initialize_level()被调用")
+	print("LevelManager.initialize_level() called")
 	
-	# 如果有下一关名称，初始化关卡
+	# Initialize level if next level name exists
 	if next_level_name == "":
-		push_error("LevelManager.initialize_level(): 无下一关名称!")
+		push_error("LevelManager.initialize_level(): No next level name!")
 		return
 		
-	print("准备初始化关卡: ", next_level_name)
+	print("Preparing to initialize level: ", next_level_name)
 	var current_scene = get_tree().current_scene
 	
-	print("当前场景: ", current_scene.name if current_scene else "null")
-	print("current_scene类型: ", typeof(current_scene))
-	print("current_scene has init_level方法: ", current_scene.has_method("init_level") if current_scene else "N/A")
+	print("Current scene: ", current_scene.name if current_scene else "null")
+	print("current_scene type: ", typeof(current_scene))
+	print("current_scene has init_level method: ", current_scene.has_method("init_level") if current_scene else "N/A")
 	
-	await get_tree().process_frame # 再等一帧，确保 current_scene 完全 ready
+	await get_tree().process_frame # Wait one more frame to ensure current_scene is fully ready
 	
 	if current_scene == null:
-		push_error("LevelManager.initialize_level(): 当前场景为null!")
+		push_error("LevelManager.initialize_level(): Current scene is null!")
 		return
 		
 	if not current_scene.has_method("init_level"):
-		push_error("LevelManager.initialize_level(): 当前场景没有init_level方法!")
+		push_error("LevelManager.initialize_level(): Current scene doesn't have init_level method!")
 		return
 		
-	print("找到当前关卡场景: ", current_scene.name)
-	# 设置关卡属性
-	print("LevelManager: 尝试获取关卡配置 - ", next_level_name)
-	print("LevelManager: 可用的关卡配置列表: ", LEVEL_CONFIGS.keys())
+	print("Found current level scene: ", current_scene.name)
+	# Set level properties
+	print("LevelManager: Attempting to get level configuration - ", next_level_name)
+	print("LevelManager: Available level configurations: ", LEVEL_CONFIGS.keys())
 	
 	var config = LEVEL_CONFIGS.get(next_level_name)
 	if config == null:
-		push_error("未找到关卡配置: " + next_level_name + "。可用配置: " + str(LEVEL_CONFIGS.keys()))
+		push_error("Level configuration not found: " + next_level_name + ". Available configurations: " + str(LEVEL_CONFIGS.keys()))
 		return
 		
-	print("找到关卡配置，开始设置属性")
-	print("配置详情: ", config)
+	print("Found level configuration, setting properties")
+	print("Configuration details: ", config)
 	
 	current_scene.current_level_name = next_level_name
 	current_scene.maze_width = config.maze_width
 	current_scene.maze_height = config.maze_height
 	current_scene.corridor_width = config.corridor_width
 	
-	# 设置敌人和物品数量
+	# Set enemy and item counts
 	current_scene.desired_counts = {
 		"Key": config.items.Key,
 		"Hp_bean": config.items.Hp_bean,
@@ -208,27 +208,27 @@ func initialize_level():
 		"Enemy_Slime": config.enemies.Slime
 	}
 	
-	print("属性设置完成，开始初始化关卡")
-	print("设置的desired_counts: ", current_scene.desired_counts)
+	print("Properties set, starting level initialization")
+	print("Set desired_counts: ", current_scene.desired_counts)
 	
-	# 初始化关卡
-	# 直接使用await调用init_level方法
-	print("等待init_level()协程完成...")
+	# Initialize level
+	# Directly use await to call init_level method
+	print("Waiting for init_level() coroutine to complete...")
 	await current_scene.init_level()
 		
-	print("关卡初始化完成")
+	print("Level initialization complete")
 	
-	# 通知UI系统更新关卡信息
+	# Notify UI system to update level information
 	var ui_managers = get_tree().get_nodes_in_group("ui_manager")
 	for ui in ui_managers:
 		if ui.has_method("update_level_info"):
 			ui.update_level_info(current_scene.current_level_name)
-			print("LevelManager: 通知UI管理器更新关卡信息: ", current_scene.current_level_name)
+			print("LevelManager: Notified UI manager to update level info: ", current_scene.current_level_name)
 	
-	# 清除下一关名称和初始化标记
+	# Clear next level name and initialization flag
 	next_level_name = ""
 	_should_initialize = false
-	print("下一关名称和初始化标记已清除")
+	print("Next level name and initialization flag cleared")
 
 func get_next_level_name(current_level_name: String) -> String:
 	var level_names = LEVEL_CONFIGS.keys()

@@ -1,4 +1,4 @@
-# UIManager.gd - 游戏UI总管理器
+# UIManager.gd - Game UI Manager
 extends CanvasLayer
 
 @onready var inventory_panel: Control = $StatusBar/InventoryPanel
@@ -10,11 +10,11 @@ extends CanvasLayer
 @onready var btn_inventory = $StatusBar/ButtonSection/BtnInventory
 @onready var btn_map = $StatusBar/ButtonSection/BtnMap
 
-# 动画相关变量
+# Animation related variables
 var _last_max_hp: float = 100.0
 var _hp_animation_tween: Tween = null
 
-# 玩家连接管理
+# Player connection management
 var player_reference: Node = null
 var connection_retry_timer: float = 0.0
 var connection_retry_interval: float = 1.0
@@ -31,35 +31,35 @@ var show_door_path_enabled := false
 
 func _ready():
 	add_to_group("ui_manager")
-	print("UIManager 初始化完成，初始 max_hp = ", _last_max_hp)
+	print("UIManager initialized, initial max_hp = ", _last_max_hp)
 	
-	# 禁用按钮的键盘焦点，只允许鼠标点击
+	# Disable keyboard focus for buttons, allow mouse clicks only
 	btn_nav.focus_mode = Control.FOCUS_NONE
 	btn_inventory.focus_mode = Control.FOCUS_NONE
 	btn_map.focus_mode = Control.FOCUS_NONE
 
-	# 尝试连接玩家
+	# Try to connect to player
 	_try_connect_player()
 	
-	# 连接关卡管理器信号（如果存在）
+	# Connect level manager signals (if exists)
 	if LevelManager:
 		if LevelManager.has_signal("level_ready_to_initialize"):
 			LevelManager.level_ready_to_initialize.connect(_on_level_changed)
 
-	# 连接按钮信号
+	# Connect button signals
 	btn_nav.pressed.connect(_on_btn_nav_pressed)
 	btn_inventory.pressed.connect(_on_btn_inventory_pressed)
 	btn_map.pressed.connect(_on_btn_map_pressed)
 	nav_menu.id_pressed.connect(_on_nav_menu_id_pressed)
 	
-	# 延迟更新关卡信息，确保所有系统都已初始化
+	# Delay level info update to ensure all systems are initialized
 	call_deferred("_update_level_display")
 	
-	# 再次延迟更新，确保存档加载等操作完成后能正确显示
+	# Additional delay for update to ensure save loading and other operations are complete
 	call_deferred("_delayed_level_update")
 
 func _process(delta: float):
-	# 如果没有玩家引用，定期尝试重新连接
+	# If no player reference, periodically try to reconnect
 	if not player_reference:
 		connection_retry_timer += delta
 		if connection_retry_timer >= connection_retry_interval:
@@ -67,20 +67,20 @@ func _process(delta: float):
 			_try_connect_player()
 
 func _try_connect_player():
-	# 查找玩家
+	# Find player
 	player_reference = get_tree().get_first_node_in_group("player")
 	if player_reference:
-		print("UIManager: 成功找到玩家引用")
-		# 立即更新一次玩家状态
+		print("UIManager: Successfully found player reference")
+		# Update player status immediately
 		_update_player_status()
 	else:
-		print("UIManager: 警告 - 未找到玩家引用，将在稍后重试")
+		print("UIManager: Warning - Player reference not found, will retry later")
 
 func _update_player_status():
 	if not player_reference:
 		return
 	
-	# 获取玩家当前状态
+	# Get current player status
 	var hp = player_reference.current_hp if "current_hp" in player_reference else 100
 	var max_hp = player_reference.max_hp if "max_hp" in player_reference else 100
 	var exp = player_reference.current_exp if "current_exp" in player_reference else 0
@@ -93,7 +93,7 @@ func toggle_inventory():
 		inventory_panel.toggle_visibility()
 
 func _input(event):
-	# ESC键关闭背包
+	# ESC key to close inventory
 	if event.is_action_pressed("ui_cancel") and inventory_panel and inventory_panel.visible:
 		inventory_panel.hide_inventory()
 		get_viewport().set_input_as_handled()
@@ -103,104 +103,104 @@ func update_player_status(hp, max_hp, exp, exp_to_next_level):
 	print("Received: hp = ", hp, ", max_hp = ", max_hp)
 	print("Last max_hp = ", _last_max_hp)
 	
-	# 检查是否需要播放HP上限增加的动画
+	# Check if HP max increase animation is needed
 	if max_hp > _last_max_hp:
-		print("检测到HP上限增加！从 ", _last_max_hp, " 增加到 ", max_hp)
+		print("HP max increase detected! From ", _last_max_hp, " to ", max_hp)
 		_play_hp_increase_animation(hp, max_hp)
 	else:
-		print("HP上限未增加，直接更新值")
-		# 直接设置值
+		print("HP max not increased, updating values directly")
+		# Set values directly
 		hp_bar.max_value = max_hp
 		hp_bar.value = hp
 	
-	# 设置经验值
+	# Set experience values
 	exp_bar.max_value = exp_to_next_level
 	exp_bar.value = exp
 	
-	# 强制更新
+	# Force update
 	hp_bar.queue_redraw()
 	exp_bar.queue_redraw()
 	
-	# 更新上次的max_hp值
+	# Update last max_hp value
 	_last_max_hp = max_hp
 	
-	# 再次确认值
+	# Confirm values
 	print("After setting: HPBar value = ", hp_bar.value, ", max_value = ", hp_bar.max_value)
 	print("EXPBar value = ", exp_bar.value, ", max_value = ", exp_bar.max_value)
 	print("------------------------")
 
 func _play_hp_increase_animation(new_hp: float, new_max_hp: float):
-	print("开始播放HP增加动画")
+	print("Starting HP increase animation")
 	
-	# 如果已经有动画在播放，先停止它
+	# Stop previous animation if playing
 	if _hp_animation_tween and _hp_animation_tween.is_valid():
-		print("停止之前的动画")
+		print("Stopping previous animation")
 		_hp_animation_tween.kill()
 	
-	# 创建新的动画
+	# Create new animation
 	_hp_animation_tween = create_tween()
-	_hp_animation_tween.set_parallel(true)  # 允许动画并行执行
+	_hp_animation_tween.set_parallel(true)  # Allow parallel animations
 	
-	# 让HP条闪烁（更明显的效果）
+	# Make HP bar flash (more noticeable effect)
 	_hp_animation_tween.tween_property(hp_bar, "modulate", Color(2.0, 2.0, 2.0, 1.0), 0.3)
 	_hp_animation_tween.tween_property(hp_bar, "modulate", Color(1, 1, 1, 1), 0.3).set_delay(0.3)
 	
-	# 添加缩放效果
+	# Add scale effect
 	_hp_animation_tween.tween_property(hp_bar, "scale", Vector2(1.1, 1.1), 0.3)
 	_hp_animation_tween.tween_property(hp_bar, "scale", Vector2(1, 1), 0.3).set_delay(0.3)
 	
-	# 更新值
+	# Update values
 	_hp_animation_tween.tween_callback(func():
-		print("更新HP值：", new_hp, "/", new_max_hp)
+		print("Updating HP values: ", new_hp, "/", new_max_hp)
 		hp_bar.max_value = new_max_hp
 		hp_bar.value = new_hp
 		hp_bar.queue_redraw()
 	).set_delay(0.1)
 	
-	print("动画设置完成")
+	print("Animation setup complete")
 
 # ============================================================================
-# 关卡信息管理
+# Level Information Management
 # ============================================================================
 func _on_level_changed(level_name: String):
-	"""当关卡改变时更新显示"""
-	print("UIManager: 接收到关卡变化信号: ", level_name)
+	"""Update display when level changes"""
+	print("UIManager: Received level change signal: ", level_name)
 	_update_level_display(level_name)
 
 func _update_level_display(level_name: String = ""):
-	"""更新关卡显示"""
+	"""Update level display"""
 	if status_bar and status_bar.has_method("update_level_info"):
 		status_bar.update_level_info(level_name)
-		print("UIManager: 已更新关卡显示: ", level_name)
+		print("UIManager: Level display updated: ", level_name)
 	else:
-		print("UIManager: 警告 - StatusBar 没有 update_level_info 方法")
+		print("UIManager: Warning - StatusBar does not have update_level_info method")
 
 func update_level_info(level_name: String):
-	"""公共接口：更新关卡信息"""
+	"""Public interface: Update level information"""
 	_update_level_display(level_name)
 
 func _delayed_level_update():
-	"""延迟的关卡信息更新，确保所有数据都已加载"""
-	await get_tree().create_timer(0.2).timeout  # 等待200毫秒
+	"""Delayed level info update to ensure all data is loaded"""
+	await get_tree().create_timer(0.2).timeout  # Wait 200ms
 	_update_level_display()
 
 # ============================================================================
-# 按钮事件处理
+# Button Event Handling
 # ============================================================================
 func _on_btn_nav_pressed():
-	# 计算按钮的全局位置
+	# Calculate button's global position
 	var button_global_pos = btn_nav.global_position
 	var button_size = btn_nav.size
 	
-	# 设置菜单位置：在按钮下方显示
+	# Set menu position: display below button
 	var menu_pos = Vector2i(
 		int(button_global_pos.x),
 		int(button_global_pos.y + button_size.y)
 	)
 	
-	# 弹出菜单到指定位置
+	# Popup menu at specified position
 	nav_menu.popup_on_parent(Rect2i(menu_pos, Vector2i(0, 0)))
-	print("NAV菜单显示在位置: ", menu_pos)
+	print("NAV menu displayed at position: ", menu_pos)
 
 func _on_btn_inventory_pressed():
 	toggle_inventory()
@@ -208,7 +208,7 @@ func _on_btn_inventory_pressed():
 func _on_btn_map_pressed():
 	minimap_enabled = !minimap_enabled
 	emit_signal("minimap_toggled", minimap_enabled)
-	# 这里你需要在场景中监听此信号，控制minimap显示/隐藏
+	# You need to listen for this signal in the scene to control minimap show/hide
 
 func _on_nav_menu_id_pressed(id):
 	if id == 0: # key

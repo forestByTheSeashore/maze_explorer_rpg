@@ -185,8 +185,11 @@ func _on_tutorial_button_pressed():
 	# 显示玩法说明界面
 	print("暂停菜单: 玩法说明按钮被点击")
 	
-	# 加载玩法说明场景
-	var tutorial_scene = preload("res://scenes/tutorial.tscn")
+	# 动态加载玩法说明场景以避免循环引用
+	var tutorial_scene = load("res://scenes/tutorial.tscn")
+	if not tutorial_scene:
+		print("Error: Cannot load tutorial scene")
+		return
 	var tutorial_instance = tutorial_scene.instantiate()
 	
 	# 标记为从暂停菜单打开

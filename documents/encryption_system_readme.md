@@ -1,233 +1,233 @@
-# 游戏存档加密系统
+# Game Save Encryption System
 
-## 概述
-为了保护用户游戏存档的安全性和私密性，我们为GameExplorer_V1游戏添加了完整的存档加密功能。这个系统使用现代加密技术保护玩家的游戏进度数据，防止存档被恶意修改或窃取。
+## Overview
+To protect the security and privacy of user game saves, we have added a complete save encryption functionality to GameExplorer_V1. This system uses modern encryption technology to protect players' game progress data, preventing saves from being maliciously modified or stolen.
 
-## 安全特性
+## Security Features
 
-### 1. 数据加密
-- **加密算法**: 使用XOR加密算法（可扩展为更强的加密算法）
-- **密钥管理**: 支持静态密钥和动态密钥
-- **数据完整性**: 使用校验和验证数据完整性
-- **文件格式**: 自定义二进制格式，包含魔数标识和版本信息
+### 1. Data Encryption
+- **Encryption Algorithm**: Uses XOR encryption (expandable to stronger encryption algorithms)
+- **Key Management**: Supports static and dynamic keys
+- **Data Integrity**: Uses checksums to verify data integrity
+- **File Format**: Custom binary format with magic number identification and version information
 
-### 2. 伦理考虑
-- **用户隐私**: 保护玩家的游戏进度不被他人窥探
-- **数据安全**: 防止存档被恶意修改或破坏
-- **透明度**: 用户可以选择启用或禁用加密
-- **性能优化**: 加密过程高效，不影响游戏体验
+### 2. Ethical Considerations
+- **User Privacy**: Protects player progress from being viewed by others
+- **Data Security**: Prevents saves from being maliciously modified or corrupted
+- **Transparency**: Users can choose to enable or disable encryption
+- **Performance Optimization**: Efficient encryption process that doesn't affect game experience
 
-## 技术实现
+## Technical Implementation
 
-### 核心组件
+### Core Components
 
-#### 1. EncryptionManager (加密管理器)
-- **文件位置**: `scripts/EncryptionManager.gd`
-- **类型**: 静态工具类
-- **功能**: 
-  - 数据加密和解密
-  - 文件完整性验证
-  - 动态密钥生成
-  - 加密文件信息获取
+#### 1. EncryptionManager
+- **File Location**: `scripts/EncryptionManager.gd`
+- **Type**: Static utility class
+- **Features**: 
+  - Data encryption and decryption
+  - File integrity verification
+  - Dynamic key generation
+  - Encrypted file information retrieval
 
-#### 2. SaveManager (存档管理器增强)
-- **文件位置**: `scripts/SaveManager.gd`
-- **新增功能**:
-  - 加密模式切换
-  - 加密存档保存和读取
-  - 兼容性处理（支持新旧存档格式）
+#### 2. SaveManager (Enhanced)
+- **File Location**: `scripts/SaveManager.gd`
+- **New Features**:
+  - Encryption mode switching
+  - Encrypted save storage and loading
+  - Compatibility handling (supports old and new save formats)
 
-#### 3. EncryptionTest (测试套件)
-- **文件位置**: `scripts/EncryptionTest.gd`
-- **功能**: 
-  - 自动化测试加密功能
-  - 数据完整性验证
-  - 性能测试
+#### 3. EncryptionTest (Test Suite)
+- **File Location**: `scripts/EncryptionTest.gd`
+- **Features**: 
+  - Automated encryption testing
+  - Data integrity verification
+  - Performance testing
 
-### 加密文件格式
+### Encrypted File Format
 
 ```
-+------------------+
-| 魔数标识 (4字节)  | "GEXP"
-+------------------+
-| 版本信息 (2字节)  | "1.0" 
-+------------------+
-| 数据长度 (4字节)  | 加密数据的长度
-+------------------+
-| 加密数据 (变长)   | XOR加密的JSON数据
-+------------------+
-| 校验和 (2字节)    | 用于验证数据完整性
-+------------------+
++----------------------+
+| Magic Number (4B)    | "GEXP"
++----------------------+
+| Version Info (2B)    | "1.0" 
++----------------------+
+| Data Length (4B)     | Length of encrypted data
++----------------------+
+| Encrypted Data (var) | XOR encrypted JSON data
++----------------------+
+| Checksum (2B)        | For data integrity verification
++----------------------+
 ```
 
-## 使用指南
+## Usage Guide
 
-### 1. 用户界面
-在游戏暂停菜单中，玩家可以：
-- 切换加密功能的开启/关闭
-- 查看当前存档的加密状态
-- 正常进行存档和读档操作
+### 1. User Interface
+In the game pause menu, players can:
+- Toggle encryption on/off
+- View current save encryption status
+- Perform normal save and load operations
 
-### 2. 加密设置
-- **默认状态**: 加密功能默认启用
-- **动态密钥**: 基于系统信息生成唯一密钥
-- **实时切换**: 可以在游戏中随时切换加密模式
+### 2. Encryption Settings
+- **Default State**: Encryption enabled by default
+- **Dynamic Keys**: Generates unique keys based on system information
+- **Real-time Switching**: Can switch encryption modes anytime during gameplay
 
-### 3. 兼容性
-- **向后兼容**: 支持读取旧的未加密存档
-- **格式检测**: 自动检测存档格式并选择相应的读取方式
-- **平滑迁移**: 用户可以选择将旧存档迁移到加密格式
+### 3. Compatibility
+- **Backward Compatible**: Supports reading old unencrypted saves
+- **Format Detection**: Automatically detects save format and chooses appropriate reading method
+- **Smooth Migration**: Users can choose to migrate old saves to encrypted format
 
-## 开发者指南
+## Developer Guide
 
-### 1. 配置加密功能
+### 1. Configuring Encryption
 
 ```gdscript
-# 启用加密（默认）
+# Enable encryption (default)
 SaveManager.set_encryption_mode(true, true)
 
-# 禁用加密
+# Disable encryption
 SaveManager.set_encryption_mode(false, false)
 
-# 仅使用静态密钥
+# Use static key only
 SaveManager.set_encryption_mode(true, false)
 ```
 
-### 2. 手动加密数据
+### 2. Manual Data Encryption
 
 ```gdscript
-# 加密字典数据
+# Encrypt dictionary data
 var game_data = {"level": "forest", "score": 1200}
 var encrypted_bytes = EncryptionManager.encrypt_data(game_data)
 
-# 解密数据
+# Decrypt data
 var decrypted_data = EncryptionManager.decrypt_data(encrypted_bytes)
 ```
 
-### 3. 文件完整性检查
+### 3. File Integrity Check
 
 ```gdscript
-# 验证加密文件
+# Verify encrypted file
 var is_valid = EncryptionManager.verify_encrypted_file("user://save.dat")
 
-# 获取文件信息
+# Get file information
 var file_info = EncryptionManager.get_encrypted_file_info("user://save.dat")
-print("文件大小: ", file_info.total_size)
-print("有效性: ", file_info.is_valid)
+print("File size: ", file_info.total_size)
+print("Validity: ", file_info.is_valid)
 ```
 
-## 安全考虑
+## Security Considerations
 
-### 1. 密钥管理
-- **静态密钥**: 适合基础保护，防止普通用户修改存档
-- **动态密钥**: 基于系统特征生成，提供更好的安全性
-- **密钥轮换**: 未来可扩展支持定期更换密钥
+### 1. Key Management
+- **Static Keys**: Suitable for basic protection, prevents ordinary users from modifying saves
+- **Dynamic Keys**: Generated based on system characteristics, provides better security
+- **Key Rotation**: Future expandability to support periodic key changes
 
-### 2. 攻击防护
-- **数据篡改**: 校验和机制防止数据被恶意修改
-- **格式验证**: 魔数标识确保文件格式正确
-- **版本控制**: 支持未来的加密算法升级
+### 2. Attack Protection
+- **Data Tampering**: Checksum mechanism prevents malicious modifications
+- **Format Validation**: Magic number ensures correct file format
+- **Version Control**: Supports future encryption algorithm upgrades
 
-### 3. 隐私保护
-- **本地存储**: 加密存档仅存储在用户本地
-- **无网络传输**: 不会将加密密钥发送到外部服务器
-- **用户控制**: 用户完全控制是否使用加密功能
+### 3. Privacy Protection
+- **Local Storage**: Encrypted saves stored only locally
+- **No Network Transfer**: Encryption keys never sent to external servers
+- **User Control**: Users have full control over encryption functionality
 
-## 性能分析
+## Performance Analysis
 
-### 1. 加密性能
-- **算法复杂度**: O(n) 线性时间复杂度
-- **内存使用**: 临时占用原数据2倍内存
-- **速度**: 对于典型游戏存档（<10KB），加密时间<1ms
+### 1. Encryption Performance
+- **Algorithm Complexity**: O(n) linear time complexity
+- **Memory Usage**: Temporarily uses 2x original data memory
+- **Speed**: For typical game saves (<10KB), encryption time <1ms
 
-### 2. 优化策略
-- **延迟加载**: 避免在游戏启动时进行加密操作
-- **缓存机制**: 可扩展支持解密结果缓存
-- **异步处理**: 对于大型存档，可使用后台线程处理
+### 2. Optimization Strategies
+- **Delayed Loading**: Avoids encryption operations during game startup
+- **Caching Mechanism**: Expandable to support decryption result caching
+- **Async Processing**: Can use background threads for large saves
 
-## 测试和验证
+## Testing and Validation
 
-### 1. 自动化测试
-游戏启动时（仅在开发模式下）会自动运行以下测试：
-- 基础加密解密功能
-- 空数据处理
-- 复杂数据结构
-- 不同密钥验证
-- 文件完整性检查
+### 1. Automated Testing
+The following tests run automatically at game startup (development mode only):
+- Basic encryption/decryption functionality
+- Empty data handling
+- Complex data structures
+- Different key validation
+- File integrity checks
 
-### 2. 手动测试
-开发者可以调用以下方法进行手动测试：
+### 2. Manual Testing
+Developers can call the following method for manual testing:
 ```gdscript
 SaveManager.run_encryption_test_manual()
 ```
 
-### 3. 调试工具
+### 3. Debug Tools
 ```gdscript
-# 打印加密文件信息
+# Print encrypted file information
 EncryptionTest.print_file_info("user://save_game_encrypted.dat")
 ```
 
-## 未来扩展
+## Future Extensions
 
-### 1. 高级加密算法
-- **AES加密**: 替换XOR为AES-256加密
-- **非对称加密**: 支持RSA公钥加密
-- **哈希算法**: 使用SHA-256替代简单校验和
+### 1. Advanced Encryption Algorithms
+- **AES Encryption**: Replace XOR with AES-256 encryption
+- **Asymmetric Encryption**: Support for RSA public key encryption
+- **Hash Algorithms**: Use SHA-256 instead of simple checksums
 
-### 2. 云存档支持
-- **加密云同步**: 加密存档的云端同步
-- **多设备支持**: 跨设备的加密存档同步
-- **备份恢复**: 加密存档的云端备份
+### 2. Cloud Save Support
+- **Encrypted Cloud Sync**: Cloud synchronization of encrypted saves
+- **Multi-device Support**: Cross-device encrypted save synchronization
+- **Backup Recovery**: Cloud backup of encrypted saves
 
-### 3. 用户体验改进
-- **加密强度选择**: 让用户选择加密强度
-- **批量迁移**: 支持批量转换存档格式
-- **加密状态指示**: 更明显的UI指示当前加密状态
+### 3. User Experience Improvements
+- **Encryption Strength Selection**: Let users choose encryption strength
+- **Batch Migration**: Support batch conversion of save formats
+- **Encryption Status Indicator**: More visible UI indication of current encryption status
 
-## 故障排除
+## Troubleshooting
 
-### 常见问题
+### Common Issues
 
-#### 1. 加密失败
-- **症状**: 保存时显示"加密失败"
-- **原因**: 数据格式错误或密钥问题
-- **解决**: 检查存档数据完整性，重新生成密钥
+#### 1. Encryption Failure
+- **Symptoms**: Shows "Encryption failed" when saving
+- **Cause**: Data format error or key issues
+- **Solution**: Check save data integrity, regenerate keys
 
-#### 2. 解密失败
-- **症状**: 读档时显示"解密失败"
-- **原因**: 文件损坏、密钥不匹配或格式错误
-- **解决**: 验证文件完整性，检查加密设置
+#### 2. Decryption Failure
+- **Symptoms**: Shows "Decryption failed" when loading
+- **Cause**: File corruption, key mismatch, or format error
+- **Solution**: Verify file integrity, check encryption settings
 
-#### 3. 性能问题
-- **症状**: 存档/读档速度明显变慢
-- **原因**: 大型存档数据或系统性能限制
-- **解决**: 优化存档数据结构，考虑异步处理
+#### 3. Performance Issues
+- **Symptoms**: Noticeably slower save/load speeds
+- **Cause**: Large save data or system performance limitations
+- **Solution**: Optimize save data structure, consider async processing
 
-### 调试技巧
-1. 查看控制台输出获取详细错误信息
-2. 使用测试工具验证加密功能
-3. 检查文件权限和磁盘空间
-4. 验证Autoload配置是否正确
+### Debug Tips
+1. Check console output for detailed error messages
+2. Use test tools to verify encryption functionality
+3. Check file permissions and disk space
+4. Verify Autoload configuration is correct
 
-## 技术规范
+## Technical Specifications
 
-### 支持的数据类型
-- Dictionary (字典)
-- Array (数组)  
-- String (字符串)
-- Int (整数)
-- Float (浮点数)
-- Bool (布尔值)
-- Vector2/Vector3 (向量)
+### Supported Data Types
+- Dictionary
+- Array
+- String
+- Int
+- Float
+- Bool
+- Vector2/Vector3
 
-### 文件规范
-- **最大文件大小**: 100MB (理论限制)
-- **推荐文件大小**: <1MB (性能考虑)
-- **文件扩展名**: `.dat` (加密存档)
-- **编码格式**: UTF-8 (JSON序列化)
+### File Specifications
+- **Maximum File Size**: 100MB (theoretical limit)
+- **Recommended File Size**: <1MB (performance consideration)
+- **File Extension**: `.dat` (encrypted saves)
+- **Encoding Format**: UTF-8 (JSON serialization)
 
-### 系统要求
-- **Godot版本**: 4.2+
-- **平台支持**: Windows, macOS, Linux
-- **依赖项**: 无外部依赖
-- **内存要求**: 额外需要存档数据2倍内存 
+### System Requirements
+- **Godot Version**: 4.2+
+- **Platform Support**: Windows, macOS, Linux
+- **Dependencies**: No external dependencies
+- **Memory Requirements**: Additional 2x save data memory needed 

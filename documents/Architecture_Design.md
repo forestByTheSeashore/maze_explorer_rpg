@@ -1,250 +1,250 @@
-# ForestByTheSeashore 游戏架构设计文档
+# ForestByTheSeashore Game Architecture Design Document
 
-## 1. 架构概览
+## 1. Architecture Overview
 
-本游戏采用**模块化分层架构**，确保代码的可维护性、可扩展性和可测试性。
+This game uses a **modular layered architecture** to ensure code maintainability, extensibility, and testability.
 
-### 1.1 整体架构图
+### 1.1 Overall Architecture Diagram
 
 ```
 ┌─────────────────────────────────────────────────────┐
-│                   表示层 (UI Layer)                  │
+│                     UI Layer                         │
 ├─────────────────────────────────────────────────────┤
-│                   业务层 (Game Logic)                │
+│                   Game Logic Layer                   │
 ├─────────────────────────────────────────────────────┤
-│                   系统层 (Core Systems)               │
+│                   Core Systems Layer                 │
 ├─────────────────────────────────────────────────────┤
-│                   基础层 (Foundation)                │
+│                   Foundation Layer                   │
 └─────────────────────────────────────────────────────┘
 ```
 
-## 2. 分层设计详解
+## 2. Layer Design Details
 
-### 2.1 基础层 (Foundation Layer)
-**职责**: 提供基础服务和核心功能
+### 2.1 Foundation Layer
+**Responsibility**: Provides basic services and core functionality
 
-**主要组件**:
-- `GameManager`: 全局游戏状态管理器
-- `InputValidator`: 输入验证系统  
-- `EthicsManager`: 伦理内容管理器
-- `PerformanceMonitor`: 性能监控器
-- `EncryptionManager`: 数据加密管理器
+**Main Components**:
+- `GameManager`: Global game state manager
+- `InputValidator`: Input validation system
+- `EthicsManager`: Ethical content manager
+- `PerformanceMonitor`: Performance monitor
+- `EncryptionManager`: Data encryption manager
 
-**设计模式**: 单例模式 (Singleton)
+**Design Pattern**: Singleton Pattern
 
-### 2.2 系统层 (Core Systems Layer) 
-**职责**: 核心游戏系统实现
+### 2.2 Core Systems Layer
+**Responsibility**: Core game system implementation
 
-**主要组件**:
-- `SaveManager`: 存档管理系统
-- `LevelManager`: 关卡管理系统
-- `NotificationManager`: 通知管理系统
-- `InventorySystem`: 背包系统
-- `WeaponSystem`: 武器系统
+**Main Components**:
+- `SaveManager`: Save management system
+- `LevelManager`: Level management system
+- `NotificationManager`: Notification management system
+- `InventorySystem`: Inventory system
+- `WeaponSystem`: Weapon system
 
-**设计模式**: 观察者模式 (Observer), 工厂模式 (Factory)
+**Design Patterns**: Observer Pattern, Factory Pattern
 
-### 2.3 业务层 (Game Logic Layer)
-**职责**: 具体游戏逻辑实现
+### 2.3 Game Logic Layer
+**Responsibility**: Specific game logic implementation
 
-**主要组件**:
-- `Player`: 玩家控制器
-- `EnemyAI`: 敌人人工智能系统
-  - `GoblinAI`: 哥布林AI (静态守卫型)
-  - `SkeletonAI`: 骷髅AI (追踪型)
-  - `SlimeAI`: 史莱姆AI (随机移动型)
-- `LevelGenerator`: 关卡生成器 (程序化生成)
+**Main Components**:
+- `Player`: Player controller
+- `EnemyAI`: Enemy artificial intelligence system
+  - `GoblinAI`: Goblin AI (static guard type)
+  - `SkeletonAI`: Skeleton AI (tracking type)
+  - `SlimeAI`: Slime AI (random movement type)
+- `LevelGenerator`: Level generator (procedural generation)
 
-**设计模式**: 状态模式 (State), 策略模式 (Strategy)
+**Design Patterns**: State Pattern, Strategy Pattern
 
-### 2.4 表示层 (UI Layer)
-**职责**: 用户界面和交互
+### 2.4 UI Layer
+**Responsibility**: User interface and interaction
 
-**主要组件**:
-- `UIManager`: UI总管理器
-- `MainMenu`: 主菜单
-- `InventoryPanel`: 背包界面
-- `MiniMap`: 小地图系统
-- `StatusBar`: 状态栏
+**Main Components**:
+- `UIManager`: UI manager
+- `MainMenu`: Main menu
+- `InventoryPanel`: Inventory interface
+- `MiniMap`: Minimap system
+- `StatusBar`: Status bar
 
-**设计模式**: MVC模式 (Model-View-Controller)
+**Design Pattern**: MVC Pattern (Model-View-Controller)
 
-## 3. 关键功能实现
+## 3. Key Feature Implementation
 
-### 3.1 人工智能系统 (AI System)
+### 3.1 Artificial Intelligence System (AI System)
 
-#### 3.1.1 敌人AI架构
+#### 3.1.1 Enemy AI Architecture
 ```
-EnemyAI (基类)
-├── StateMachine (有限状态机)
-│   ├── IdleState (待机状态)
-│   ├── PatrolState (巡逻状态)
-│   ├── ChaseState (追逐状态)
-│   └── AttackState (攻击状态)
-└── NavigationAgent (A*路径寻找)
-```
-
-#### 3.1.2 AI实现特点
-- **有限状态机 (FSM)**: 管理敌人行为状态转换
-- **A*路径寻找**: 使用Godot Navigation2D实现智能寻路
-- **决策系统**: 基于距离和玩家状态的动态决策
-- **性能优化**: 使用视野范围限制AI激活
-
-### 3.2 程序化关卡生成
-
-#### 3.2.1 生成算法
-- **递归回溯算法 (Recursive Backtracking)**: 生成迷宫布局
-- **房间连接算法**: 确保关卡连通性
-- **物品分布算法**: 合理分配钥匙、武器、敌人位置
-
-#### 3.2.2 关卡系统特点
-- **动态生成**: 每次游戏都有不同的关卡布局
-- **平衡性**: 确保难度曲线合理
-- **可配置性**: 支持自定义关卡参数
-
-### 3.3 安全与伦理系统
-
-#### 3.3.1 数据安全
-```
-数据流向: 游戏数据 → JSON序列化 → XOR加密 → 校验和 → 文件存储
+EnemyAI (Base Class)
+├── StateMachine (Finite State Machine)
+│   ├── IdleState
+│   ├── PatrolState
+│   ├── ChaseState
+│   └── AttackState
+└── NavigationAgent (A* Pathfinding)
 ```
 
-**安全特性**:
-- **XOR加密**: 轻量级但有效的数据加密
-- **文件头验证**: 防止文件篡改
-- **校验和验证**: 确保数据完整性
-- **路径验证**: 防止路径遍历攻击
+#### 3.1.2 AI Implementation Features
+- **Finite State Machine (FSM)**: Manages enemy behavior state transitions
+- **A* Pathfinding**: Uses Godot Navigation2D for intelligent pathfinding
+- **Decision System**: Dynamic decision-making based on distance and player state
+- **Performance Optimization**: Uses vision range to limit AI activation
 
-#### 3.3.2 输入验证
-- **移动输入验证**: 限制输入向量范围
-- **攻击频率限制**: 防止输入spam
-- **用户名过滤**: 移除不当内容
-- **文件路径安全**: 限制访问范围
+### 3.2 Procedural Level Generation
 
-#### 3.3.3 伦理考量
-- **内容过滤**: 自动过滤不当内容
-- **隐私保护**: 本地数据存储，无云端收集
-- **适龄性检查**: 确保内容适合所有年龄段
-- **无障碍支持**: 为不同用户群体提供支持
+#### 3.2.1 Generation Algorithm
+- **Recursive Backtracking**: Generates maze layout
+- **Room Connection Algorithm**: Ensures level connectivity
+- **Item Distribution Algorithm**: Reasonably distributes keys, weapons, enemy positions
 
-## 4. 模块依赖关系
+#### 3.2.2 Level System Features
+- **Dynamic Generation**: Different level layout each game
+- **Balance**: Ensures reasonable difficulty curve
+- **Configurability**: Supports custom level parameters
 
-### 4.1 核心依赖图
+### 3.3 Security and Ethics System
+
+#### 3.3.1 Data Security
 ```
-GameManager (核心)
+Data Flow: Game Data → JSON Serialization → XOR Encryption → Checksum → File Storage
+```
+
+**Security Features**:
+- **XOR Encryption**: Lightweight but effective data encryption
+- **File Header Verification**: Prevents file tampering
+- **Checksum Verification**: Ensures data integrity
+- **Path Validation**: Prevents path traversal attacks
+
+#### 3.3.2 Input Validation
+- **Movement Input Validation**: Limits input vector range
+- **Attack Frequency Limit**: Prevents input spam
+- **Username Filtering**: Removes inappropriate content
+- **File Path Security**: Restricts access scope
+
+#### 3.3.3 Ethical Considerations
+- **Content Filtering**: Automatically filters inappropriate content
+- **Privacy Protection**: Local data storage, no cloud collection
+- **Age Appropriateness**: Ensures content suitable for all ages
+- **Accessibility Support**: Provides support for different user groups
+
+## 4. Module Dependencies
+
+### 4.1 Core Dependency Graph
+```
+GameManager (Core)
 ├── SaveManager → EncryptionManager
 ├── LevelManager → Player & Enemies
 ├── UIManager → All Systems
 └── PerformanceMonitor → System Health
 ```
 
-### 4.2 通信机制
-- **信号系统 (Signals)**: Godot内置的观察者模式实现
-- **组群系统 (Groups)**: 用于快速查找和管理节点
-- **单例访问**: 全局系统通过autoload访问
+### 4.2 Communication Mechanisms
+- **Signal System**: Godot's built-in observer pattern implementation
+- **Group System**: For quick node finding and management
+- **Singleton Access**: Global systems accessed through autoload
 
-## 5. 可扩展性设计
+## 5. Extensibility Design
 
-### 5.1 新敌人类型扩展
+### 5.1 New Enemy Type Extension
 ```gdscript
-# 添加新敌人只需继承基类并实现特定行为
+# Add new enemy by inheriting base class and implementing specific behavior
 extends EnemyAI
 class_name NewEnemyType
 
 func _implement_specific_behavior():
-    # 实现特定AI逻辑
+    # Implement specific AI logic
     pass
 ```
 
-### 5.2 新关卡机制扩展
+### 5.2 New Level Mechanism Extension
 ```gdscript
-# 关卡生成器支持插件式扩展
+# Level generator supports plugin-style extension
 class_name NewLevelFeature extends LevelFeature
 
 func generate_feature(level_data: Dictionary):
-    # 添加新的关卡特性
+    # Add new level feature
     pass
 ```
 
-### 5.3 新UI组件扩展
+### 5.3 New UI Component Extension
 ```gdscript
-# UI系统支持组件化扩展
+# UI system supports component-based extension
 class_name NewUIComponent extends Control
 
 func _ready():
     UIManager.register_component(self)
 ```
 
-## 6. 可维护性保障
+## 6. Maintainability Assurance
 
-### 6.1 代码组织原则
-- **单一职责原则**: 每个类只负责一个功能
-- **开闭原则**: 对扩展开放，对修改关闭
-- **依赖倒置**: 高层模块不依赖低层模块
-- **接口隔离**: 使用小而专一的接口
+### 6.1 Code Organization Principles
+- **Single Responsibility**: Each class responsible for one functionality
+- **Open-Closed**: Open for extension, closed for modification
+- **Dependency Inversion**: High-level modules don't depend on low-level modules
+- **Interface Segregation**: Use small, specific interfaces
 
-### 6.2 文档与注释
-- **类级注释**: 描述类的职责和用途
-- **函数注释**: 说明参数、返回值和副作用
-- **设计决策记录**: 重要设计决策的文档化
+### 6.2 Documentation and Comments
+- **Class-level Comments**: Describe class responsibilities and usage
+- **Function Comments**: Explain parameters, return values, and side effects
+- **Design Decision Records**: Documentation of important design decisions
 
-### 6.3 测试策略
-- **单元测试**: 测试个别函数和类
-- **集成测试**: 测试系统间的交互
-- **性能测试**: 监控和优化性能瓶颈
+### 6.3 Testing Strategy
+- **Unit Tests**: Test individual functions and classes
+- **Integration Tests**: Test system interactions
+- **Performance Tests**: Monitor and optimize performance bottlenecks
 
-## 7. 技术选型说明
+## 7. Technology Selection
 
-### 7.1 引擎选择: Godot Engine 4.2
-**优势**:
-- 优秀的2D渲染性能
-- 内置的节点和信号系统
-- 强大的物理引擎
-- 友好的开发工具
+### 7.1 Engine Choice: Godot Engine 4.2
+**Advantages**:
+- Excellent 2D rendering performance
+- Built-in node and signal system
+- Powerful physics engine
+- Developer-friendly tools
 
-### 7.2 语言选择: GDScript
-**优势**:
-- 与Godot深度集成
-- 简洁的语法
-- 强大的类型系统
-- 优秀的性能
+### 7.2 Language Choice: GDScript
+**Advantages**:
+- Deep integration with Godot
+- Clean syntax
+- Strong type system
+- Excellent performance
 
-### 7.3 架构模式选择
-- **组件系统**: 利用Godot的节点系统
-- **事件驱动**: 使用信号进行解耦
-- **分层架构**: 清晰的职责分离
+### 7.3 Architecture Pattern Choice
+- **Component System**: Utilizes Godot's node system
+- **Event-Driven**: Uses signals for decoupling
+- **Layered Architecture**: Clear separation of responsibilities
 
-## 8. 性能考量
+## 8. Performance Considerations
 
-### 8.1 渲染优化
-- **对象池**: 重用敌人和道具对象
-- **视野剔除**: 只渲染可见区域
-- **LOD系统**: 距离相关的细节级别
+### 8.1 Rendering Optimization
+- **Object Pool**: Reuse enemy and item objects
+- **Viewport Culling**: Only render visible areas
+- **LOD System**: Distance-based level of detail
 
-### 8.2 内存管理
-- **资源预加载**: 关键资源预先加载
-- **智能卸载**: 自动卸载不需要的资源
-- **内存监控**: 实时监控内存使用
+### 8.2 Memory Management
+- **Resource Preloading**: Preload critical resources
+- **Smart Unloading**: Automatically unload unnecessary resources
+- **Memory Monitoring**: Real-time memory usage monitoring
 
-### 8.3 计算优化
-- **AI更新频率**: 根据距离调整AI更新频率
-- **物理计算**: 优化碰撞检测范围
-- **路径缓存**: 缓存常用路径计算结果
+### 8.3 Computation Optimization
+- **AI Update Frequency**: Adjust AI update frequency based on distance
+- **Physics Calculation**: Optimize collision detection range
+- **Path Caching**: Cache commonly used path calculation results
 
-## 9. 未来扩展计划
+## 9. Future Extension Plans
 
-### 9.1 短期目标
-- 添加更多敌人类型
-- 实现关卡编辑器
-- 增加音效系统
-- 优化UI体验
+### 9.1 Short-term Goals
+- Add more enemy types
+- Implement level editor
+- Add sound system
+- Optimize UI experience
 
-### 9.2 长期目标
-- 联网多人模式
-- 物理效果增强
-- 高级AI行为
-- 移动平台支持
+### 9.2 Long-term Goals
+- Networked multiplayer mode
+- Enhanced physics effects
+- Advanced AI behavior
+- Mobile platform support
 
-## 10. 结论
+## 10. Conclusion
 
-本架构设计充分考虑了游戏开发的各个方面，从技术实现到伦理考量，从性能优化到可扩展性。通过模块化的设计，确保了代码的高质量和长期可维护性，为游戏的持续发展奠定了坚实的基础。 
+This architecture design thoroughly considers various aspects of game development, from technical implementation to ethical considerations, from performance optimization to extensibility. Through modular design, it ensures high code quality and long-term maintainability, laying a solid foundation for the game's continuous development. 

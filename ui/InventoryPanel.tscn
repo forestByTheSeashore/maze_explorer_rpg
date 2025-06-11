@@ -29,7 +29,7 @@ offset_top = 4.0
 offset_right = 117.0
 offset_bottom = 32.0
 theme_override_font_sizes/font_size = 20
-text = "背包"
+text = "Bag"
 horizontal_alignment = 1
 
 [node name="WeaponsSection" type="VBoxContainer" parent="."]
@@ -41,7 +41,7 @@ offset_bottom = 118.0
 [node name="WeaponsTitle" type="Label" parent="WeaponsSection"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 12
-text = "武器"
+text = "Weapons"
 
 [node name="WeaponsList" type="VBoxContainer" parent="WeaponsSection"]
 layout_mode = 2
@@ -55,7 +55,7 @@ offset_bottom = 250.0
 [node name="KeysTitle" type="Label" parent="KeysSection"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 12
-text = "钥匙"
+text = "Key"
 
 [node name="KeysList" type="VBoxContainer" parent="KeysSection"]
 layout_mode = 2

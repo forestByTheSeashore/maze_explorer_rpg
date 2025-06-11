@@ -1,12 +1,12 @@
 extends Node
 
-## 教程管理器
-## 为新玩家提供游戏引导和说明
+## Tutorial Manager
+## Provides game guidance and instructions for new players
 
 signal tutorial_step_completed(step_name: String)
 signal tutorial_finished()
 
-# 教程步骤定义
+# Tutorial step definitions
 enum TutorialStep {
 	WELCOME,
 	MOVEMENT,
@@ -25,11 +25,11 @@ var step_completed: Array[bool] = []
 
 func _ready():
 	add_to_group("tutorial_manager")
-	# 初始化完成状态数组
+	# Initialize completion status array
 	step_completed.resize(TutorialStep.size())
 	step_completed.fill(false)
 	
-	# 检查玩家是否是新手
+	# Check if player is new
 	_check_first_time_player()
 
 func _check_first_time_player():
@@ -40,11 +40,11 @@ func _check_first_time_player():
 		tutorial_enabled = not config.get_value("tutorial", "completed", false)
 	
 	if tutorial_enabled:
-		print("TutorialManager: 检测到新玩家，启动教程")
+		print("TutorialManager: Detected new player, starting tutorial")
 		call_deferred("start_tutorial")
 
 func start_tutorial():
-	print("TutorialManager: 开始教程")
+	print("TutorialManager: Starting tutorial")
 	current_step = TutorialStep.WELCOME
 	_create_tutorial_overlay()
 	_show_tutorial_step(current_step)
@@ -53,20 +53,20 @@ func _create_tutorial_overlay():
 	if tutorial_overlay:
 		return
 	
-	# 创建教程UI覆盖层
+	# Create tutorial UI overlay
 	tutorial_overlay = Control.new()
 	tutorial_overlay.name = "TutorialOverlay"
 	tutorial_overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	tutorial_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	
-	# 创建教程框
+	# Create tutorial panel
 	var tutorial_panel = Panel.new()
 	tutorial_panel.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
 	tutorial_panel.size = Vector2(800, 150)
 	tutorial_panel.position.y = -180
 	tutorial_panel.position.x = (get_viewport().get_visible_rect().size.x - 800) / 2
 	
-	# 添加教程文本
+	# Add tutorial text
 	var tutorial_label = RichTextLabel.new()
 	tutorial_label.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	tutorial_label.add_theme_font_size_override("normal_font_size", 18)
@@ -74,17 +74,17 @@ func _create_tutorial_overlay():
 	tutorial_label.scroll_active = false
 	tutorial_panel.add_child(tutorial_label)
 	
-	# 添加关闭按钮
+	# Add close button
 	var close_button = Button.new()
-	close_button.text = "跳过教程"
+	close_button.text = "Skip Tutorial"
 	close_button.size = Vector2(100, 30)
 	close_button.position = Vector2(tutorial_panel.size.x - 110, 10)
 	close_button.pressed.connect(_skip_tutorial)
 	tutorial_panel.add_child(close_button)
 	
-	# 添加下一步按钮
+	# Add next button
 	var next_button = Button.new()
-	next_button.text = "下一步"
+	next_button.text = "Next"
 	next_button.size = Vector2(80, 30)
 	next_button.position = Vector2(tutorial_panel.size.x - 200, 10)
 	next_button.pressed.connect(_next_tutorial_step)
@@ -92,11 +92,11 @@ func _create_tutorial_overlay():
 	
 	tutorial_overlay.add_child(tutorial_panel)
 	
-	# 添加到场景
+	# Add to scene
 	var current_scene = get_tree().current_scene
 	if current_scene:
 		current_scene.add_child(tutorial_overlay)
-		tutorial_overlay.z_index = 1000  # 确保在最上层
+		tutorial_overlay.z_index = 1000  # Ensure it's on top
 
 func _show_tutorial_step(step: TutorialStep):
 	if not tutorial_overlay:
@@ -107,25 +107,25 @@ func _show_tutorial_step(step: TutorialStep):
 		return
 	
 	var tutorial_texts = {
-		TutorialStep.WELCOME: "[center][b]欢迎来到森林海岸迷宫探险![/b][/center]\n这是一个探索迷宫、收集物品、对抗敌人的冒险游戏。\n让我们开始教程，学习基本操作！",
+		TutorialStep.WELCOME: "[center][b]Welcome to Forest Coast Maze Adventure![/b][/center]\nThis is an adventure game about exploring mazes, collecting items, and fighting enemies.\nLet's start the tutorial and learn the basic controls!",
 		
-		TutorialStep.MOVEMENT: "[center][b]移动控制[/b][/center]\n使用 [b]WASD[/b] 键或[b]方向键[/b]移动你的角色。\n试试现在移动一下！",
+		TutorialStep.MOVEMENT: "[center][b]Movement Controls[/b][/center]\nUse [b]WASD[/b] keys or [b]Arrow Keys[/b] to move your character.\nTry moving around now!",
 		
-		TutorialStep.INVENTORY: "[center][b]背包系统[/b][/center]\n按 [b]I[/b] 键打开背包查看物品。\n使用 [b]1-4[/b] 数字键快速切换武器。\n按 [b]Tab[/b] 键循环切换武器。",
+		TutorialStep.INVENTORY: "[center][b]Inventory System[/b][/center]\nPress [b]I[/b] to open inventory and view items.\nUse [b]1-4[/b] number keys to quickly switch weapons.\nPress [b]Tab[/b] to cycle through weapons.",
 		
-		TutorialStep.COMBAT: "[center][b]战斗系统[/b][/center]\n按 [b]J[/b] 键攻击敌人。\n你的攻击力必须大于敌人的攻击力才能击败他们。\n收集更强的武器来提升攻击力！",
+		TutorialStep.COMBAT: "[center][b]Combat System[/b][/center]\nPress [b]J[/b] to attack enemies.\nYour attack power must be greater than the enemy's to defeat them.\nCollect stronger weapons to increase your attack power!",
 		
-		TutorialStep.DOORS_AND_KEYS: "[center][b]门和钥匙[/b][/center]\n红色的门需要钥匙才能打开。\n靠近门并按 [b]F[/b] 键互动。\n收集钥匙并找到出口门来完成关卡！",
+		TutorialStep.DOORS_AND_KEYS: "[center][b]Doors and Keys[/b][/center]\nRed doors require keys to open.\nGet close to a door and press [b]F[/b] to interact.\nCollect keys and find the exit door to complete the level!",
 		
-		TutorialStep.MINIMAP: "[center][b]小地图和路径提示[/b][/center]\n按 [b]M[/b] 键切换小地图显示。\n按 [b]F1[/b] 显示到钥匙的路径。\n按 [b]F2[/b] 显示到出口门的路径。",
+		TutorialStep.MINIMAP: "[center][b]Minimap and Path Hints[/b][/center]\nPress [b]M[/b] to toggle minimap display.\nPress [b]F1[/b] to show path to key.\nPress [b]F2[/b] to show path to exit door.",
 		
-		TutorialStep.SAVING: "[center][b]保存游戏[/b][/center]\n按 [b]ESC[/b] 键打开暂停菜单进行保存/加载。\n按 [b]F5[/b] 快速保存，按 [b]F6[/b] 快速加载。\n你的进度会被安全加密保存！",
+		TutorialStep.SAVING: "[center][b]Saving Game[/b][/center]\nPress [b]ESC[/b] to open pause menu for save/load.\nPress [b]F5[/b] for quick save, [b]F6[/b] for quick load.\nYour progress will be securely encrypted!",
 		
-		TutorialStep.COMPLETED: "[center][b]教程完成！[/b][/center]\n恭喜！你已经掌握了所有基本操作。\n现在去探索迷宫，寻找钥匙，击败敌人吧！\n祝你游戏愉快！"
+		TutorialStep.COMPLETED: "[center][b]Tutorial Completed![/b][/center]\nCongratulations! You've mastered all basic controls.\nNow go explore the maze, find keys, and defeat enemies!\nHave fun playing!"
 	}
 	
-	label.text = tutorial_texts.get(step, "教程文本未找到")
-	print("TutorialManager: 显示教程步骤 ", TutorialStep.keys()[step])
+	label.text = tutorial_texts.get(step, "Tutorial text not found")
+	print("TutorialManager: Showing tutorial step ", TutorialStep.keys()[step])
 
 func _next_tutorial_step():
 	step_completed[current_step] = true
@@ -136,26 +136,26 @@ func _next_tutorial_step():
 		_show_tutorial_step(current_step)
 		
 		if current_step == TutorialStep.COMPLETED:
-			# 延迟关闭教程
+			# Delay tutorial closing
 			await get_tree().create_timer(3.0).timeout
 			_finish_tutorial()
 	else:
 		_finish_tutorial()
 
 func _skip_tutorial():
-	print("TutorialManager: 玩家跳过教程")
+	print("TutorialManager: Player skipped tutorial")
 	_finish_tutorial()
 
 func _finish_tutorial():
-	print("TutorialManager: 教程结束")
+	print("TutorialManager: Tutorial ended")
 	tutorial_finished.emit()
 	
-	# 保存教程完成状态
+	# Save tutorial completion status
 	var config = ConfigFile.new()
 	config.set_value("tutorial", "completed", true)
 	config.save("user://tutorial_config.cfg")
 	
-	# 移除教程UI
+	# Remove tutorial UI
 	if tutorial_overlay:
 		tutorial_overlay.queue_free()
 		tutorial_overlay = null
@@ -163,19 +163,19 @@ func _finish_tutorial():
 	tutorial_enabled = false
 
 func reset_tutorial():
-	"""重置教程状态，用于测试或重新观看"""
+	"""Reset tutorial status, used for testing or rewatching"""
 	var config = ConfigFile.new()
 	config.set_value("tutorial", "completed", false)
 	config.save("user://tutorial_config.cfg")
 	tutorial_enabled = true
 	step_completed.fill(false)
 	current_step = TutorialStep.WELCOME
-	print("TutorialManager: 教程状态已重置")
+	print("TutorialManager: Tutorial status has been reset")
 
 func is_tutorial_active() -> bool:
 	return tutorial_enabled and tutorial_overlay != null
 
-# 供其他系统调用的函数
+# Functions for other systems to call
 func mark_step_completed(step: TutorialStep):
 	if step < TutorialStep.size():
 		step_completed[step] = true
