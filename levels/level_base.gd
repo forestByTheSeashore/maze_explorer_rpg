@@ -79,6 +79,14 @@ func _ready():
 	print("Current scene name: ", scene_file_path)
 	print("Current node name: ", name)
 	
+	# Play game music
+	var audio_manager = get_node_or_null("/root/AudioManager")
+	if audio_manager:
+		audio_manager.play_game_music()
+		print("LevelBase: Started playing game music")
+	else:
+		print("LevelBase: AudioManager not found")
+	
 	# Initialize path state (unified with Level1 approach)
 	show_path_to_key = false
 	show_path_to_door = false
@@ -236,6 +244,9 @@ func init_level() -> void:
 
 	print("Step 4.5: Validating and improving maze quality...")
 	validate_and_improve_maze_quality()
+	
+	print("Step 4.6: Adding maze complexity...")
+	add_maze_complexity()
 
 	print("Step 5: Redrawing maze...")
 	await draw_maze_to_tilemap()
@@ -298,13 +309,25 @@ func on_exit_door_has_opened():
 	else:
 		print("LevelBase: Skipping effect - EffectsManager or exit_door invalid")
 	
-	# Update victory manager
+	# Update victory manager - 让它自己处理所有的胜利逻辑
 	var victory_manager = get_node_or_null("/root/VictoryManager")
 	if victory_manager:
+		print("Current level name before marking complete: ", current_level_name)
 		victory_manager.mark_level_completed(current_level_name)
+		
+		# 让VictoryManager决定是否显示胜利界面
+		# 如果VictoryManager触发了胜利界面，游戏会被暂停，后续代码不会执行
+		
+		# 等待一帧，让VictoryManager有机会处理胜利逻辑
+		await get_tree().process_frame
+		
+		# 如果游戏被暂停，说明胜利界面已经显示，直接返回
+		if get_tree().paused:
+			print("Game is paused (victory screen shown), exiting level completion handler")
+			return
 	
-	# Ensure game is not paused before switching scene
-	get_tree().paused = false
+	# 只有在游戏没有结束时才继续到下一关
+	print("Game not completed yet, proceeding to next level...")
 	
 	var next_level = get_next_level_name()
 	if next_level:
@@ -313,14 +336,13 @@ func on_exit_door_has_opened():
 		var level_manager = get_node("/root/LevelManager")
 		if level_manager:
 			level_manager.next_level_name = next_level
-			level_manager.prepare_next_level()  # Add this line
+			level_manager.prepare_next_level()
 			# Use scene switching instead of node management
 			get_tree().change_scene_to_file("res://levels/base_level.tscn")
 		else:
 			print("Error: LevelManager not found")
 	else:
-		print("Congratulations! You've completed all levels!")
-		# Game end handling will be handled automatically by VictoryManager
+		print("No more levels available!")
 
 # Get next level name
 func get_next_level_name() -> String:
@@ -452,8 +474,40 @@ func verify_tilemap():
 func ensure_path_from_entrance_to_exit():
 	if entrance_pos.x >= maze_width or entrance_pos.y >= maze_height or exit_pos.x >= maze_width or exit_pos.y >= maze_height:
 		return
-	create_path_between(entrance_pos.x, entrance_pos.y, exit_pos.x, exit_pos.y)
-	widen_specific_path(entrance_pos.x, entrance_pos.y, exit_pos.x, exit_pos.y)
+	
+	# 使用新的路径创建方法，不再创建简单的直达路径
+	print("Creating complex path from entrance to exit...")
+	
+	# 使用A*或简单的连通性检查来验证路径存在
+	if not _is_path_connected(entrance_pos.x, entrance_pos.y, exit_pos.x, exit_pos.y):
+		print("No path exists, creating minimal connection...")
+		# 只有在没有路径时才创建最小连接
+		_create_minimal_connection(entrance_pos.x, entrance_pos.y, exit_pos.x, exit_pos.y)
+	else:
+		print("Path already exists between entrance and exit")
+	
+	# 移除对 widen_specific_path 的调用，避免创建明显的宽阔直路
+
+# 重写 widen_specific_path 函数以避免创建明显的直路
+func widen_specific_path(x1: int, y1: int, x2: int, y2: int):
+	# 注释掉或重写这个函数以避免创建明显的宽路径
+	# 这个函数是造成"先右后下"问题的主要原因之一
+	print("Skipping path widening to maintain maze complexity...")
+	# 可以选择性地在某些关键位置稍微扩宽，但不要创建完整的直达路径
+	
+	# 仅在入口和出口附近稍微扩宽
+	_widen_area_around_point(x1, y1, 2)
+	_widen_area_around_point(x2, y2, 2)
+
+# 新增：在指定点周围扩宽区域
+func _widen_area_around_point(center_x: int, center_y: int, radius: int):
+	for dy in range(-radius, radius + 1):
+		for dx in range(-radius, radius + 1):
+			var nx = center_x + dx
+			var ny = center_y + dy
+			if nx >= 0 and nx < maze_width and ny >= 0 and ny < maze_height:
+				if nx > 0 and nx < maze_width - 1 and ny > 0 and ny < maze_height - 1:
+					maze_grid[ny][nx] = CellType.PATH
 
 func reposition_enemies_and_items_optimized():
 	print("Smart repositioning of enemies and items (integrated version)...")
@@ -1150,68 +1204,130 @@ func get_tile_position(world_pos: Vector2) -> Vector2i:
 	return tile_pos
 
 func create_path_between(x1: int, y1: int, x2: int, y2: int):
+	# 使用更智能的路径创建方法，避免简单的先右后下路径
 	var current_x = x1
 	var current_y = y1
+	
+	# 随机选择路径策略：直接路径、弯曲路径或螺旋路径
+	var path_strategy = randi() % 3
+	
+	match path_strategy:
+		0: # 交替移动策略 - 交替进行水平和垂直移动
+			_create_alternating_path(x1, y1, x2, y2)
+		1: # 中点弯曲策略 - 通过随机中点创建弯曲路径
+			_create_curved_path(x1, y1, x2, y2)
+		2: # 多段路径策略 - 创建多个转折点
+			_create_multi_segment_path(x1, y1, x2, y2)
+
+# 新增：交替移动路径创建
+func _create_alternating_path(x1: int, y1: int, x2: int, y2: int):
+	var current_x = x1
+	var current_y = y1
+	var dx = 1 if x2 > x1 else -1
+	var dy = 1 if y2 > y1 else -1
+	
+	# 交替进行水平和垂直移动
+	while current_x != x2 or current_y != y2:
+		if current_x >= 0 and current_x < maze_width and current_y >= 0 and current_y < maze_height:
+			maze_grid[current_y][current_x] = CellType.PATH
+		
+		# 随机决定下一步是水平移动还是垂直移动
+		var move_horizontal = (randi() % 2 == 0) and (current_x != x2)
+		if current_y == y2:  # 如果已经到达目标Y坐标，只能水平移动
+			move_horizontal = true
+		elif current_x == x2:  # 如果已经到达目标X坐标，只能垂直移动
+			move_horizontal = false
+		
+		if move_horizontal and current_x != x2:
+			current_x += dx
+		elif current_y != y2:
+			current_y += dy
+
+# 新增：弯曲路径创建
+func _create_curved_path(x1: int, y1: int, x2: int, y2: int):
+	# 创建1-3个随机中间点
+	var num_waypoints = randi() % 3 + 1
+	var waypoints = []
+	
+	for i in range(num_waypoints):
+		var progress = float(i + 1) / float(num_waypoints + 1)
+		var base_x = int(x1 + (x2 - x1) * progress)
+		var base_y = int(y1 + (y2 - y1) * progress)
+		
+		# 添加随机偏移，但保持在迷宫范围内
+		var offset_range = min(20, min(maze_width, maze_height) / 4)
+		var offset_x = (randi() % (offset_range * 2 + 1)) - offset_range
+		var offset_y = (randi() % (offset_range * 2 + 1)) - offset_range
+		
+		var waypoint_x = clamp(base_x + offset_x, 1, maze_width - 2)
+		var waypoint_y = clamp(base_y + offset_y, 1, maze_height - 2)
+		
+		waypoints.append(Vector2i(waypoint_x, waypoint_y))
+	
+	# 连接所有点
+	var current_point = Vector2i(x1, y1)
+	for waypoint in waypoints:
+		_create_simple_line(current_point.x, current_point.y, waypoint.x, waypoint.y)
+		current_point = waypoint
+	_create_simple_line(current_point.x, current_point.y, x2, y2)
+
+# 新增：多段路径创建
+func _create_multi_segment_path(x1: int, y1: int, x2: int, y2: int):
+	var current_x = x1
+	var current_y = y1
+	
+	# 创建一个包含多个转折的路径
+	while current_x != x2 or current_y != y2:
+		if current_x >= 0 and current_x < maze_width and current_y >= 0 and current_y < maze_height:
+			maze_grid[current_y][current_x] = CellType.PATH
+		
+		# 决定移动方向，添加随机性
+		var can_move_x = current_x != x2
+		var can_move_y = current_y != y2
+		
+		if can_move_x and can_move_y:
+			# 两个方向都可以移动时，增加随机性
+			# 70%概率移动向目标，30%概率随机选择
+			if randi() % 100 < 70:
+				# 移动向距离更远的维度
+				var x_distance = abs(x2 - current_x)
+				var y_distance = abs(y2 - current_y)
+				if x_distance > y_distance:
+					current_x += 1 if x2 > current_x else -1
+				else:
+					current_y += 1 if y2 > current_y else -1
+			else:
+				# 随机选择方向
+				if randi() % 2 == 0:
+					current_x += 1 if x2 > current_x else -1
+				else:
+					current_y += 1 if y2 > current_y else -1
+		elif can_move_x:
+			current_x += 1 if x2 > current_x else -1
+		elif can_move_y:
+			current_y += 1 if y2 > current_y else -1
+
+# 新增：创建简单直线（辅助函数）
+func _create_simple_line(x1: int, y1: int, x2: int, y2: int):
+	var current_x = x1
+	var current_y = y1
+	
+	# 先水平移动
 	while current_x != x2:
 		if current_x >= 0 and current_x < maze_width and current_y >= 0 and current_y < maze_height:
 			maze_grid[current_y][current_x] = CellType.PATH
-		if current_x < x2:
-			current_x += 1
-		else:
-			current_x -= 1
+		current_x += 1 if x2 > current_x else -1
+	
+	# 再垂直移动
 	while current_y != y2:
 		if current_x >= 0 and current_x < maze_width and current_y >= 0 and current_y < maze_height:
 			maze_grid[current_y][current_x] = CellType.PATH
-		if current_y < y2:
-			current_y += 1
-		else:
-			current_y -= 1
+		current_y += 1 if y2 > current_y else -1
+	
+	# 确保终点被标记为路径
 	if x2 >= 0 and x2 < maze_width and y2 >= 0 and y2 < maze_height:
 		maze_grid[y2][x2] = CellType.PATH
 
-func widen_specific_path(x1: int, y1: int, x2: int, y2: int):
-	# Increase main path width slightly, balancing navigation needs and maze complexity
-	var width = 3  # Increased from 2 slightly, maintaining reasonable maze density
-	var current_x = x1
-	var current_y = y1
-	
-	# Create main path from start to end
-	while current_x != x2:
-		# Create wide channel at current position
-		for dy in range(-width, width + 1):
-			for dx in range(-width, width + 1):
-				var nx = current_x + dx
-				var ny = current_y + dy
-				if nx >= 0 and nx < maze_width and ny >= 0 and ny < maze_height:
-					maze_grid[ny][nx] = CellType.PATH
-		
-		if current_x < x2:
-			current_x += 1
-		else:
-			current_x -= 1
-	
-	while current_y != y2:
-		# Create wide channel at current position
-		for dy in range(-width, width + 1):
-			for dx in range(-width, width + 1):
-				var nx = current_x + dx
-				var ny = current_y + dy
-				if nx >= 0 and nx < maze_width and ny >= 0 and ny < maze_height:
-					maze_grid[ny][nx] = CellType.PATH
-		
-		if current_y < y2:
-			current_y += 1
-		else:
-			current_y -= 1
-	
-	# Ensure end point has reasonable space
-	for dy in range(-width, width + 1):
-		for dx in range(-width, width + 1):
-			var nx = x2 + dx
-			var ny = y2 + dy
-			if nx >= 0 and nx < maze_width and ny >= 0 and ny < maze_height:
-				maze_grid[ny][nx] = CellType.PATH
-	
 # Check if position is truly safe (strict check)
 func _is_truly_safe_position(x: int, y: int) -> bool:
 	# Check boundaries
@@ -1415,9 +1531,6 @@ func clear_all_paths():
 		if is_instance_valid(line):
 			line.queue_free()
 	path_lines.clear()
-	show_path_to_key = false
-	show_path_to_door = false
-	print("LevelBase: Force clearing all paths completed")
 
 # Cleanup method (unified with Level1 approach)
 func _exit_tree():
@@ -1494,6 +1607,261 @@ func _safe_to_create_path(x: int, y: int) -> bool:
 	
 	# If there's already too many paths, don't create any more
 	return surrounding_paths <= 3
+
+# Check if there's a path between two points
+func _is_path_connected(x1: int, y1: int, x2: int, y2: int) -> bool:
+	if x1 < 0 or x1 >= maze_width or y1 < 0 or y1 >= maze_height:
+		return false
+	if x2 < 0 or x2 >= maze_width or y2 < 0 or y2 >= maze_height:
+		return false
+	if maze_grid[y1][x1] != CellType.PATH or maze_grid[y2][x2] != CellType.PATH:
+		return false
+	
+	# 简单的BFS搜索
+	var visited = {}
+	var queue = [Vector2i(x1, y1)]
+	var directions = [Vector2i(0, 1), Vector2i(0, -1), Vector2i(1, 0), Vector2i(-1, 0)]
+	
+	while not queue.is_empty():
+		var current = queue.pop_front()
+		var key = str(current.x) + "," + str(current.y)
+		
+		if key in visited:
+			continue
+		visited[key] = true
+		
+		if current.x == x2 and current.y == y2:
+			return true
+		
+		for dir in directions:
+			var next_x = current.x + dir.x
+			var next_y = current.y + dir.y
+			var next_key = str(next_x) + "," + str(next_y)
+			
+			if next_x >= 0 and next_x < maze_width and next_y >= 0 and next_y < maze_height:
+				if maze_grid[next_y][next_x] == CellType.PATH and not (next_key in visited):
+					queue.append(Vector2i(next_x, next_y))
+	
+	return false
+
+# Create minimal connection between two points
+func _create_minimal_connection(x1: int, y1: int, x2: int, y2: int):
+	# 创建尽可能少的路径来连接两点
+	# 尝试通过现有路径找到最短连接
+	
+	# 找到最近的可达点
+	var best_path_length = 999999
+	var best_connection_point = Vector2i(-1, -1)
+	
+	# 搜索从起点可达的所有点
+	var reachable_from_start = _get_reachable_points(x1, y1)
+	
+	# 搜索从终点可达的所有点  
+	var reachable_from_end = _get_reachable_points(x2, y2)
+	
+	# 找到最短的连接
+	for start_point in reachable_from_start:
+		for end_point in reachable_from_end:
+			var distance = abs(start_point.x - end_point.x) + abs(start_point.y - end_point.y)
+			if distance < best_path_length:
+				best_path_length = distance
+				# 在这两点之间创建连接
+				_create_simple_line(start_point.x, start_point.y, end_point.x, end_point.y)
+				return
+
+# Get reachable points from a given point
+func _get_reachable_points(start_x: int, start_y: int) -> Array:
+	var reachable = []
+	var visited = {}
+	var queue = [Vector2i(start_x, start_y)]
+	var directions = [Vector2i(0, 1), Vector2i(0, -1), Vector2i(1, 0), Vector2i(-1, 0)]
+	
+	while not queue.is_empty():
+		var current = queue.pop_front()
+		var key = str(current.x) + "," + str(current.y)
+		
+		if key in visited:
+			continue
+		visited[key] = true
+		reachable.append(current)
+		
+		for dir in directions:
+			var next_x = current.x + dir.x
+			var next_y = current.y + dir.y
+			var next_key = str(next_x) + "," + str(next_y)
+			
+			if next_x >= 0 and next_x < maze_width and next_y >= 0 and next_y < maze_height:
+				if maze_grid[next_y][next_x] == CellType.PATH and not (next_key in visited):
+					queue.append(Vector2i(next_x, next_y))
+	
+	return reachable
+
+# 新增：增加迷宫复杂性的函数
+func add_maze_complexity():
+	"""添加额外的迷宫复杂性，防止过于简单的路径"""
+	print("Adding maze complexity to prevent simple paths...")
+	
+	# 1. 添加一些额外的路径分叉
+	_add_random_branches()
+	
+	# 2. 创建一些循环路径
+	_add_circular_paths()
+	
+	# 3. 添加一些死胡同（但不要太多）
+	_add_controlled_dead_ends()
+
+# 新增：添加随机分支
+func _add_random_branches():
+	var branches_added = 0
+	var max_branches = 5  # 限制分支数量
+	
+	for attempt in range(20):
+		if branches_added >= max_branches:
+			break
+			
+		var start_x = randi() % (maze_width - 4) + 2
+		var start_y = randi() % (maze_height - 4) + 2
+		
+		# 检查这个位置是否适合创建分支
+		if maze_grid[start_y][start_x] == CellType.PATH:
+			# 尝试在随机方向创建分支
+			var directions = [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]
+			directions.shuffle()
+			
+			for dir in directions:
+				var branch_length = randi() % 8 + 3  # 3-10 tile long branch
+				var can_create = true
+				
+				# 检查是否可以创建这个分支
+				for i in range(1, branch_length + 1):
+					var check_x = start_x + dir.x * i
+					var check_y = start_y + dir.y * i
+					
+					if check_x <= 0 or check_x >= maze_width - 1 or check_y <= 0 or check_y >= maze_height - 1:
+						can_create = false
+						break
+				
+				if can_create:
+					# 创建分支
+					for i in range(1, branch_length + 1):
+						var branch_x = start_x + dir.x * i
+						var branch_y = start_y + dir.y * i
+						maze_grid[branch_y][branch_x] = CellType.PATH
+					branches_added += 1
+					break
+	
+	print("Added ", branches_added, " random branches")
+
+# 新增：添加循环路径
+func _add_circular_paths():
+	var loops_added = 0
+	var max_loops = 3
+	
+	for attempt in range(15):
+		if loops_added >= max_loops:
+			break
+			
+		var center_x = randi() % (maze_width - 10) + 5
+		var center_y = randi() % (maze_height - 10) + 5
+		var radius = randi() % 4 + 3  # radius 3-6
+		
+		# 尝试创建一个矩形循环
+		var can_create_loop = true
+		var loop_points = []
+		
+		# 创建矩形的四个角
+		var corners = [
+			Vector2i(center_x - radius, center_y - radius),
+			Vector2i(center_x + radius, center_y - radius),
+			Vector2i(center_x + radius, center_y + radius),
+			Vector2i(center_x - radius, center_y + radius)
+		]
+		
+		# 检查是否可以创建循环
+		for i in range(corners.size()):
+			var start_corner = corners[i]
+			var end_corner = corners[(i + 1) % corners.size()]
+			
+			# 检查这条边是否可以创建
+			var steps_x = 1 if end_corner.x > start_corner.x else (-1 if end_corner.x < start_corner.x else 0)
+			var steps_y = 1 if end_corner.y > start_corner.y else (-1 if end_corner.y < start_corner.y else 0)
+			
+			var current_x = start_corner.x
+			var current_y = start_corner.y
+			
+			while current_x != end_corner.x or current_y != end_corner.y:
+				if current_x <= 0 or current_x >= maze_width - 1 or current_y <= 0 or current_y >= maze_height - 1:
+					can_create_loop = false
+					break
+				loop_points.append(Vector2i(current_x, current_y))
+				
+				if current_x != end_corner.x:
+					current_x += steps_x
+				elif current_y != end_corner.y:
+					current_y += steps_y
+			
+			if not can_create_loop:
+				break
+		
+		if can_create_loop and loop_points.size() > 8:  # 只创建合理大小的循环
+			# 创建循环路径
+			for point in loop_points:
+				maze_grid[point.y][point.x] = CellType.PATH
+			loops_added += 1
+	
+	print("Added ", loops_added, " circular paths")
+
+# 新增：添加受控的死胡同
+func _add_controlled_dead_ends():
+	var dead_ends_added = 0
+	var max_dead_ends = 8  # 限制死胡同数量
+	
+	for attempt in range(25):
+		if dead_ends_added >= max_dead_ends:
+			break
+		
+		var start_x = randi() % (maze_width - 4) + 2
+		var start_y = randi() % (maze_height - 4) + 2
+		
+		# 检查这个位置是否适合创建死胡同
+		if maze_grid[start_y][start_x] == CellType.PATH:
+			# 检查周围是否有足够的墙壁空间
+			var wall_count = 0
+			var directions = [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]
+			var available_directions = []
+			
+			for dir in directions:
+				var check_x = start_x + dir.x
+				var check_y = start_y + dir.y
+				
+				if check_x > 0 and check_x < maze_width - 1 and check_y > 0 and check_y < maze_height - 1:
+					if maze_grid[check_y][check_x] == CellType.WALL:
+						wall_count += 1
+						available_directions.append(dir)
+			
+			# 如果有足够的墙壁，创建一个短的死胡同
+			if wall_count >= 2 and available_directions.size() > 0:
+				var chosen_dir = available_directions[randi() % available_directions.size()]
+				var dead_end_length = randi() % 4 + 2  # 2-5 tiles long
+				
+				var can_create = true
+				for i in range(1, dead_end_length + 1):
+					var check_x = start_x + chosen_dir.x * i
+					var check_y = start_y + chosen_dir.y * i
+					
+					if check_x <= 0 or check_x >= maze_width - 1 or check_y <= 0 or check_y >= maze_height - 1:
+						can_create = false
+						break
+				
+				if can_create:
+					# 创建死胡同
+					for i in range(1, dead_end_length + 1):
+						var dead_end_x = start_x + chosen_dir.x * i
+						var dead_end_y = start_y + chosen_dir.y * i
+						maze_grid[dead_end_y][dead_end_x] = CellType.PATH
+					dead_ends_added += 1
+	
+	print("Added ", dead_ends_added, " controlled dead ends")
 
 # Removed overly aggressive corridor detection function, using more conservative quality validation strategy
 

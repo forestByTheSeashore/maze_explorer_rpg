@@ -94,12 +94,31 @@ func _on_body_entered(body):
             config.attack_power
         )
         if equipped:
+            # Update victory manager statistics
+            var victory_manager = get_node_or_null("/root/VictoryManager")
+            if victory_manager:
+                victory_manager.increment_items_collected()
+                print("VictoryManager: Item collected count updated (", config.weapon_name, ")")
+            
             print("Player obtained new weapon:", config.weapon_name, "(Attack Power:", config.attack_power, ")")
             
             # Show weapon obtained notification
             var notification_manager = get_node_or_null("/root/NotificationManager")
             if notification_manager:
                 notification_manager.notify_weapon_obtained(config.weapon_name, config.attack_power)
+            
+            # Play pickup sound effect
+            var audio_manager = get_node_or_null("/root/AudioManager")
+            if audio_manager:
+                audio_manager.play_pickup_sound()
+            elif audio_player and pickup_sound:
+                audio_player.stream = pickup_sound
+                audio_player.play()
+            
+            # Play pickup effects
+            var effects_manager = get_node_or_null("/root/EffectsManager")
+            if effects_manager:
+                effects_manager.play_pickup_effect(global_position)
             
             _play_pickup_effect()
             await get_tree().create_timer(0.5).timeout

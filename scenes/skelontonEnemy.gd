@@ -370,8 +370,12 @@ func _validate_target() -> bool:
 
 func _update_facing_direction():
 	"""Update facing direction"""
-	if player_target:
+	if player_target and is_instance_valid(player_target):
 		facing_direction_vector = global_position.direction_to(player_target.global_position).normalized()
+	else:
+		# If no valid target, maintain current facing direction or use default
+		if facing_direction_vector == Vector2.ZERO:
+			facing_direction_vector = Vector2.RIGHT  # Default facing direction
 
 # ============================================================================
 # Attack System
@@ -432,6 +436,11 @@ func _execute_attack_check():
 		print("Warning: AttackHitbox node not found!")
 		return
 	
+	# 确保 monitoring 是开启的
+	if not attack_hitbox.monitoring:
+		print("Warning: AttackHitbox monitoring is off, enabling it...")
+		attack_hitbox.monitoring = true
+	
 	# Validate target again before attack (ensure player hasn't died during this time)
 	if not _validate_target():
 		attack_hitbox.monitoring = false
@@ -487,12 +496,77 @@ func _reset_attack_state():
 		_enter_state(State.DEAD)
 		return
 	
+	# 使用更安全的异步处理来避免Lambda错误
+	_safe_post_attack_processing()
+
+# 新增：安全的攻击后处理
+func _safe_post_attack_processing():
+	"""安全的攻击后处理，避免Lambda错误"""
+	# 检查对象是否仍然有效
+	if not is_inside_tree() or is_dead:
+		return
+	
 	# Simple post-attack processing
 	if _validate_target():
-		# Brief wait before continuing chase
-		await get_tree().create_timer(0.5).timeout
-		if _validate_target() and not is_dead:  # Check target validity and death state again
-			_enter_state(State.CHASE)
+		# 使用定时器而不是直接await来避免Lambda错误
+		var timer = Timer.new()
+		timer.wait_time = 0.5
+		timer.one_shot = true
+		add_child(timer)
+		timer.start()
+		
+		# 使用信号连接而不是Lambda
+		timer.timeout.connect(_on_post_attack_timer_timeout)
+
+# 新增：攻击后定时器超时处理
+func _on_post_attack_timer_timeout():
+	"""攻击后定时器超时处理"""
+	# 清理定时器
+	for child in get_children():
+		if child is Timer and child.one_shot:
+			child.queue_free()
+	
+	# 检查对象和目标是否仍然有效
+	if not is_inside_tree() or is_dead:
+		return
+	
+	if _validate_target() and not is_dead:
+		_enter_state(State.CHASE)
+
+func _on_hit_by_player():
+	"""Hit reaction"""
+	print(name, " hit by player")
+	
+	# 使用更安全的闪烁效果处理
+	if not animated_sprite or not is_inside_tree():
+		return
+	
+	var original_modulate = animated_sprite.modulate
+	animated_sprite.modulate = Color.RED
+	
+	# 使用定时器替代直接await
+	var flash_timer = Timer.new()
+	flash_timer.wait_time = 0.1
+	flash_timer.one_shot = true
+	add_child(flash_timer)
+	flash_timer.start()
+	flash_timer.timeout.connect(_flash_timer_timeout_wrapper.bind(original_modulate))
+
+# Wrapper function to handle flash timer timeout safely
+func _flash_timer_timeout_wrapper(original_modulate: Color):
+	_on_flash_timer_timeout(original_modulate)
+
+# 新增：闪烁定时器超时处理
+func _on_flash_timer_timeout(original_modulate: Color):
+	"""闪烁定时器超时处理"""
+	# 恢复原始颜色
+	if animated_sprite and is_inside_tree():
+		animated_sprite.modulate = original_modulate
+	
+	# 清理定时器
+	for child in get_children():
+		if child is Timer and child.one_shot:
+			child.queue_free()
 
 # ============================================================================
 # Animation System
@@ -550,17 +624,6 @@ func receive_player_attack(player_attack_power: int) -> int:
 		print(name, " still alive, continuing fight")
 	
 	return actual_damage
-
-func _on_hit_by_player():
-	"""Hit reaction"""
-	print(name, " hit by player")
-	
-	# Flash effect
-	var original_modulate = animated_sprite.modulate
-	animated_sprite.modulate = Color.RED
-	await get_tree().create_timer(0.1).timeout
-	if animated_sprite:
-		animated_sprite.modulate = original_modulate
 
 func take_damage(amount: int, _source_attack_power: int = 0):
 	"""Generic damage interface"""
@@ -624,6 +687,12 @@ func _handle_defeat_cleanup():
 		return
 	
 	print(name, " executing death cleanup")
+	
+	# Update victory manager statistics
+	var victory_manager = get_node_or_null("/root/VictoryManager")
+	if victory_manager:
+		victory_manager.increment_enemies_defeated()
+		print("VictoryManager: Enemy defeat count updated (", name, ")")
 	
 	# Give experience to player
 	var player_node = get_tree().get_first_node_in_group("player")

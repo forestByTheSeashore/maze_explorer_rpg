@@ -55,6 +55,14 @@ var desired_counts = {
 func _ready():
 	print("Level_1: _ready started...")
 	
+	# Play game music
+	var audio_manager = get_node_or_null("/root/AudioManager")
+	if audio_manager:
+		audio_manager.play_game_music()
+		print("Level_1: Started playing game music")
+	else:
+		print("Level_1: AudioManager not found")
+	
 	# Initialize path state
 	show_path_to_key = false
 	show_path_to_door = false

@@ -85,10 +85,14 @@ func show_notification(message: String, type: String = "info", duration: float =
 	
 	# Set auto-removal
 	var timer = get_tree().create_timer(duration)
-	timer.timeout.connect(func(): remove_notification(notification))
+	timer.timeout.connect(_timer_timeout_wrapper.bind(notification))
 	
 	# Show animation
 	animate_notification_in(notification)
+
+# Wrapper function to handle timer timeout safely
+func _timer_timeout_wrapper(notification: Control):
+	_on_timer_timeout(notification)
 
 # Create notification node
 func create_notification_node(message: String, type: String) -> Control:
@@ -288,3 +292,8 @@ func notify_quick_save():
 
 func notify_quick_load():
 	show_info("📁 Quick loading...")
+
+# Timer timeout handler to safely remove notifications
+func _on_timer_timeout(notification: Control):
+	if is_instance_valid(notification):
+		remove_notification(notification)

@@ -107,7 +107,7 @@ func _show_tutorial_step(step: TutorialStep):
 		return
 	
 	var tutorial_texts = {
-		TutorialStep.WELCOME: "[center][b]Welcome to Forest Coast Maze Adventure![/b][/center]\nThis is an adventure game about exploring mazes, collecting items, and fighting enemies.\nLet's start the tutorial and learn the basic controls!",
+		TutorialStep.WELCOME: "[center][b]Welcome to Maze Fighting Explorer![/b][/center]\nThis is an adventure game about exploring mazes, collecting items, and fighting enemies.\nLet's start the tutorial and learn the basic controls!",
 		
 		TutorialStep.MOVEMENT: "[center][b]Movement Controls[/b][/center]\nUse [b]WASD[/b] keys or [b]Arrow Keys[/b] to move your character.\nTry moving around now!",
 		

@@ -40,8 +40,27 @@ theme_override_constants/separation = 20
 [node name="Title" type="Label" parent="ScrollContainer/VBoxContainer"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 32
-text = "🎮 Gameplay Instructions"
+text = "🎮 Maze Fighting Explorer - Tutorial"
 horizontal_alignment = 1
+
+[node name="MapLayoutSection" type="VBoxContainer" parent="ScrollContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="MapLayoutTitle" type="Label" parent="ScrollContainer/VBoxContainer/MapLayoutSection"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 22
+text = "🗺️ Map Layout"
+
+[node name="MapLayoutContent" type="RichTextLabel" parent="ScrollContainer/VBoxContainer/MapLayoutSection"]
+custom_minimum_size = Vector2(0, 100)
+layout_mode = 2
+bbcode_enabled = true
+text = "[color=cyan]• Entrance Door[/color] - Located at the [b]top-left corner[/b] of the map (starting point)
+[color=orange]• Exit Door[/color] - Located at the [b]bottom-right corner[/b] of the map (goal)
+[color=gray]  Navigate through the maze from entrance to exit
+  The exit door requires a key to open[/color]"
+fit_content = true
 
 [node name="MovementSection" type="VBoxContainer" parent="ScrollContainer/VBoxContainer"]
 layout_mode = 2
@@ -77,8 +96,31 @@ custom_minimum_size = Vector2(0, 80)
 layout_mode = 2
 bbcode_enabled = true
 text = "[color=yellow]• F key[/color] - Interact with items, doors, etc.
-[color=gray]  Press F key near a door to open it (requires the corresponding key)
-  Press F key near an item to pick it up[/color]"
+[color=gray]  Press F key near a door to open it (requires the corresponding key)"
+fit_content = true
+
+[node name="WeaponSection" type="VBoxContainer" parent="ScrollContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="WeaponTitle" type="Label" parent="ScrollContainer/VBoxContainer/WeaponSection"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 22
+text = "⚔️ Weapon System"
+
+[node name="WeaponContent" type="RichTextLabel" parent="ScrollContainer/VBoxContainer/WeaponSection"]
+custom_minimum_size = Vector2(0, 160)
+layout_mode = 2
+bbcode_enabled = true
+text = "[color=white]• Starting Weapon:[/color] You begin with a [b]Basic Sword[/b] (Attack Power: 5)
+
+[color=gold]• Weapon Types Available:[/color]
+  - [color=white]Basic Sword[/color] - Attack Power: 5 (starting weapon)
+  - [color=orange]Bronze Sword[/color] - Attack Power: 12
+  - [color=silver]Iron Sword[/color] - Attack Power: 20
+  - [color=yellow]Steel Sword[/color] - Attack Power: 30
+
+[color=gray]Collect stronger weapons throughout the maze to increase your combat effectiveness.[/color]"
 fit_content = true
 
 [node name="CombatSection" type="VBoxContainer" parent="ScrollContainer/VBoxContainer"]
@@ -98,8 +140,31 @@ text = "[color=red]• J key[/color] - Attack enemies
 [color=orange]• 1-4 number keys[/color] - Quick switch weapons
 [color=cyan]• Tab key[/color] - Switch to the next weapon
 [color=cyan]• Shift+Tab[/color] - Switch to the previous weapon
-[color=gray]  Different weapon types have different attack power
+[color=gray]  Your attack power must be greater than the enemy's to defeat them
   Defeating enemies may drop items[/color]"
+fit_content = true
+
+[node name="EnemySection" type="VBoxContainer" parent="ScrollContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="EnemyTitle" type="Label" parent="ScrollContainer/VBoxContainer/EnemySection"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 22
+text = "👹 Enemy Types"
+
+[node name="EnemyContent" type="RichTextLabel" parent="ScrollContainer/VBoxContainer/EnemySection"]
+custom_minimum_size = Vector2(0, 140)
+layout_mode = 2
+bbcode_enabled = true
+text = "[color=red]• Red Slime[/color] - HP: 40, Attack: 10 (Weak but numerous)
+[color=green]• Green Goblin[/color] - HP: 60, Attack: 15 (Guard enemy, attacks when approached)
+[color=purple]• Fire Skeleton[/color] - HP: 80, Attack: 20 (Strong enemy with chase behavior)
+
+[color=gray]Each enemy type has different behavior patterns:
+  - Slimes move randomly and attack on contact
+  - Goblins guard specific areas and attack when you get close
+  - Skeletons will chase you when they detect your presence[/color]"
 fit_content = true
 
 [node name="InventorySection" type="VBoxContainer" parent="ScrollContainer/VBoxContainer"]
@@ -119,6 +184,27 @@ text = "[color=purple]• I key[/color] - Open/Close inventory
 [color=gray]  The inventory displays all the items you have collected
   Including keys, weapons, health beans, etc.
   You can view detailed information about the items[/color]"
+fit_content = true
+
+[node name="UIButtonsSection" type="VBoxContainer" parent="ScrollContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="UIButtonsTitle" type="Label" parent="ScrollContainer/VBoxContainer/UIButtonsSection"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 22
+text = "🖱️ Screen UI Buttons"
+
+[node name="UIButtonsContent" type="RichTextLabel" parent="ScrollContainer/VBoxContainer/UIButtonsSection"]
+custom_minimum_size = Vector2(0, 120)
+layout_mode = 2
+bbcode_enabled = true
+text = "[color=cyan]• NAV Button[/color] - Navigation menu with options:
+  [color=gray]  - 'key' - Toggle path to key location
+  - 'door_exit' - Toggle path to exit door[/color]
+[color=purple]• INV Button[/color] - Open/Close inventory panel
+[color=lightblue]• MAP Button[/color] - Toggle mini-map display
+[color=gray]These buttons provide quick access to important game functions[/color]"
 fit_content = true
 
 [node name="NavigationSection" type="VBoxContainer" parent="ScrollContainer/VBoxContainer"]
@@ -141,24 +227,6 @@ text = "[color=yellow]• F1 key[/color] - Show/Hide path to the key
   The mini-map shows the overall layout of the current level[/color]"
 fit_content = true
 
-[node name="SaveSection" type="VBoxContainer" parent="ScrollContainer/VBoxContainer"]
-layout_mode = 2
-theme_override_constants/separation = 10
-
-[node name="SaveTitle" type="Label" parent="ScrollContainer/VBoxContainer/SaveSection"]
-layout_mode = 2
-theme_override_font_sizes/font_size = 22
-text = "💾 Save/Load"
-
-[node name="SaveContent" type="RichTextLabel" parent="ScrollContainer/VBoxContainer/SaveSection"]
-custom_minimum_size = Vector2(0, 80)
-layout_mode = 2
-bbcode_enabled = true
-text = "[color=green]• F5 key[/color] - Quick save game
-[color=lightgreen]• F6 key[/color] - Quick load game
-[color=gray]  Save your game progress anytime[/color]"
-fit_content = true
-
 [node name="PauseSection" type="VBoxContainer" parent="ScrollContainer/VBoxContainer"]
 layout_mode = 2
 theme_override_constants/separation = 10
@@ -169,11 +237,40 @@ theme_override_font_sizes/font_size = 22
 text = "⏸️ Game Pause"
 
 [node name="PauseContent" type="RichTextLabel" parent="ScrollContainer/VBoxContainer/PauseSection"]
-custom_minimum_size = Vector2(0, 60)
+custom_minimum_size = Vector2(0, 120)
 layout_mode = 2
 bbcode_enabled = true
 text = "[color=white]• ESC key[/color] - Pause/Resume game
-[color=gray]  Access settings menu when paused[/color]"
+[color=gray]  When paused, you can access:
+  - Continue Game - Resume playing
+  - Save Game - Save your current progress
+  - Load Game - Load a previously saved game
+  - Save Encryption - Toggle save file encryption (Enable/Disable)
+  - Back to Main Menu - Return to the main menu
+  - Quit Game - Exit the application[/color]"
+fit_content = true
+
+[node name="VictorySection" type="VBoxContainer" parent="ScrollContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="VictoryTitle" type="Label" parent="ScrollContainer/VBoxContainer/VictorySection"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 22
+text = "🎉 Victory Page"
+
+[node name="VictoryContent" type="RichTextLabel" parent="ScrollContainer/VBoxContainer/VictorySection"]
+custom_minimum_size = Vector2(0, 120)
+layout_mode = 2
+bbcode_enabled = true
+text = "[color=gold]When you complete all levels, you'll see the Victory screen:[/color]
+
+[color=yellow]• Victory![/color] - Celebration message with congratulations
+[color=white]• \"All levels completed\"[/color] - Confirmation of your achievement
+[color=gray]Options available:
+  - Play Again - Restart the game from the beginning
+  - Main Menu - Return to the main menu
+  - Quit Game - Exit the application[/color]"
 fit_content = true
 
 [node name="ObjectivesSection" type="VBoxContainer" parent="ScrollContainer/VBoxContainer"]
@@ -186,15 +283,16 @@ theme_override_font_sizes/font_size = 22
 text = "🎯 Game Objectives"
 
 [node name="ObjectivesContent" type="RichTextLabel" parent="ScrollContainer/VBoxContainer/ObjectivesSection"]
-custom_minimum_size = Vector2(0, 120)
+custom_minimum_size = Vector2(0, 140)
 layout_mode = 2
 bbcode_enabled = true
 text = "[color=gold]Main Objectives:[/color]
-• Explore the maze and find keys
-• Use keys to open the exit door
-• Defeat enemies along the way
-• Collect useful items and weapons
-[color=lightblue]• Reach the next level[/color]"
+• Start at the entrance door (top-left corner)
+• Explore the maze and find the key
+• Use the key to open the exit door (bottom-right corner)
+• Defeat enemies along the way to gain experience
+• Collect weapons and health items to become stronger
+[color=lightblue]• Successfully reach the next level[/color]"
 fit_content = true
 
 [node name="TipsSection" type="VBoxContainer" parent="ScrollContainer/VBoxContainer"]
@@ -207,17 +305,18 @@ theme_override_font_sizes/font_size = 22
 text = "💡 Game Tips"
 
 [node name="TipsContent" type="RichTextLabel" parent="ScrollContainer/VBoxContainer/TipsSection"]
-custom_minimum_size = Vector2(0, 140)
+custom_minimum_size = Vector2(0, 160)
 layout_mode = 2
 bbcode_enabled = true
 text = "[color=lightgreen]• Exploration Tips:[/color]
   - Carefully explore every corner to find hidden items
-  - Use navigation features to find the best path
-  - Collect health beans to restore health
+  - Use navigation features (F1/F2 keys or NAV button) to find the best path
+  - Collect health beans to restore health when needed
 [color=orange]• Combat Tips:[/color]
-  - Use different types of weapons wisely
-  - Observe enemy attack patterns
-  - Maintain distance for tactical attacks"
+  - Upgrade from Basic Sword to stronger weapons when possible
+  - Use different weapon types strategically
+  - Observe enemy attack patterns and maintain safe distance
+  - Remember: your attack power must exceed enemy's to defeat them"
 fit_content = true
 
 [node name="BackButton" type="Button" parent="."]

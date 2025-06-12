@@ -142,9 +142,85 @@ func play_effect(effect_name: String, position: Vector2, direction: Vector2 = Ve
 	var lifetime = config.get("lifetime", 1.0)
 	
 	var timer = get_tree().create_timer(lifetime + 0.5)  # Extra 0.5 seconds to ensure particles fully disappear
-	timer.timeout.connect(func(): _return_effect_to_pool(effect_name, effect))
+	timer.timeout.connect(_cleanup_effect_wrapper.bind(effect_name, effect))
 	
 	print("EffectsManager: Playing effect - ", effect_name, " position: ", position)
+
+# Wrapper function to handle cleanup safely
+func _cleanup_effect_wrapper(effect_name: String, effect: Node2D):
+	_cleanup_effect_safe(effect_name, effect)
+
+# Safe effect cleanup handler using lambda
+func _cleanup_effect_safe(effect_name: String, effect: Node2D):
+	if is_instance_valid(effect):
+		_return_effect_to_pool(effect_name, effect)
+
+# Wrapper functions for all bind() callbacks to prevent type conversion errors
+func _hit_particles_cleanup_wrapper(particles: CPUParticles2D):
+	_on_hit_particles_cleanup(particles)
+
+func _pickup_particles_cleanup_wrapper(particles: CPUParticles2D):
+	_on_pickup_particles_cleanup(particles)
+
+func _explosion_cleanup_wrapper(explosion: Node2D):
+	_on_explosion_cleanup(explosion)
+
+func _heal_effect_cleanup_wrapper(heal_effect: Node2D):
+	_on_heal_effect_cleanup(heal_effect)
+
+func _trail_effect_cleanup_wrapper(trail: Node2D):
+	_on_trail_effect_cleanup(trail)
+
+func _screen_flash_cleanup_wrapper(canvas: CanvasLayer):
+	_on_screen_flash_cleanup(canvas)
+
+func _screen_flash_tween_finished_wrapper(canvas: CanvasLayer):
+	_on_screen_flash_tween_finished(canvas)
+
+func _damage_number_tween_finished_wrapper(label: Label):
+	_on_damage_number_tween_finished(label)
+
+# Hit particles cleanup handler
+func _on_hit_particles_cleanup(particles: CPUParticles2D):
+	if is_instance_valid(particles):
+		particles.queue_free()
+
+# Pickup particles cleanup handler  
+func _on_pickup_particles_cleanup(particles: CPUParticles2D):
+	if is_instance_valid(particles):
+		particles.queue_free()
+
+# Explosion cleanup handler
+func _on_explosion_cleanup(explosion: Node2D):
+	if is_instance_valid(explosion):
+		explosion.queue_free()
+
+# Heal effect cleanup handler
+func _on_heal_effect_cleanup(heal_effect: Node2D):
+	if is_instance_valid(heal_effect):
+		heal_effect.queue_free()
+
+# Trail effect cleanup handler
+func _on_trail_effect_cleanup(trail: Node2D):
+	if is_instance_valid(trail):
+		trail.queue_free()
+
+# Screen flash cleanup handler
+func _on_screen_flash_cleanup(canvas: CanvasLayer):
+	if is_instance_valid(canvas):
+		print("EffectsManager: Timer cleanup of screen flash")
+		canvas.queue_free()
+
+# Screen flash tween finished handler
+func _on_screen_flash_tween_finished(canvas: CanvasLayer):
+	if is_instance_valid(canvas):
+		print("EffectsManager: Tween cleanup of screen flash")
+		canvas.queue_free()
+
+# Damage number tween finished handler
+func _on_damage_number_tween_finished(label: Label):
+	if is_instance_valid(label):
+		label.queue_free()
 
 func _get_effect_from_pool(effect_name: String) -> Node2D:
 	"""Get effect from object pool"""
@@ -213,10 +289,7 @@ func play_hit_effect(position: Vector2):
 	
 	# Auto cleanup
 	var timer = get_tree().create_timer(1.0)
-	timer.timeout.connect(func(): 
-		if is_instance_valid(particles):
-			particles.queue_free()
-	)
+	timer.timeout.connect(_hit_particles_cleanup_wrapper.bind(particles))
 
 func _create_hit_particles() -> CPUParticles2D:
 	var particles = CPUParticles2D.new()
@@ -245,10 +318,7 @@ func play_pickup_effect(position: Vector2):
 	particles.emitting = true
 	
 	var timer = get_tree().create_timer(1.5)
-	timer.timeout.connect(func(): 
-		if is_instance_valid(particles):
-			particles.queue_free()
-	)
+	timer.timeout.connect(_pickup_particles_cleanup_wrapper.bind(particles))
 
 func _create_pickup_particles() -> CPUParticles2D:
 	var particles = CPUParticles2D.new()
@@ -327,10 +397,7 @@ func create_explosion_effect(position: Vector2, radius: float = 100.0, color: Co
 	
 	# Auto cleanup
 	var timer = get_tree().create_timer(2.0)
-	timer.timeout.connect(func(): 
-		if is_instance_valid(explosion):
-			explosion.queue_free()
-	)
+	timer.timeout.connect(_explosion_cleanup_wrapper.bind(explosion))
 	
 	print("EffectsManager: Created explosion effect at position: ", position, " radius: ", radius)
 
@@ -363,10 +430,7 @@ func create_heal_effect(position: Vector2):
 	
 	# Auto cleanup
 	var timer = get_tree().create_timer(2.0)
-	timer.timeout.connect(func(): 
-		if is_instance_valid(heal_effect):
-			heal_effect.queue_free()
-	)
+	timer.timeout.connect(_heal_effect_cleanup_wrapper.bind(heal_effect))
 
 func create_trail_effect(start_pos: Vector2, end_pos: Vector2, color: Color = Color.WHITE):
 	"""Create trail effect"""
@@ -399,10 +463,7 @@ func create_trail_effect(start_pos: Vector2, end_pos: Vector2, color: Color = Co
 	
 	# Auto cleanup
 	var timer = get_tree().create_timer(1.0)
-	timer.timeout.connect(func(): 
-		if is_instance_valid(trail):
-			trail.queue_free()
-	)
+	timer.timeout.connect(_trail_effect_cleanup_wrapper.bind(trail))
 
 ## Screen Effects
 func create_screen_flash(color: Color = Color.WHITE, duration: float = 0.2):
@@ -428,21 +489,13 @@ func create_screen_flash(color: Color = Color.WHITE, duration: float = 0.2):
 	
 	# Use timer as backup cleanup mechanism
 	var cleanup_timer = get_tree().create_timer(duration + 1.0)  # Extra 1 second to ensure cleanup
-	cleanup_timer.timeout.connect(func():
-		if is_instance_valid(canvas):
-			print("EffectsManager: Timer cleanup of screen flash")
-			canvas.queue_free()
-	)
+	cleanup_timer.timeout.connect(_screen_flash_cleanup_wrapper.bind(canvas))
 	
 	# Use tween for fade out animation
 	var tween = create_tween()
 	if tween:
 		tween.tween_property(overlay, "modulate:a", 0.0, duration)
-		tween.tween_callback(func():
-			if is_instance_valid(canvas):
-				print("EffectsManager: Tween cleanup of screen flash")
-				canvas.queue_free()
-		)
+		tween.tween_callback(_screen_flash_tween_finished_wrapper.bind(canvas))
 	else:
 		# If tween creation fails, use timer for cleanup
 		print("EffectsManager: Tween creation failed, using timer for cleanup")
@@ -464,10 +517,7 @@ func create_damage_number(position: Vector2, damage: int, color: Color = Color.R
 	tween.set_parallel(true)
 	tween.tween_property(label, "global_position:y", position.y - 50, 1.0)
 	tween.tween_property(label, "modulate:a", 0.0, 1.0)
-	tween.tween_callback(func():
-		if is_instance_valid(label):
-			label.queue_free()
-	)
+	tween.tween_callback(_damage_number_tween_finished_wrapper.bind(label))
 
 ## Clear all effects
 func clear_all_effects():

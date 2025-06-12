@@ -12,6 +12,8 @@ var update_interval: float = 0.5  # Update interval (seconds)
 var connection_retry_timer: float = 0.0
 var connection_retry_interval: float = 1.0  # Retry interval for player connection
 
+var is_updating_from_ui: bool = false  # Prevent UI update loops
+
 func _ready():
 	# Set background (if adjustment needed in code)
 	background.color = Color(0, 0, 0, 0.7)  # Semi-transparent black background
@@ -141,7 +143,7 @@ func _create_weapon_button(weapon: WeaponData, index: int, is_current: bool) -> 
 	weapon_label.add_theme_font_size_override("font_size", 10)
 	
 	# Connect button signal
-	radio_button.toggled.connect(_on_weapon_selected.bind(index))
+	radio_button.toggled.connect(_weapon_selected_wrapper.bind(index))
 	
 	# Highlight if current weapon
 	if is_current:
@@ -155,7 +157,9 @@ func _create_weapon_button(weapon: WeaponData, index: int, is_current: bool) -> 
 	
 	return button_container
 
-var is_updating_from_ui: bool = false  # Prevent UI update loops
+# Wrapper function to handle weapon selection safely
+func _weapon_selected_wrapper(index: int, pressed: bool):
+	_on_weapon_selected(index, pressed)
 
 func _on_weapon_selected(index: int, pressed: bool):
 	if pressed and player_reference and not is_updating_from_ui:

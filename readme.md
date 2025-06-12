@@ -1,4 +1,4 @@
-# ForestByTheSeashore - Advanced 2D Maze RPG
+# Maze Fighting Explorer - Advanced 2D Maze RPG
 
 A sophisticated 2D top-down maze exploration RPG built with Godot Engine 4.2. This project demonstrates enterprise-level game development practices with advanced systems architecture, comprehensive security measures, and professional-grade polish.
 
@@ -7,6 +7,7 @@ A sophisticated 2D top-down maze exploration RPG built with Godot Engine 4.2. Th
 Navigate through procedurally configured maze levels as a brave adventurer. Fight enemies, collect items, unlock doors, and progress through increasingly challenging levels while your character grows stronger.
 
 ### Core Gameplay Loop
+
 - **Exploration**: Navigate maze environments with intelligent pathfinding hints
 - **Combat**: Engage enemies using a tactical combat system with various weapons
 - **Progression**: Gain EXP, level up, and increase your power
@@ -16,6 +17,7 @@ Navigate through procedurally configured maze levels as a brave adventurer. Figh
 ## 🏗️ Architecture & Systems
 
 ### Advanced System Architecture
+
 The game follows a clean **4-layer modular architecture**:
 
 ```
@@ -55,24 +57,28 @@ The game follows a clean **4-layer modular architecture**:
 ### Technical Features
 
 #### 🤖 **Intelligent AI System**
+
 - **Finite State Machine**: IDLE → CHASE → ATTACK → DEATH states
 - **A* Pathfinding**: Uses Godot's Navigation2D for smart enemy movement
 - **Multiple AI Behaviors**: Different enemy types with unique strategies
 - **Dynamic Difficulty**: Enemy counts and behaviors scale with level progression
 
 #### 🎵 **Professional Audio Engine**
+
 - **Object Pooling**: Efficient audio resource management
 - **Dynamic Loading**: Gracefully handles missing audio files
 - **Multi-Channel**: Background music, sound effects, UI sounds
 - **Volume Control**: Master, music, and SFX volume controls
 
 #### ✨ **Rich Visual Effects**
+
 - **Particle Systems**: Combat hits, item pickups, celebrations
 - **Screen Effects**: Death overlay, victory flashes
 - **Animation System**: Smooth character and UI animations
 - **Visual Feedback**: Damage numbers, status indicators
 
 #### 💾 **Secure Save System**
+
 - **XOR Encryption**: Save file protection
 - **Integrity Verification**: Magic headers and checksums
 - **Version Control**: Backward compatibility support
@@ -81,12 +87,14 @@ The game follows a clean **4-layer modular architecture**:
 ## 🔐 Security & Ethics Implementation
 
 ### Data Security
+
 - **Multi-layer Encryption**: XOR + checksum + magic number validation
 - **Input Validation**: Sanitization of all user inputs
 - **Path Security**: Prevention of directory traversal attacks
 - **Frequency Limiting**: Anti-spam protection for attacks
 
 ### Ethical Design
+
 - **Content Filtering**: Automatic inappropriate content detection
 - **Age Appropriate**: E-rating compliant design
 - **Privacy Protection**: No data collection, local storage only
@@ -95,24 +103,28 @@ The game follows a clean **4-layer modular architecture**:
 ## 🎯 Key Features
 
 ### 🗝️ **Progressive Level System**
+
 - **5 Unique Levels**: Each with increasing difficulty
 - **Dynamic Configuration**: Enemies, items, and maze complexity scale
 - **Smart Pathfinding**: F1/F2 hotkeys show routes to objectives
 - **Completion Tracking**: Statistics and achievement system
 
 ### ⚔️ **Advanced Combat System**
+
 - **Weapon Variety**: Multiple sword types with different attack power
 - **Real-time Combat**: Immediate feedback with effects and sounds
 - **EXP System**: Character progression through enemy defeats
 - **Tactical Elements**: Positioning and timing matter
 
 ### 🎓 **Interactive Tutorial**
+
 - **7-Step Guided Learning**: Progressive skill introduction
 - **Context-Sensitive Help**: F7 hotkey for instant guidance
 - **Skippable Design**: Veteran-friendly options
 - **Visual Indicators**: Clear UI highlighting and instructions
 
 ### 📊 **Complete UI Suite**
+
 - **Status Bar**: HP, EXP, weapon info display
 - **Mini-map**: M key toggles overview navigation
 - **Inventory Panel**: I key opens item management
@@ -121,21 +133,22 @@ The game follows a clean **4-layer modular architecture**:
 
 ## 🎮 Controls
 
-| Key | Action | Key | Action |
-|-----|--------|-----|--------|
-| **WASD** | Movement | **J** | Attack |
-| **F** | Interact | **I** | Toggle Inventory |
-| **1-4** | Select Weapon | **Tab** | Cycle Weapons |
-| **M** | Toggle Minimap | **F1/F2** | Show Path to Key/Door |
-| **F5/F6** | Quick Save/Load | **F7** | Show Tutorial |
-| **ESC** | Pause Menu | **Enter** | Confirm |
+| Key             | Action          | Key             | Action                |
+| --------------- | --------------- | --------------- | --------------------- |
+| **WASD**  | Movement        | **J**     | Attack                |
+| **F**     | Interact        | **I**     | Toggle Inventory      |
+| **1-4**   | Select Weapon   | **Tab**   | Cycle Weapons         |
+| **M**     | Toggle Minimap  | **F1/F2** | Show Path to Key/Door |
+| **ESC**   | Pause Menu      | **Enter** | Confirm               |
 
 ## 🚀 Getting Started
 
 ### Prerequisites
+
 - **Godot Engine 4.2** or newer
 
 ### Installation & Running
+
 1. **Clone** this repository to your local machine
 2. **Open Godot Engine** and click "Import"
 3. **Navigate** to the project folder and select `project.godot`
@@ -143,8 +156,9 @@ The game follows a clean **4-layer modular architecture**:
 5. **Main Scene**: Automatically starts from `main_menu.tscn`
 
 ### Project Structure
+
 ```
-ForestByTheSeashore/
+Maze Fighting Explorer/
 ├── scenes/          # All game scenes and scripts
 ├── levels/          # Level definitions and management
 ├── ui/              # User interface components
@@ -159,10 +173,7 @@ ForestByTheSeashore/
 This project includes comprehensive technical documentation:
 
 - **Architecture_Design.md** - System architecture and design patterns
-- **Security_Ethics_Report.md** - Security measures and ethical considerations  
-- **A_Grade_Improvements.md** - Development evolution and feature implementation
-- **Audio Configuration Guide** - Audio setup and resource management
-- **Multiple System Guides** - Individual system documentation
+- **Security_Ethics_Report.md** - Security measures and ethical considerations
 
 ## 🎖️ Development Standards
 
@@ -178,4 +189,4 @@ This project demonstrates:
 
 ---
 
-**ForestByTheSeashore** represents a complete, commercial-quality game development project showcasing advanced Godot Engine techniques and professional software development practices.
+**Maze Fighting Explorer** represents a complete, commercial-quality game development project showcasing advanced Godot Engine techniques and professional software development practices.

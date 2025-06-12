@@ -107,6 +107,12 @@ func defeated():
     is_dead = true
     print(name + " was defeated!")
     
+    # Update victory manager statistics
+    var victory_manager = get_node_or_null("/root/VictoryManager")
+    if victory_manager:
+        victory_manager.increment_enemies_defeated()
+        print("VictoryManager: Enemy defeat count updated")
+    
     # Stop damage detection
     can_deal_damage = false
     if damage_zone:

@@ -31,6 +31,12 @@ func _on_body_entered(body):
     
     is_collected = true
     
+    # Update victory manager statistics
+    var victory_manager = get_node_or_null("/root/VictoryManager")
+    if victory_manager:
+        victory_manager.increment_items_collected()
+        print("VictoryManager: Item collected count updated (HPBean)")
+    
     # Increase player's current HP (not healing, permanent increase)
     if body.has_method("increase_hp_from_bean"):
         body.increase_hp_from_bean(hp_increase)
@@ -40,6 +46,19 @@ func _on_body_entered(body):
         var notification_manager = get_node_or_null("/root/NotificationManager")
         if notification_manager:
             notification_manager.notify_hp_increased(hp_increase)
+    
+    # Play pickup sound effect
+    var audio_manager = get_node_or_null("/root/AudioManager")
+    if audio_manager:
+        audio_manager.play_pickup_sound()
+    elif audio_player and pickup_sound:
+        audio_player.stream = pickup_sound
+        audio_player.play()
+    
+    # Play pickup effects
+    var effects_manager = get_node_or_null("/root/EffectsManager")
+    if effects_manager:
+        effects_manager.play_pickup_effect(global_position)
     
     # Play pickup effect
     _play_pickup_effect()

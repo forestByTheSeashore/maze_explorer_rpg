@@ -1,4 +1,4 @@
-# ForestByTheSeashore Game Architecture Design Document
+# Maze Fighting Explorer Game Architecture Design Document
 
 ## 1. Architecture Overview
 

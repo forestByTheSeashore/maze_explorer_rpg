@@ -28,11 +28,11 @@ const LEVEL_CONFIGS = {
 	"level_2": {
 		"maze_width": 81,           # Slightly larger maze
 		"maze_height": 81,
-		"corridor_width": 10,       # Narrower corridors
+		"corridor_width": 12,       # Slightly narrower than level_1 but still manageable
 		"enemies": {
-			"Goblin": 5,            # Increased number of enemies
-			"Skeleton": 3,
-			"Slime": 6
+			"Goblin": 4,            # Moderate increase from level_1
+			"Skeleton": 2,
+			"Slime": 5
 		},
 		"items": {
 			"Key": 1,
@@ -48,11 +48,11 @@ const LEVEL_CONFIGS = {
 	"level_3": {
 		"maze_width": 81,           # Even larger maze
 		"maze_height": 81,
-		"corridor_width": 8,        # Even narrower corridors, increasing difficulty
+		"corridor_width": 10,       # More narrow corridors, increasing difficulty
 		"enemies": {
-			"Goblin": 8,            # Significantly more enemies
-			"Skeleton": 5,
-			"Slime": 10
+			"Goblin": 6,            # Further increase in enemies
+			"Skeleton": 4,
+			"Slime": 8
 		},
 		"items": {
 			"Key": 1,

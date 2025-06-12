@@ -10,7 +10,7 @@ config_version=5
 
 [application]
 
-config/name="Maze Explorer V 1"
+config/name="Maze Fighting Explorer"
 run/main_scene="res://scenes/main_menu.tscn"
 config/features=PackedStringArray("4.2", "Forward Plus")
 config/icon="res://icon.svg"
@@ -38,7 +38,7 @@ window/vsync/vsync_mode=0
 
 [dotnet]
 
-project/assembly_name="Game Explorer V 1"
+project/assembly_name="Maze Fighting Explorer"
 
 [input]
 
