@@ -436,7 +436,7 @@ func _execute_attack_check():
 		print("Warning: AttackHitbox node not found!")
 		return
 	
-	# 确保 monitoring 是开启的
+	# Ensure monitoring is enabled
 	if not attack_hitbox.monitoring:
 		print("Warning: AttackHitbox monitoring is off, enabling it...")
 		attack_hitbox.monitoring = true
@@ -496,37 +496,37 @@ func _reset_attack_state():
 		_enter_state(State.DEAD)
 		return
 	
-	# 使用更安全的异步处理来避免Lambda错误
+	# Use safer async processing to avoid Lambda errors
 	_safe_post_attack_processing()
 
-# 新增：安全的攻击后处理
+# New: Safe post-attack processing
 func _safe_post_attack_processing():
-	"""安全的攻击后处理，避免Lambda错误"""
-	# 检查对象是否仍然有效
+	"""Safe post-attack processing - Avoid Lambda errors"""
+	# Check if object is still valid
 	if not is_inside_tree() or is_dead:
 		return
 	
 	# Simple post-attack processing
 	if _validate_target():
-		# 使用定时器而不是直接await来避免Lambda错误
+		# Use timer instead of direct await to avoid Lambda errors
 		var timer = Timer.new()
 		timer.wait_time = 0.5
 		timer.one_shot = true
 		add_child(timer)
 		timer.start()
 		
-		# 使用信号连接而不是Lambda
+		# Use signal connection instead of Lambda
 		timer.timeout.connect(_on_post_attack_timer_timeout)
 
-# 新增：攻击后定时器超时处理
+# New: Attack post-timer timeout processing
 func _on_post_attack_timer_timeout():
-	"""攻击后定时器超时处理"""
-	# 清理定时器
+	"""Post-attack timer timeout processing"""
+	# Clean up timer
 	for child in get_children():
 		if child is Timer and child.one_shot:
 			child.queue_free()
 	
-	# 检查对象和目标是否仍然有效
+	# Check if object and target are still valid
 	if not is_inside_tree() or is_dead:
 		return
 	
@@ -537,14 +537,14 @@ func _on_hit_by_player():
 	"""Hit reaction"""
 	print(name, " hit by player")
 	
-	# 使用更安全的闪烁效果处理
+	# Use safer flash effect processing
 	if not animated_sprite or not is_inside_tree():
 		return
 	
 	var original_modulate = animated_sprite.modulate
 	animated_sprite.modulate = Color.RED
 	
-	# 使用定时器替代直接await
+	# Use timer instead of direct await
 	var flash_timer = Timer.new()
 	flash_timer.wait_time = 0.1
 	flash_timer.one_shot = true
@@ -556,14 +556,14 @@ func _on_hit_by_player():
 func _flash_timer_timeout_wrapper(original_modulate: Color):
 	_on_flash_timer_timeout(original_modulate)
 
-# 新增：闪烁定时器超时处理
+# New: Flash timer timeout processing
 func _on_flash_timer_timeout(original_modulate: Color):
-	"""闪烁定时器超时处理"""
-	# 恢复原始颜色
+	"""Flash timer timeout processing"""
+	# Restore original color
 	if animated_sprite and is_inside_tree():
 		animated_sprite.modulate = original_modulate
 	
-	# 清理定时器
+	# Clean up timer
 	for child in get_children():
 		if child is Timer and child.one_shot:
 			child.queue_free()

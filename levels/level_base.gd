@@ -309,24 +309,24 @@ func on_exit_door_has_opened():
 	else:
 		print("LevelBase: Skipping effect - EffectsManager or exit_door invalid")
 	
-	# Update victory manager - 让它自己处理所有的胜利逻辑
+	# Update victory manager - let it handle all victory logic
 	var victory_manager = get_node_or_null("/root/VictoryManager")
 	if victory_manager:
 		print("Current level name before marking complete: ", current_level_name)
 		victory_manager.mark_level_completed(current_level_name)
 		
-		# 让VictoryManager决定是否显示胜利界面
-		# 如果VictoryManager触发了胜利界面，游戏会被暂停，后续代码不会执行
+		# Let VictoryManager decide whether to show victory screen
+		# If VictoryManager triggers victory screen, game will be paused and subsequent code won't execute
 		
-		# 等待一帧，让VictoryManager有机会处理胜利逻辑
+		# Wait one frame to let VictoryManager handle victory logic
 		await get_tree().process_frame
 		
-		# 如果游戏被暂停，说明胜利界面已经显示，直接返回
+		# If game is paused, victory screen is shown, return directly
 		if get_tree().paused:
 			print("Game is paused (victory screen shown), exiting level completion handler")
 			return
 	
-	# 只有在游戏没有结束时才继续到下一关
+	# Only proceed to next level if game is not completed
 	print("Game not completed yet, proceeding to next level...")
 	
 	var next_level = get_next_level_name()
@@ -475,31 +475,31 @@ func ensure_path_from_entrance_to_exit():
 	if entrance_pos.x >= maze_width or entrance_pos.y >= maze_height or exit_pos.x >= maze_width or exit_pos.y >= maze_height:
 		return
 	
-	# 使用新的路径创建方法，不再创建简单的直达路径
+	# Use new path creation method, no longer create simple direct paths
 	print("Creating complex path from entrance to exit...")
 	
-	# 使用A*或简单的连通性检查来验证路径存在
+	# Use A* or simple connectivity check to verify path exists
 	if not _is_path_connected(entrance_pos.x, entrance_pos.y, exit_pos.x, exit_pos.y):
 		print("No path exists, creating minimal connection...")
-		# 只有在没有路径时才创建最小连接
+		# Only create minimal connection when no path exists
 		_create_minimal_connection(entrance_pos.x, entrance_pos.y, exit_pos.x, exit_pos.y)
 	else:
 		print("Path already exists between entrance and exit")
 	
-	# 移除对 widen_specific_path 的调用，避免创建明显的宽阔直路
+	# Remove call to widen_specific_path to avoid creating obvious wide paths
 
-# 重写 widen_specific_path 函数以避免创建明显的直路
+# Rewrite widen_specific_path function to avoid creating obvious straight paths
 func widen_specific_path(x1: int, y1: int, x2: int, y2: int):
-	# 注释掉或重写这个函数以避免创建明显的宽路径
-	# 这个函数是造成"先右后下"问题的主要原因之一
+	# Comment out or rewrite this function to avoid creating obvious wide paths
+	# This function is one of the main causes of the "right then down" problem
 	print("Skipping path widening to maintain maze complexity...")
-	# 可以选择性地在某些关键位置稍微扩宽，但不要创建完整的直达路径
+	# Can selectively widen at some key positions, but don't create complete direct paths
 	
-	# 仅在入口和出口附近稍微扩宽
+	# Only widen slightly around entrance and exit
 	_widen_area_around_point(x1, y1, 2)
 	_widen_area_around_point(x2, y2, 2)
 
-# 新增：在指定点周围扩宽区域
+# New: Widen area around specified point
 func _widen_area_around_point(center_x: int, center_y: int, radius: int):
 	for dy in range(-radius, radius + 1):
 		for dx in range(-radius, radius + 1):
@@ -1204,38 +1204,37 @@ func get_tile_position(world_pos: Vector2) -> Vector2i:
 	return tile_pos
 
 func create_path_between(x1: int, y1: int, x2: int, y2: int):
-	# 使用更智能的路径创建方法，避免简单的先右后下路径
+	# Use a smarter path creation method to avoid simple right-then-down paths
 	var current_x = x1
 	var current_y = y1
 	
-	# 随机选择路径策略：直接路径、弯曲路径或螺旋路径
+	# Randomly select path strategy: straight, curved, or multi-segment
 	var path_strategy = randi() % 3
 	
 	match path_strategy:
-		0: # 交替移动策略 - 交替进行水平和垂直移动
+		0: # Alternating path strategy - alternating horizontal and vertical movement
 			_create_alternating_path(x1, y1, x2, y2)
-		1: # 中点弯曲策略 - 通过随机中点创建弯曲路径
+		1: # Curved path strategy - create curved path through random intermediate points
 			_create_curved_path(x1, y1, x2, y2)
-		2: # 多段路径策略 - 创建多个转折点
+		2: # Multi-segment path strategy - create multiple turning points
 			_create_multi_segment_path(x1, y1, x2, y2)
 
-# 新增：交替移动路径创建
 func _create_alternating_path(x1: int, y1: int, x2: int, y2: int):
 	var current_x = x1
 	var current_y = y1
 	var dx = 1 if x2 > x1 else -1
 	var dy = 1 if y2 > y1 else -1
 	
-	# 交替进行水平和垂直移动
+	# Alternating horizontal and vertical movement
 	while current_x != x2 or current_y != y2:
 		if current_x >= 0 and current_x < maze_width and current_y >= 0 and current_y < maze_height:
 			maze_grid[current_y][current_x] = CellType.PATH
 		
-		# 随机决定下一步是水平移动还是垂直移动
+		# Randomly decide next move: horizontal or vertical
 		var move_horizontal = (randi() % 2 == 0) and (current_x != x2)
-		if current_y == y2:  # 如果已经到达目标Y坐标，只能水平移动
+		if current_y == y2:  # If already at target Y, only horizontal move
 			move_horizontal = true
-		elif current_x == x2:  # 如果已经到达目标X坐标，只能垂直移动
+		elif current_x == x2:  # If already at target X, only vertical move
 			move_horizontal = false
 		
 		if move_horizontal and current_x != x2:
@@ -1243,9 +1242,9 @@ func _create_alternating_path(x1: int, y1: int, x2: int, y2: int):
 		elif current_y != y2:
 			current_y += dy
 
-# 新增：弯曲路径创建
+# New: Curved path creation
 func _create_curved_path(x1: int, y1: int, x2: int, y2: int):
-	# 创建1-3个随机中间点
+	# Create 1-3 random intermediate points
 	var num_waypoints = randi() % 3 + 1
 	var waypoints = []
 	
@@ -1254,7 +1253,7 @@ func _create_curved_path(x1: int, y1: int, x2: int, y2: int):
 		var base_x = int(x1 + (x2 - x1) * progress)
 		var base_y = int(y1 + (y2 - y1) * progress)
 		
-		# 添加随机偏移，但保持在迷宫范围内
+		# Add random offset but keep within maze boundaries
 		var offset_range = min(20, min(maze_width, maze_height) / 4)
 		var offset_x = (randi() % (offset_range * 2 + 1)) - offset_range
 		var offset_y = (randi() % (offset_range * 2 + 1)) - offset_range
@@ -1264,32 +1263,32 @@ func _create_curved_path(x1: int, y1: int, x2: int, y2: int):
 		
 		waypoints.append(Vector2i(waypoint_x, waypoint_y))
 	
-	# 连接所有点
+	# Connect all points
 	var current_point = Vector2i(x1, y1)
 	for waypoint in waypoints:
 		_create_simple_line(current_point.x, current_point.y, waypoint.x, waypoint.y)
 		current_point = waypoint
 	_create_simple_line(current_point.x, current_point.y, x2, y2)
 
-# 新增：多段路径创建
+# New: Multi-segment path creation
 func _create_multi_segment_path(x1: int, y1: int, x2: int, y2: int):
 	var current_x = x1
 	var current_y = y1
 	
-	# 创建一个包含多个转折的路径
+	# Create a path with multiple turns
 	while current_x != x2 or current_y != y2:
 		if current_x >= 0 and current_x < maze_width and current_y >= 0 and current_y < maze_height:
 			maze_grid[current_y][current_x] = CellType.PATH
 		
-		# 决定移动方向，添加随机性
+		# Decide move direction, add randomness
 		var can_move_x = current_x != x2
 		var can_move_y = current_y != y2
 		
 		if can_move_x and can_move_y:
-			# 两个方向都可以移动时，增加随机性
-			# 70%概率移动向目标，30%概率随机选择
+			# When both directions can move, add randomness
+			# 70% chance to move towards target, 30% chance to randomly choose
 			if randi() % 100 < 70:
-				# 移动向距离更远的维度
+				# Move towards the dimension with greater distance
 				var x_distance = abs(x2 - current_x)
 				var y_distance = abs(y2 - current_y)
 				if x_distance > y_distance:
@@ -1297,7 +1296,7 @@ func _create_multi_segment_path(x1: int, y1: int, x2: int, y2: int):
 				else:
 					current_y += 1 if y2 > current_y else -1
 			else:
-				# 随机选择方向
+				# Randomly select direction
 				if randi() % 2 == 0:
 					current_x += 1 if x2 > current_x else -1
 				else:
@@ -1307,24 +1306,24 @@ func _create_multi_segment_path(x1: int, y1: int, x2: int, y2: int):
 		elif can_move_y:
 			current_y += 1 if y2 > current_y else -1
 
-# 新增：创建简单直线（辅助函数）
+# New: Create simple line (helper function)
 func _create_simple_line(x1: int, y1: int, x2: int, y2: int):
 	var current_x = x1
 	var current_y = y1
 	
-	# 先水平移动
+	# First move horizontally
 	while current_x != x2:
 		if current_x >= 0 and current_x < maze_width and current_y >= 0 and current_y < maze_height:
 			maze_grid[current_y][current_x] = CellType.PATH
 		current_x += 1 if x2 > current_x else -1
 	
-	# 再垂直移动
+	# Then move vertically
 	while current_y != y2:
 		if current_x >= 0 and current_x < maze_width and current_y >= 0 and current_y < maze_height:
 			maze_grid[current_y][current_x] = CellType.PATH
 		current_y += 1 if y2 > current_y else -1
 	
-	# 确保终点被标记为路径
+	# Ensure end point is marked as path
 	if x2 >= 0 and x2 < maze_width and y2 >= 0 and y2 < maze_height:
 		maze_grid[y2][x2] = CellType.PATH
 
@@ -1617,7 +1616,7 @@ func _is_path_connected(x1: int, y1: int, x2: int, y2: int) -> bool:
 	if maze_grid[y1][x1] != CellType.PATH or maze_grid[y2][x2] != CellType.PATH:
 		return false
 	
-	# 简单的BFS搜索
+	# Simple BFS search
 	var visited = {}
 	var queue = [Vector2i(x1, y1)]
 	var directions = [Vector2i(0, 1), Vector2i(0, -1), Vector2i(1, 0), Vector2i(-1, 0)]
@@ -1646,26 +1645,26 @@ func _is_path_connected(x1: int, y1: int, x2: int, y2: int) -> bool:
 
 # Create minimal connection between two points
 func _create_minimal_connection(x1: int, y1: int, x2: int, y2: int):
-	# 创建尽可能少的路径来连接两点
-	# 尝试通过现有路径找到最短连接
+	# Create as few paths as possible to connect two points
+	# Try to find shortest connection through existing paths
 	
-	# 找到最近的可达点
+	# Find nearest reachable point
 	var best_path_length = 999999
 	var best_connection_point = Vector2i(-1, -1)
 	
-	# 搜索从起点可达的所有点
+	# Search all points reachable from start
 	var reachable_from_start = _get_reachable_points(x1, y1)
 	
-	# 搜索从终点可达的所有点  
+	# Search all points reachable from end
 	var reachable_from_end = _get_reachable_points(x2, y2)
 	
-	# 找到最短的连接
+	# Find shortest connection
 	for start_point in reachable_from_start:
 		for end_point in reachable_from_end:
 			var distance = abs(start_point.x - end_point.x) + abs(start_point.y - end_point.y)
 			if distance < best_path_length:
 				best_path_length = distance
-				# 在这两点之间创建连接
+				# Create connection between these two points
 				_create_simple_line(start_point.x, start_point.y, end_point.x, end_point.y)
 				return
 
@@ -1696,24 +1695,24 @@ func _get_reachable_points(start_x: int, start_y: int) -> Array:
 	
 	return reachable
 
-# 新增：增加迷宫复杂性的函数
+# New: Add maze complexity function
 func add_maze_complexity():
-	"""添加额外的迷宫复杂性，防止过于简单的路径"""
+	"""Add additional maze complexity to prevent overly simple paths"""
 	print("Adding maze complexity to prevent simple paths...")
 	
-	# 1. 添加一些额外的路径分叉
+	# 1. Add some additional path branches
 	_add_random_branches()
 	
-	# 2. 创建一些循环路径
+	# 2. Create some circular paths
 	_add_circular_paths()
 	
-	# 3. 添加一些死胡同（但不要太多）
+	# 3. Add some dead ends (but not too many)
 	_add_controlled_dead_ends()
 
-# 新增：添加随机分支
+# New: Add random branches
 func _add_random_branches():
 	var branches_added = 0
-	var max_branches = 5  # 限制分支数量
+	var max_branches = 5  # Limit number of branches
 	
 	for attempt in range(20):
 		if branches_added >= max_branches:
@@ -1722,9 +1721,9 @@ func _add_random_branches():
 		var start_x = randi() % (maze_width - 4) + 2
 		var start_y = randi() % (maze_height - 4) + 2
 		
-		# 检查这个位置是否适合创建分支
+		# Check if this position is suitable for creating a branch
 		if maze_grid[start_y][start_x] == CellType.PATH:
-			# 尝试在随机方向创建分支
+			# Try to create branch in random direction
 			var directions = [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]
 			directions.shuffle()
 			
@@ -1732,7 +1731,7 @@ func _add_random_branches():
 				var branch_length = randi() % 8 + 3  # 3-10 tile long branch
 				var can_create = true
 				
-				# 检查是否可以创建这个分支
+				# Check if this branch can be created
 				for i in range(1, branch_length + 1):
 					var check_x = start_x + dir.x * i
 					var check_y = start_y + dir.y * i
@@ -1742,7 +1741,7 @@ func _add_random_branches():
 						break
 				
 				if can_create:
-					# 创建分支
+					# Create branch
 					for i in range(1, branch_length + 1):
 						var branch_x = start_x + dir.x * i
 						var branch_y = start_y + dir.y * i
@@ -1752,7 +1751,7 @@ func _add_random_branches():
 	
 	print("Added ", branches_added, " random branches")
 
-# 新增：添加循环路径
+# New: Add circular paths
 func _add_circular_paths():
 	var loops_added = 0
 	var max_loops = 3
@@ -1765,11 +1764,11 @@ func _add_circular_paths():
 		var center_y = randi() % (maze_height - 10) + 5
 		var radius = randi() % 4 + 3  # radius 3-6
 		
-		# 尝试创建一个矩形循环
+		# Try to create a rectangular loop
 		var can_create_loop = true
 		var loop_points = []
 		
-		# 创建矩形的四个角
+		# Create four corners of rectangle
 		var corners = [
 			Vector2i(center_x - radius, center_y - radius),
 			Vector2i(center_x + radius, center_y - radius),
@@ -1777,12 +1776,12 @@ func _add_circular_paths():
 			Vector2i(center_x - radius, center_y + radius)
 		]
 		
-		# 检查是否可以创建循环
+		# Check if loop can be created
 		for i in range(corners.size()):
 			var start_corner = corners[i]
 			var end_corner = corners[(i + 1) % corners.size()]
 			
-			# 检查这条边是否可以创建
+			# Check if this edge can be created
 			var steps_x = 1 if end_corner.x > start_corner.x else (-1 if end_corner.x < start_corner.x else 0)
 			var steps_y = 1 if end_corner.y > start_corner.y else (-1 if end_corner.y < start_corner.y else 0)
 			
@@ -1803,18 +1802,18 @@ func _add_circular_paths():
 			if not can_create_loop:
 				break
 		
-		if can_create_loop and loop_points.size() > 8:  # 只创建合理大小的循环
-			# 创建循环路径
+		if can_create_loop and loop_points.size() > 8:  # Only create reasonably sized loops
+			# Create loop path
 			for point in loop_points:
 				maze_grid[point.y][point.x] = CellType.PATH
 			loops_added += 1
 	
 	print("Added ", loops_added, " circular paths")
 
-# 新增：添加受控的死胡同
+# New: Add controlled dead ends
 func _add_controlled_dead_ends():
 	var dead_ends_added = 0
-	var max_dead_ends = 8  # 限制死胡同数量
+	var max_dead_ends = 8  # Limit number of dead ends
 	
 	for attempt in range(25):
 		if dead_ends_added >= max_dead_ends:
@@ -1823,9 +1822,9 @@ func _add_controlled_dead_ends():
 		var start_x = randi() % (maze_width - 4) + 2
 		var start_y = randi() % (maze_height - 4) + 2
 		
-		# 检查这个位置是否适合创建死胡同
+		# Check if this position is suitable for creating dead end
 		if maze_grid[start_y][start_x] == CellType.PATH:
-			# 检查周围是否有足够的墙壁空间
+			# Check if there's enough wall space around
 			var wall_count = 0
 			var directions = [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]
 			var available_directions = []
@@ -1839,7 +1838,7 @@ func _add_controlled_dead_ends():
 						wall_count += 1
 						available_directions.append(dir)
 			
-			# 如果有足够的墙壁，创建一个短的死胡同
+			# If there are enough walls, create a short dead end
 			if wall_count >= 2 and available_directions.size() > 0:
 				var chosen_dir = available_directions[randi() % available_directions.size()]
 				var dead_end_length = randi() % 4 + 2  # 2-5 tiles long
@@ -1854,7 +1853,7 @@ func _add_controlled_dead_ends():
 						break
 				
 				if can_create:
-					# 创建死胡同
+					# Create dead end
 					for i in range(1, dead_end_length + 1):
 						var dead_end_x = start_x + chosen_dir.x * i
 						var dead_end_y = start_y + chosen_dir.y * i
