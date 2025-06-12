@@ -333,7 +333,7 @@ func _create_pickup_particles() -> CPUParticles2D:
 	particles.color = Color.YELLOW
 	particles.scale_amount_min = 0.8
 	particles.scale_amount_max = 1.2
-	particles.gravity = Vector2(0, -20)  # 向上飘
+	particles.gravity = Vector2(0, -20)  # Float upward
 	
 	return particles
 
