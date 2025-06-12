@@ -59,7 +59,7 @@ audio/
 - Button sounds: "click", "button", "menu"
 - Victory sounds: "victory", "success", "win", "achievement"
 - Menu music: "ambient", "menu", "peaceful"
-- Game music: "adventure", "exploration", "forest"
+- Game music: "adventure", "exploration"
 
 ## System Features
 

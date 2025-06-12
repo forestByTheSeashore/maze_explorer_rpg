@@ -31,6 +31,12 @@ func _on_body_entered(body):
     
     is_collected = true
     
+    # Update victory manager statistics
+    var victory_manager = get_node_or_null("/root/VictoryManager")
+    if victory_manager:
+        victory_manager.increment_items_collected()
+        print("VictoryManager: Item collected count updated (HPBean)")
+    
     # Increase player's current HP (not healing, permanent increase)
     if body.has_method("increase_hp_from_bean"):
         body.increase_hp_from_bean(hp_increase)

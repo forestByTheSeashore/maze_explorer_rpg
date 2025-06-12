@@ -254,6 +254,12 @@ func _handle_death():
 
 func _cleanup():
 	"""Clean up and give player experience"""
+	# Update victory manager statistics
+	var victory_manager = get_node_or_null("/root/VictoryManager")
+	if victory_manager:
+		victory_manager.increment_enemies_defeated()
+		print("VictoryManager: Enemy defeat count updated (", name, ")")
+	
 	var player_node = get_tree().get_first_node_in_group("player")
 	if player_node and player_node.has_method("gain_experience"):
 		player_node.gain_experience(experience_drop)

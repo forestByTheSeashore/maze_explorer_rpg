@@ -4,8 +4,8 @@ extends Node
 ## Responsible for encrypting and decrypting game save data, protecting user data security
 
 # Encryption key configuration
-const ENCRYPTION_KEY = "GameExplorer_SecureKey_2024"  # Can be modified as needed
-const MAGIC_HEADER = "GEXP"  # Magic number identifier for verifying encrypted save files
+const ENCRYPTION_KEY = "MazeFightingExplorer_SecureKey_2024"  # Updated to match the real game name
+const MAGIC_HEADER = "MFEX"  # Magic number identifier for verifying encrypted save files (Maze Fighting Explorer)
 const VERSION = "10"  # Encryption version identifier (fixed 2 bytes)
 
 # Error code definitions

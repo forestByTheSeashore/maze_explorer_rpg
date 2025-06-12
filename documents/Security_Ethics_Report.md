@@ -1,7 +1,7 @@
-# ForestByTheSeashore Security and Ethics Implementation Report
+# Maze Fighting Explorer Security and Ethics Implementation Report
 
 ## Overview
-This report details the computer security and ethical considerations and implementations in the ForestByTheSeashore game project, ensuring the game meets modern software development security standards and ethical requirements.
+This report details the computer security and ethical considerations and implementations in the Maze Fighting Explorer game project, ensuring the game meets modern software development security standards and ethical requirements.
 
 ## 1. Computer Security Implementation
 
@@ -13,12 +13,12 @@ This report details the computer security and ethical considerations and impleme
 **Security Measures**:
 ```gdscript
 # Multi-layer Security Architecture
-Magic Number Verification (GEXP) → Version Control → XOR Encryption → Checksum Verification
+Magic Number Verification (MFEX) → Version Control → XOR Encryption → Checksum Verification
 ```
 
 **Key Features**:
 - **XOR Encryption Algorithm**: Lightweight but effective symmetric encryption
-- **File Header Verification**: 4-byte magic number "GEXP" prevents file tampering
+- **File Header Verification**: 4-byte magic number "MFEX" prevents file tampering
 - **Checksum Protection**: 16-bit checksum ensures data integrity
 - **Version Control**: 2-byte version identifier supports backward compatibility
 
@@ -32,7 +32,7 @@ static func encrypt_data(data: Dictionary, key: String = ENCRYPTION_KEY) -> Pack
     
     # Build secure file format
     var final_data = PackedByteArray()
-    final_data.append_array(MAGIC_HEADER.to_utf8_buffer())  # Magic number
+    final_data.append_array(MAGIC_HEADER.to_utf8_buffer())  # Magic number "MFEX"
     final_data.append_array(VERSION.to_utf8_buffer())       # Version
     # ... Add length and checksum
 ```
@@ -231,7 +231,7 @@ static func log_suspicious_input(input_type: String, details: String):
 
 ## 7. Conclusion
 
-The ForestByTheSeashore project has taken comprehensive measures in security and ethics:
+The Maze Fighting Explorer project has taken comprehensive measures in security and ethics:
 
 **Security Aspects**:
 - Implemented multi-layer data protection mechanisms

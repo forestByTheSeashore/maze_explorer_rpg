@@ -1,7 +1,7 @@
 # Game Save Encryption System
 
 ## Overview
-To protect the security and privacy of user game saves, we have added a complete save encryption functionality to GameExplorer_V1. This system uses modern encryption technology to protect players' game progress data, preventing saves from being maliciously modified or stolen.
+To protect the security and privacy of user game saves, we have added a complete save encryption functionality to Maze Fighting Explorer. This system uses modern encryption technology to protect players' game progress data, preventing saves from being maliciously modified or stolen.
 
 ## Security Features
 
@@ -48,7 +48,7 @@ To protect the security and privacy of user game saves, we have added a complete
 
 ```
 +----------------------+
-| Magic Number (4B)    | "GEXP"
+| Magic Number (4B)    | "MFEX"
 +----------------------+
 | Version Info (2B)    | "1.0" 
 +----------------------+

@@ -7,8 +7,8 @@ signal game_completed()
 signal level_completed(level_name: String)
 
 # Level configuration
-const TOTAL_LEVELS = 3  # Total number of levels
-const FINAL_LEVEL_NAME = "level_3"  # Name of the final level
+const TOTAL_LEVELS = 4  # Total number of levels
+const FINAL_LEVEL_NAME = "level_4"  # Name of the final level
 
 var completed_levels: Array[String] = []
 var victory_screen: Control = null
@@ -30,18 +30,36 @@ func _initialize_statistics():
 
 func mark_level_completed(level_name: String):
 	print("VictoryManager: Level completed - ", level_name)
+	print("VictoryManager: Before marking - completed levels: ", completed_levels)
+	print("VictoryManager: Before marking - levels completed count: ", game_statistics["levels_completed"])
+	print("VictoryManager: TOTAL_LEVELS = ", TOTAL_LEVELS)
+	print("VictoryManager: FINAL_LEVEL_NAME = ", FINAL_LEVEL_NAME)
 	
 	if level_name not in completed_levels:
 		completed_levels.append(level_name)
 		game_statistics["levels_completed"] += 1
 		level_completed.emit(level_name)
+		print("VictoryManager: After marking - completed levels: ", completed_levels)
+		print("VictoryManager: After marking - levels completed count: ", game_statistics["levels_completed"])
 	
-	# Check if all levels are completed
-	if _is_game_completed():
+	# First check if this is the final level (by name)
+	if level_name == FINAL_LEVEL_NAME:
+		print("VictoryManager: Final level (", FINAL_LEVEL_NAME, ") completed! Triggering immediate victory!")
+		_trigger_game_victory()
+		return
+	
+	# Then check if all levels are completed (by count)
+	var is_completed = _is_game_completed()
+	print("VictoryManager: Is game completed by count? ", is_completed, " (", game_statistics["levels_completed"], "/", TOTAL_LEVELS, ")")
+	
+	if is_completed:
+		print("VictoryManager: Triggering game victory by level count!")
 		_trigger_game_victory()
 
 func _is_game_completed() -> bool:
-	return game_statistics["levels_completed"] >= TOTAL_LEVELS
+	var completed = game_statistics["levels_completed"] >= TOTAL_LEVELS
+	print("VictoryManager: _is_game_completed check - ", game_statistics["levels_completed"], " >= ", TOTAL_LEVELS, " = ", completed)
+	return completed
 
 func _trigger_game_victory():
 	print("VictoryManager: Game completed!")
@@ -54,18 +72,35 @@ func _show_victory_screen():
 	
 	# Pause the game
 	get_tree().paused = true
+	print("VictoryManager: Game paused: ", get_tree().paused)
 	
 	# Create victory screen
 	_create_victory_screen()
 
 func _create_victory_screen():
+	print("VictoryManager: _create_victory_screen called")
+	
 	if victory_screen:
+		print("VictoryManager: Victory screen already exists, returning")
 		return
+	
+	print("VictoryManager: Creating new victory screen")
+	
+	# Create a CanvasLayer to ensure the victory screen is on top
+	var canvas_layer = CanvasLayer.new()
+	canvas_layer.name = "VictoryCanvasLayer"
+	canvas_layer.layer = 1000
+	canvas_layer.process_mode = Node.PROCESS_MODE_ALWAYS
 	
 	victory_screen = Control.new()
 	victory_screen.name = "VictoryScreen"
 	victory_screen.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	victory_screen.process_mode = Node.PROCESS_MODE_ALWAYS
+	
+	# Add victory screen to canvas layer
+	canvas_layer.add_child(victory_screen)
+	
+	print("VictoryManager: Victory screen Control created")
 	
 	# Background
 	var background = ColorRect.new()
@@ -73,15 +108,24 @@ func _create_victory_screen():
 	background.color = Color(0, 0, 0, 0.9)
 	victory_screen.add_child(background)
 	
+	print("VictoryManager: Background added")
+	
 	# Main container
 	var main_container = VBoxContainer.new()
-	main_container.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
+	main_container.set_anchors_and_offsets_preset(Control.PRESET_CENTER_LEFT)
 	main_container.custom_minimum_size = Vector2(600, 500)
-	main_container.position = Vector2(-300, -250)
+	main_container.anchor_left = 0.5
+	main_container.anchor_right = 0.5
+	main_container.anchor_top = 0.5
+	main_container.anchor_bottom = 0.5
+	main_container.offset_left = -300
+	main_container.offset_right = 300
+	main_container.offset_top = -250
+	main_container.offset_bottom = 250
 	
 	# Title
 	var title = Label.new()
-	title.text = "🎉 Congratulations! 🎉"
+	title.text = "🎉 Victory! 🎉"
 	title.add_theme_font_size_override("font_size", 48)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.add_theme_color_override("font_color", Color.GOLD)
@@ -92,33 +136,27 @@ func _create_victory_screen():
 	spacer1.custom_minimum_size = Vector2(0, 30)
 	main_container.add_child(spacer1)
 	
-	# Statistics
-	var stats_container = VBoxContainer.new()
-	stats_container.add_theme_constant_override("separation", 10)
+	# Simplified information container
+	var info_container = VBoxContainer.new()
+	info_container.add_theme_constant_override("separation", 15)
 	
-	var stats_title = Label.new()
-	stats_title.text = "Game Statistics"
-	stats_title.add_theme_font_size_override("font_size", 24)
-	stats_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	stats_container.add_child(stats_title)
-	
-	# Create statistics labels
-	var stats_labels = [
-		"Levels Completed: %d / %d" % [game_statistics["levels_completed"], TOTAL_LEVELS],
-		"Enemies Defeated: %d" % game_statistics["enemies_defeated"],
-		"Items Collected: %d" % game_statistics["items_collected"],
-		"Deaths: %d" % game_statistics["deaths"],
-		"Play Time: %s" % _format_time(game_statistics["total_play_time"])
+	# Create information labels - simplified version
+	var info_labels = [
+		"Congratulations on completing the game!",
+		"All levels completed",
+		"",
+		"Thank you for playing!"
 	]
 	
-	for stat_text in stats_labels:
-		var stat_label = Label.new()
-		stat_label.text = stat_text
-		stat_label.add_theme_font_size_override("font_size", 16)
-		stat_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		stats_container.add_child(stat_label)
+	for info_text in info_labels:
+		var info_label = Label.new()
+		info_label.text = info_text
+		info_label.add_theme_font_size_override("font_size", 20)
+		info_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		info_label.add_theme_color_override("font_color", Color.WHITE)
+		info_container.add_child(info_label)
 	
-	main_container.add_child(stats_container)
+	main_container.add_child(info_container)
 	
 	# Spacer
 	var spacer2 = Control.new()
@@ -156,9 +194,15 @@ func _create_victory_screen():
 	
 	# Add to scene
 	var current_scene = get_tree().current_scene
+	print("VictoryManager: Current scene: ", current_scene.name if current_scene else "null")
+	
 	if current_scene:
-		current_scene.add_child(victory_screen)
-		victory_screen.z_index = 1000
+		current_scene.add_child(canvas_layer)
+		print("VictoryManager: Victory screen added to scene with z_index 1000")
+		print("VictoryManager: Victory screen visible: ", victory_screen.visible)
+		print("VictoryManager: Victory screen modulate: ", victory_screen.modulate)
+	else:
+		print("VictoryManager: ERROR - No current scene to add victory screen to!")
 
 func _format_time(seconds: float) -> String:
 	var hours = int(seconds) / 3600
@@ -175,9 +219,13 @@ func _play_again():
 	_reset_game_state()
 	get_tree().paused = false
 	
-	# Clear victory screen
+	# Clear victory screen and its canvas layer
 	if victory_screen:
-		victory_screen.queue_free()
+		var canvas_layer = victory_screen.get_parent()
+		if canvas_layer and canvas_layer.name == "VictoryCanvasLayer":
+			canvas_layer.queue_free()
+		else:
+			victory_screen.queue_free()
 		victory_screen = null
 	
 	# Restart first level
@@ -191,9 +239,13 @@ func _return_to_main_menu():
 	print("VictoryManager: Returning to main menu")
 	get_tree().paused = false
 	
-	# Clear victory screen
+	# Clear victory screen and its canvas layer
 	if victory_screen:
-		victory_screen.queue_free()
+		var canvas_layer = victory_screen.get_parent()
+		if canvas_layer and canvas_layer.name == "VictoryCanvasLayer":
+			canvas_layer.queue_free()
+		else:
+			victory_screen.queue_free()
 		victory_screen = null
 	
 	# Return to main menu
@@ -237,4 +289,10 @@ func get_game_statistics() -> Dictionary:
 func force_victory():
 	"""Debug: Force trigger victory"""
 	print("VictoryManager: Force triggering victory (debug)")
+	_trigger_game_victory()
+
+# Public victory trigger function
+func trigger_victory():
+	"""Public function: Trigger game victory"""
+	print("VictoryManager: Public victory trigger called")
 	_trigger_game_victory() 

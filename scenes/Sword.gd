@@ -94,6 +94,12 @@ func _on_body_entered(body):
             config.attack_power
         )
         if equipped:
+            # Update victory manager statistics
+            var victory_manager = get_node_or_null("/root/VictoryManager")
+            if victory_manager:
+                victory_manager.increment_items_collected()
+                print("VictoryManager: Item collected count updated (", config.weapon_name, ")")
+            
             print("Player obtained new weapon:", config.weapon_name, "(Attack Power:", config.attack_power, ")")
             
             # Show weapon obtained notification
