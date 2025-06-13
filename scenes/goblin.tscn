@@ -26,7 +26,7 @@ var facing_direction: Vector2 = Vector2.RIGHT
 var is_player_in_detection: bool = false
 
 func _ready():
-	add_to_group(\"enemies\")
+	add_to_group("enemies")
 	current_hp = max_hp
 	
 
@@ -39,14 +39,14 @@ func _ready():
 	
 	if animated_sprite:
 		animated_sprite.animation_finished.connect(_on_animation_finished)
-		animated_sprite.play(\"idle_right\")
+		animated_sprite.play("idle_right")
 	
-	print(name, \" StaticGoblin initialized, HP:\", current_hp, \" Attack Power:\", attack_power)
+	print(name, " StaticGoblin initialized, HP:", current_hp, " Attack Power:", attack_power)
 
 
 func _process(_delta: float):
 	# Check player status
-	if player_target and player_target.has_method(\"is_dead\") and player_target.is_dead():
+	if player_target and player_target.has_method("is_dead") and player_target.is_dead():
 		_reset_target()
 		return
 	
@@ -72,8 +72,8 @@ func _update_facing_direction():
 	# Only update animation flip
 	if not is_attacking:
 		animated_sprite.flip_h = facing_direction.x < 0
-		if not animated_sprite.is_playing() or animated_sprite.animation != \"idle_right\":
-			animated_sprite.play(\"idle_right\")
+		if not animated_sprite.is_playing() or animated_sprite.animation != "idle_right":
+			animated_sprite.play("idle_right")
 
 func _perform_attack():
 
@@ -83,11 +83,11 @@ func _perform_attack():
 	is_attacking = true
 	can_attack = false
 	
-	print(name, \" Start attacking player\")
+	print(name, " Start attacking player")
 	
 	# Play attack animation
-	if animated_sprite and animated_sprite.sprite_frames.has_animation(\"attack_right\"):
-		animated_sprite.play(\"attack_right\")
+	if animated_sprite and animated_sprite.sprite_frames.has_animation("attack_right"):
+		animated_sprite.play("attack_right")
 		animated_sprite.flip_h = facing_direction.x < 0
 	
 	# Set attack hitbox
@@ -124,7 +124,7 @@ func _execute_attack():
 	if not attack_hitbox or not player_target:
 		return
 	
-	if player_target.has_method(\"is_dead\") and player_target.is_dead():
+	if player_target.has_method("is_dead") and player_target.is_dead():
 		attack_hitbox.monitoring = false
 		return
 	
@@ -132,30 +132,30 @@ func _execute_attack():
 	var hit_player = false
 	
 	for body in hit_targets:
-		if body == player_target and body.has_method(\"take_damage\"):
+		if body == player_target and body.has_method("take_damage"):
 			var distance = global_position.distance_to(body.global_position)
 			if distance <= attack_range * 1.2:
 				body.take_damage(attack_power)
 				hit_player = true
-				print(name, \" Attack hit player, causing\", attack_power, \"damage\")
+				print(name, " Attack hit player, causing", attack_power, "damage")
 				break
 	
 	# Backup attack detection
 	if not hit_player and player_target:
 		var distance = global_position.distance_to(player_target.global_position)
-		if distance <= attack_range and player_target.has_method(\"take_damage\"):
-			if not (player_target.has_method(\"is_dead\") and player_target.is_dead()):
+		if distance <= attack_range and player_target.has_method("take_damage"):
+			if not (player_target.has_method("is_dead") and player_target.is_dead()):
 				player_target.take_damage(attack_power)
 				hit_player = true
-				print(name, \" 备用攻击检测命中\")
+				print(name, " backup attack detection hit")
 	
 	if not hit_player:
-		print(name, \" 攻击未命中\")
+		print(name, " attack missed")
 	
 	attack_hitbox.monitoring = false
 
 func _reset_attack_state():
-	\"\"\"重置攻击状态\"\"\"
+	"""Reset attack state"""
 	is_attacking = false
 	can_attack = true
 	
@@ -163,38 +163,38 @@ func _reset_attack_state():
 		attack_hitbox.monitoring = false
 	
 	if animated_sprite:
-		animated_sprite.play(\"idle_right\")
+		animated_sprite.play("idle_right")
 		if player_target:
 			animated_sprite.flip_h = facing_direction.x < 0
 
 # ============================================================================
-# 伤害系统
+# Damage system
 # ============================================================================
 func receive_player_attack(player_attack_power: int) -> int:
-	\"\"\"接收玩家攻击\"\"\"
+	"""Receive player attack"""
 	if current_hp <= 0:
 		return 0
 	
 	var actual_damage = player_attack_power
 	current_hp -= actual_damage
-	print(name, \" 受到玩家攻击\", actual_damage, \"点伤害，剩余HP:\", current_hp)
+	print(name, " received player attack ", actual_damage, " damage, remaining HP:", current_hp)
 	
 	_play_hit_feedback()
 	
 	if current_hp <= 0:
 		_handle_death()
 	else:
-		# 受击后反击
+		# Counter-attack after being hit
 		if player_target and can_attack and not is_attacking:
 			var distance = global_position.distance_to(player_target.global_position)
 			if distance <= attack_range * 1.5:
-				print(name, \" 受击后反击\")
-				call_deferred(\"_perform_attack\")
+				print(name, " counter-attacking after being hit")
+				call_deferred("_perform_attack")
 	
 	return actual_damage
 
 func _play_hit_feedback():
-	\"\"\"播放受击反馈效果\"\"\"
+	"""Play hit feedback effect"""
 	if not animated_sprite:
 		return
 	
@@ -207,12 +207,12 @@ func _play_hit_feedback():
 		animated_sprite.modulate = original_modulate
 
 func take_damage(amount: int):
-	\"\"\"通用伤害接口\"\"\"
+	"""Generic damage interface"""
 	if current_hp <= 0:
 		return
 	
 	current_hp -= amount
-	print(name, \" 受到\", amount, \"点伤害，剩余HP:\", current_hp)
+	print(name, " took ", amount, " damage, remaining HP:", current_hp)
 	
 	_play_hit_feedback()
 	
@@ -220,82 +220,82 @@ func take_damage(amount: int):
 		_handle_death()
 
 func _handle_death():
-	\"\"\"处理死亡\"\"\"
-	print(name, \" StaticGoblin死亡\")
+	"""Handle death"""
+	print(name, " StaticGoblin died")
 	
 	is_attacking = false
 	can_attack = false
 	
-	# 禁用碰撞
+	# Disable collision
 	var collision_shape = $CollisionShape2D
 	if collision_shape:
 		collision_shape.disabled = true
 	
-	# 停用检测区域
+	# Disable detection area
 	if detection_area:
 		detection_area.monitoring = false
 	
 	if attack_hitbox:
 		attack_hitbox.monitoring = false
 	
-	# 播放死亡动画
-	if animated_sprite and animated_sprite.sprite_frames.has_animation(\"death\"):
-		animated_sprite.play(\"death\")
+	# Play death animation
+	if animated_sprite and animated_sprite.sprite_frames.has_animation("death"):
+		animated_sprite.play("death")
 	else:
 		_cleanup()
 
 func _cleanup():
-	\"\"\"清理并给玩家经验\"\"\"
-	var player_node = get_tree().get_first_node_in_group(\"player\")
-	if player_node and player_node.has_method(\"gain_experience\"):
+	"""Cleanup and give experience to player"""
+	var player_node = get_tree().get_first_node_in_group("player")
+	if player_node and player_node.has_method("gain_experience"):
 		player_node.gain_experience(experience_drop)
-		print(\"玩家获得经验:\", experience_drop)
+		print("Player gained experience:", experience_drop)
 	
 	queue_free()
 
 # ============================================================================
-# 检测系统
+# Detection System
 # ============================================================================
 func _on_detection_area_body_entered(body):
-	\"\"\"玩家进入检测范围\"\"\"
-	if body.is_in_group(\"player\"):
-		print(name, \" 检测到玩家进入范围:\", body.name)
+	"""Player enters detection range"""
+	if body.is_in_group("player"):
+		print(name, " detected player entering range:", body.name)
 		player_target = body
 		is_player_in_detection = true
 		_update_facing_direction()
 
 func _on_detection_area_body_exited(body):
-	\"\"\"玩家离开检测范围\"\"\"
+	"""Player leaves detection range"""
 	if body == player_target:
-		print(name, \" 玩家离开检测范围\")
+		print(name, " player left detection range")
 		is_player_in_detection = false
-		# 保持警戒状态一段时间
+		# Stay alert for a while
 		await get_tree().create_timer(3.0).timeout
 		if not is_player_in_detection:
 			_reset_target()
 
 func _reset_target():
-	\"\"\"重置目标\"\"\"
+	"""Reset target"""
 	player_target = null
 	is_player_in_detection = false
 	
 	facing_direction = Vector2.RIGHT
 	if animated_sprite and not is_attacking:
 		animated_sprite.flip_h = false
-		animated_sprite.play(\"idle_right\")
+		animated_sprite.play("idle_right")
 
 # ============================================================================
-# 动画回调
+# Animation Callbacks
 # ============================================================================
 func _on_animation_finished():
-	\"\"\"动画完成回调\"\"\"
+	"""Animation completion callback"""
 	if not animated_sprite:
 		return
 		
-	if animated_sprite.animation == \"death\":
+	if animated_sprite.animation == "death":
 		_cleanup()
-	elif animated_sprite.animation == \"attack_right\":
-		# 攻击动画完成，状态由_handle_attack_timing管理
+	elif animated_sprite.animation == "attack_right":
+		# Attack animation complete, state managed by _handle_attack_timing
 		pass
 "
 
@@ -442,7 +442,7 @@ animations = [{
 "texture": SubResource("AtlasTexture_7r5gn")
 }],
 "loop": true,
-"name": &"attack_right",
+"name": "attack_right",
 "speed": 5.0
 }, {
 "frames": [{
@@ -483,7 +483,7 @@ animations = [{
 "texture": SubResource("AtlasTexture_weuyf")
 }],
 "loop": true,
-"name": &"idle_right",
+"name": "idle_right",
 "speed": 5.0
 }]
 
@@ -504,7 +504,7 @@ script = SubResource("GDScript_2pgk0")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
 sprite_frames = SubResource("SpriteFrames_ye8qr")
-animation = &"idle_right"
+animation = "idle_right"
 frame_progress = 0.524052
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
