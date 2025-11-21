@@ -6,6 +6,17 @@ A sophisticated 2D top-down maze exploration RPG built with Godot Engine 4.2. Th
 
 Navigate through procedurally configured maze levels as a brave adventurer. Fight enemies, collect items, unlock doors, and progress through increasingly challenging levels while your character grows stronger.
 
+
+## Video Demo
+
+<video src="video_demo/Hongyu%20Lin-2543143-game%20demo.mp4" controls width="720">
+
+  Your browser does not support the video tag. You can download the gameplay showcase `<a href="video_demo/Hongyu%20Lin-2543143-game%20demo.mp4">`here`</a>`.
+
+</video>
+
+The raw file lives in `video_demo/Hongyu Lin-2543143-game demo.mp4`; clone the repo and open it locally if the embedded player does not load on your platform.
+
 ### Core Gameplay Loop
 
 - **Exploration**: Navigate maze environments with intelligent pathfinding hints
@@ -133,13 +144,13 @@ The game follows a clean **4-layer modular architecture**:
 
 ## 🎮 Controls
 
-| Key             | Action          | Key             | Action                |
-| --------------- | --------------- | --------------- | --------------------- |
-| **WASD**  | Movement        | **J**     | Attack                |
-| **F**     | Interact        | **I**     | Toggle Inventory      |
-| **1-4**   | Select Weapon   | **Tab**   | Cycle Weapons         |
-| **M**     | Toggle Minimap  | **F1/F2** | Show Path to Key/Door |
-| **ESC**   | Pause Menu      | **Enter** | Confirm               |
+| Key            | Action         | Key             | Action                |
+| -------------- | -------------- | --------------- | --------------------- |
+| **WASD** | Movement       | **J**     | Attack                |
+| **F**    | Interact       | **I**     | Toggle Inventory      |
+| **1-4**  | Select Weapon  | **Tab**   | Cycle Weapons         |
+| **M**    | Toggle Minimap | **F1/F2** | Show Path to Key/Door |
+| **ESC**  | Pause Menu     | **Enter** | Confirm               |
 
 ## 🚀 Getting Started
 
